@@ -1588,7 +1588,7 @@ function expenseSection(q){
     <div class="kv" style="margin-top:10px">
       ${kvRow('Coût estimé de la commande (devis)',arOr(estimated))}
       ${kvRow('Coût réel enregistré',hasExpenses?ar(real):'—')}
-      ${kvRow('Plus (+) ou moins (−) que prévu',gap!==null?`${ar(gap)}${estimated?` (${dec(gap/estimated*100,1)} %)`:''}`:'—')}
+      ${kvRow('Différence avec l’estimation',gap!==null?`${ar(gap)}${estimated?` (${dec(gap/estimated*100,1)} %)`:''}`:'—')}
       ${kvRow('Coût réel par unité acceptée',hasExpenses&&accepted>0?ar(real/accepted):'—')}
       ${kvRow('Marge estimée (devis)',arOr(q.res.margeLot))}
       ${kvRow('Marge recalculée (prix × unités acceptées − coûts réels)',hasExpenses&&accepted>0&&isNum(q.res.pv)?ar(q.res.pv*accepted-real):'—')}
@@ -1886,11 +1886,11 @@ function viewDash(v){
       <div class="dash-stages">${stageHtml(DASH_STAGES)}</div>
       <section class="card"><h3>Activité récente</h3><ul class="dash-recent">${recent.map(q=>`<li><button type="button" class="dash-row" data-dash-open="${esc(q.no)}"><span class="dash-row-label"><b class="num">${esc(q.no)}</b> ${esc(q.inputs.name)}<span class="hint"> · ${fdtm(q.modified)}</span></span>${statusPill(q)}</button></li>`).join('')}</ul></section>
       <section class="card"><h3>Terminés</h3>${dashRow(STATUS.DELIVERED,rowLabel(STATUS.DELIVERED),countOf(STATUS.DELIVERED))}${dashRow(STATUS.CANCELLED,rowLabel(STATUS.CANCELLED),countOf(STATUS.CANCELLED))}</section>
-      <details class="card dash-money"><summary>Montants et écarts <small>pour le suivi financier</small></summary><div class="kv">
-        ${kvRow('Montant estimé des commandes en cours',ar(engaged))}
-        ${kvRow('Dépenses réelles enregistrées',withExpenses.length?ar(realTotal):'Aucune dépense enregistrée')}
-        ${kvRow('Plus (+) ou moins (−) que prévu',withExpenses.length?ar(realTotal-estimatedForReal):'—')}
-      </div><p class="kv-note">Calculé seulement sur les dossiers dont les dépenses réelles sont saisies.</p></details>
+      <details class="card dash-money"><summary>Argent <small>commandes et dépenses</small></summary><div class="kv">
+        ${kvRow('Coût estimé des commandes en cours',ar(engaged))}
+        ${kvRow('Dépenses payées',withExpenses.length?ar(realTotal):'Aucune dépense saisie')}
+        ${kvRow('Différence avec l’estimation',withExpenses.length?ar(realTotal-estimatedForReal):'—')}
+      </div><p class="kv-note">Calculé seulement pour les commandes dont les dépenses sont saisies.</p></details>
     </div>`;
   }
   v.onclick=e=>{

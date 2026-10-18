@@ -439,10 +439,10 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
 @keyframes splashIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
 @keyframes splashOut{to{opacity:0;visibility:hidden}}
 @keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes viewIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes viewIn{from{opacity:0;transform:translateX(calc(var(--dir,1) * 18px))}to{opacity:1;transform:none}}
 @keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-18px,14px) scale(1.06)}100%{transform:translate(0,0) scale(1)}}
 @media (max-width:760px){
-  #appSplash{position:fixed;inset:0;z-index:100;display:grid;place-content:center;justify-items:center;gap:14px;background:radial-gradient(circle at 30% 20%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 55%),var(--m-bg,#f1f4f3);color:var(--m-ink,#14161c);animation:splashOut .45s ease 1s forwards}
+  #appSplash{position:fixed;inset:0;z-index:100;display:grid;place-content:center;justify-items:center;gap:14px;background:radial-gradient(circle at 30% 20%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 55%),var(--m-bg,#f1f4f3);color:var(--m-ink,#14161c);animation:splashOut .3s ease .5s forwards}
   #appSplash .mark{width:76px;height:76px;border-radius:24px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:26px;font-weight:800;letter-spacing:-.5px;box-shadow:0 14px 34px color-mix(in srgb,var(--accent) 40%,transparent);animation:splashIn .6s cubic-bezier(.2,.7,.2,1) both}
   #appSplash p{margin:0;font-weight:700;font-size:20px;letter-spacing:-.3px;animation:splashIn .6s .15s both}
   .enter{animation:cardIn .5s cubic-bezier(.2,.7,.2,1) both}
@@ -460,7 +460,7 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
     const splash=document.createElement('div');splash.id='appSplash';splash.setAttribute('aria-hidden','true');
     splash.innerHTML='<div class="mark"><svg viewBox="0 0 512 512" width="46" height="46" aria-hidden="true"><path d="M256 96 L400 170 L400 342 L256 416 L112 342 L112 170 Z" fill="#ffffff" fill-opacity="0.22"/><path d="M256 96 L400 170 L256 244 L112 170 Z" fill="#ffffff"/><path d="M112 170 L256 244 L256 416 L112 342 Z" fill="#E7F3EF"/><path d="M400 170 L256 244 L256 416 L400 342 Z" fill="#ffffff" fill-opacity="0.82"/><path d="M256 244 V416" stroke="#0F766E" stroke-width="12" stroke-linecap="round"/></svg></div><p>Devis Transitaires</p>';
     document.body.appendChild(splash);
-    setTimeout(()=>splash.remove(),1500);
+    setTimeout(()=>splash.remove(),800);
   }
   function haptic(){
     try{const H=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Haptics;if(H){H.impact({style:'LIGHT'});return}}catch(e){}
@@ -605,9 +605,9 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
   .m-steps button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:54px;padding:4px 2px;border:0;border-radius:14px;background:transparent;color:var(--m-muted);font-size:12px;font-weight:600;line-height:1.1;box-shadow:none}
   .m-steps button[aria-current=step]{background:var(--m-surface);color:var(--accent);box-shadow:var(--m-shadow)}
   .m-steps button::before,.seg button[data-mode]::before,.seg button[data-price-mode]::before{content:"";width:18px;height:18px;flex:0 0 auto;background-color:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
-  .m-steps button:nth-child(1){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 7l9-4 9 4v10l-9 4-9-4z'/%3E%3Cpath d='M3 7l9 4 9-4M12 11v10'/%3E%3C/svg%3E")}
-  .m-steps button:nth-child(2){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M2 6h12v10H2z'/%3E%3Cpath d='M14 10h4l3 3v3h-7'/%3E%3Ccircle cx='6' cy='18' r='2'/%3E%3Ccircle cx='17' cy='18' r='2'/%3E%3C/svg%3E")}
-  .m-steps button:nth-child(3){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 12V4h8l10 10-8 8L3 12z'/%3E%3Ccircle cx='7.5' cy='7.5' r='1.5'/%3E%3C/svg%3E")}
+  .m-steps button:nth-of-type(1){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 7l9-4 9 4v10l-9 4-9-4z'/%3E%3Cpath d='M3 7l9 4 9-4M12 11v10'/%3E%3C/svg%3E")}
+  .m-steps button:nth-of-type(2){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M2 6h12v10H2z'/%3E%3Cpath d='M14 10h4l3 3v3h-7'/%3E%3Ccircle cx='6' cy='18' r='2'/%3E%3Ccircle cx='17' cy='18' r='2'/%3E%3C/svg%3E")}
+  .m-steps button:nth-of-type(3){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Crect x='2.5' y='6.5' width='19' height='11' rx='2'/%3E%3Ccircle cx='12' cy='12' r='2.6'/%3E%3Cpath d='M6 10v4M18 10v4'/%3E%3C/svg%3E")}
   .seg button[data-mode],.seg button[data-price-mode]{display:inline-flex;align-items:center;justify-content:center;gap:6px}
   .seg button[data-mode]::before,.seg button[data-price-mode]::before{width:15px;height:15px}
   .seg button[data-mode=prix]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M15 9a4 4 0 100 6M7 11h6M7 13h6'/%3E%3C/svg%3E")}
@@ -641,7 +641,12 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
 (function(){
   const mq=matchMedia('(max-width:760px)');
   const STEPS=['Produit','Transport','Prix'];
-  let cur=0,lastTab=null,openAtProduct=false;
+  let cur=0,lastTab=null,openAtProduct=false,lastNo=null;
+  /* « Nouveau devis » (menu, accueil, bouton du devis) : on marque l’ouverture, même si le numéro ne change pas */
+  const newQuoteBase=window.startNewQuote;
+  if(typeof newQuoteBase==='function'){
+    window.startNewQuote=function(){openAtProduct=true;return newQuoteBase.apply(this,arguments)};
+  }
   const head=document.createElement('nav');
   head.className='m-steps';head.setAttribute('aria-label','Étapes du devis');
   head.innerHTML=STEPS.map((s,i)=>`<button type="button" data-wiz-go="${i}">${s}</button>`).join('');
@@ -668,6 +673,7 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
   }
   function showMissing(list){
     document.querySelectorAll('.m-invalid').forEach(el=>el.classList.remove('m-invalid'));
+    void document.body.offsetWidth;
     list.forEach(([id])=>{if(id)boxFor(id)?.classList.add('m-invalid')});
     msg.textContent='Pour continuer, renseignez : '+list.map(([,l])=>l).join(', ')+'.';
     msg.hidden=false;
@@ -744,6 +750,8 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
     const B=blocks(cols);if(!B)return;
     const tab=typeof S!=='undefined'?S.tab:null;
     if(tab!==lastTab){lastTab=tab;if(tab==='devis'){cur=0;openAtProduct=!String(S.draft.name||'').trim()}}
+    /* Chaque nouveau devis a un nouveau numéro : même sur l’onglet Devis, on repart du haut de la section Produit */
+    if(S.draft.no!==lastNo){lastNo=S.draft.no;if(!String(S.draft.name||'').trim())openAtProduct=true}
     helpToInfo(cols);
     if(head.parentElement!==cols)cols.prepend(head);
     /* Nouveau devis : on arrive directement sur la section Produit (une seule fois par ouverture) */
@@ -860,6 +868,162 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
   }
   new MutationObserver(apply).observe(document.body,{subtree:true,childList:true});
   apply();
+})();
+</script>
+<style>
+/* Animations (téléphone). Elles suivent le réglage « réduire les animations » : la règle globale les coupe. */
+@media (max-width:760px){
+  /* Indicateur d’étape qui glisse vers l’étape active */
+  .m-steps{position:relative}
+  .m-steps button{position:relative;z-index:1}
+  .m-steps button[aria-current=step]{background:transparent;box-shadow:none}
+  .m-steps-pill{position:absolute;top:5px;bottom:5px;left:0;width:0;border-radius:14px;background:var(--m-surface);box-shadow:var(--m-shadow);transition:transform .25s ease,width .25s ease;z-index:0;pointer-events:none}
+  /* Champ manquant : petite secousse */
+  .m-invalid{animation:m-shake .35s ease}
+  @keyframes m-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+  /* Prix recalculé : léger fond qui s’estompe */
+  .m-flash{animation:m-flash .5s ease-out}
+  @keyframes m-flash{from{background-color:color-mix(in srgb,var(--accent) 24%,transparent)}to{background-color:transparent}}
+  /* Pastille d’état qui apparaît en fondu */
+  .m-fade{animation:m-fade .3s ease}
+  @keyframes m-fade{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+  /* Enregistrement réussi : coche qui se dessine, puis bannière */
+  #mSave.m-done{background:#16a34a!important}
+  #mSave.m-done::before{display:none}
+  .m-check{display:none;width:20px;height:20px;flex:0 0 auto}
+  #mSave.m-done .m-check{display:inline-block}
+  .m-check path,.m-banner path{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  .m-check path{stroke:#fff;stroke-dasharray:1;stroke-dashoffset:1}
+  #mSave.m-done .m-check path{animation:m-draw .45s ease .05s forwards}
+  @keyframes m-draw{to{stroke-dashoffset:0}}
+  .m-banner{position:fixed;z-index:60;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-160%);display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;background:#16a34a;color:#fff;font-weight:600;font-size:14px;box-shadow:0 10px 26px #0f172a33;transition:transform .35s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+  .m-banner.on{transform:translate(-50%,0)}
+  .m-banner svg{width:18px;height:18px}
+  /* Historique : cartes qui suivent le doigt */
+  .hcard{transition:transform .2s ease}
+  .hcard.m-swiping{transition:none}
+}
+</style>
+<script>
+/* Animations : indicateur d’étape, prix recalculé, pastille d’état, enregistrement, glisser sur l’Historique, sens des transitions entre onglets. */
+(function(){
+  const mq=matchMedia('(max-width:760px)');
+  /* Indicateur d’étape : la pastille va sous l’étape active */
+  function pills(){
+    document.querySelectorAll('.m-steps').forEach(head=>{
+      let pill=head.querySelector('.m-steps-pill');
+      if(!pill){pill=document.createElement('span');pill.className='m-steps-pill';head.prepend(pill)}
+      const cur=head.querySelector('button[aria-current=step]');
+      if(!cur)return;
+      pill.style.width=cur.offsetWidth+'px';
+      pill.style.transform='translateX('+cur.offsetLeft+'px)';
+    });
+  }
+  /* Prix recalculé dans la barre du bas : léger flash (pas au premier affichage) */
+  let lastPrice=null;
+  function flashPrice(){
+    const el=document.getElementById('mPriceValue');if(!el)return;
+    const t=el.textContent;
+    if(t===lastPrice)return;
+    const first=lastPrice===null;
+    lastPrice=t;
+    if(first||!t||t==='—')return;
+    el.classList.remove('m-flash');void el.offsetWidth;el.classList.add('m-flash');
+  }
+  /* Pastille d’état (Enregistré, Brouillon…) : fondu seulement quand elle change */
+  function fadeStat(){
+    const s=document.getElementById('qStat');if(!s)return;
+    const html=s.innerHTML;
+    if(s.dataset.last===html)return;
+    const first=s.dataset.last===undefined;
+    s.dataset.last=html;
+    if(first)return;
+    s.classList.remove('m-fade');void s.offsetWidth;s.classList.add('m-fade');
+  }
+  /* Enregistrement réussi : coche dans le bouton et bannière en haut */
+  let banner=null;
+  function celebrate(){
+    const b=document.getElementById('mSave');
+    if(b){
+      if(!b.querySelector('.m-check'))b.insertAdjacentHTML('beforeend','<svg class="m-check" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>');
+      b.classList.add('m-done');clearTimeout(b._t);b._t=setTimeout(()=>b.classList.remove('m-done'),1500);
+    }
+    if(!banner){
+      banner=document.createElement('div');banner.className='m-banner';banner.setAttribute('role','status');
+      banner.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Devis enregistré</span>';
+      document.body.appendChild(banner);
+    }
+    banner.classList.add('on');clearTimeout(banner._t);banner._t=setTimeout(()=>banner.classList.remove('on'),2000);
+  }
+  const saveBase=window.saveQuote;
+  if(typeof saveBase==='function'){
+    window.saveQuote=function(){
+      const r=saveBase.apply(this,arguments);
+      setTimeout(()=>{const s=document.getElementById('qStat');if(s&&/Enregistré/.test(s.textContent))celebrate()},50);
+      return r;
+    };
+  }
+  /* Historique : glisser une carte. Vers la gauche : dupliquer ; vers la droite : supprimer (avec confirmation). */
+  let card=null,sx=0,sy=0,dx=0,moved=false,lock=null;
+  document.addEventListener('touchstart',e=>{
+    if(!mq.matches)return;
+    const c=e.target.closest&&e.target.closest('#hlist .hcard[data-card-no]');
+    if(!c)return;
+    card=c;sx=e.touches[0].clientX;sy=e.touches[0].clientY;dx=0;moved=false;lock=null;
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!card)return;
+    const x=e.touches[0].clientX-sx,y=e.touches[0].clientY-sy;
+    if(lock===null){if(Math.abs(x)<8&&Math.abs(y)<8)return;lock=Math.abs(x)>Math.abs(y)?'x':'y'}
+    if(lock!=='x')return;
+    dx=Math.max(-140,Math.min(140,x));moved=true;
+    card.classList.add('m-swiping');card.style.transform='translateX('+dx+'px)';
+  },{passive:true});
+  document.addEventListener('touchend',()=>{
+    if(!card)return;
+    const c=card;card=null;
+    c.classList.remove('m-swiping');c.style.transform='';
+    if(!moved||lock!=='x')return;
+    c._noClick=true;setTimeout(()=>{c._noClick=false},400);
+    if(Math.abs(dx)<90)return;
+    if(typeof window.mQuoteAction==='function')window.mQuoteAction(dx<0?'dup':'del',c.dataset.cardNo);
+  });
+  document.addEventListener('click',e=>{
+    const c=e.target.closest&&e.target.closest('.hcard');
+    if(c&&c._noClick){e.stopPropagation();e.preventDefault()}
+  },true);
+  /* Sens des transitions : vers la droite si l’onglet suivant est après dans la barre */
+  const ORDER=['dash','devis','histo','tarifs','cal','params','guide'];
+  const goPrev=window.go;
+  window.go=function(k){
+    const from=ORDER.indexOf(S.tab),to=ORDER.indexOf(k);
+    document.body.style.setProperty('--dir',to>=from?'1':'-1');
+    return goPrev.apply(this,arguments);
+  };
+  new MutationObserver(()=>{
+    if(!mq.matches)return;
+    pills();flashPrice();fadeStat();
+  }).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['aria-current']});
+  pills();flashPrice();fadeStat();
+})();
+</script>
+<style>
+/* Changement de thème : fondu lent des couleurs (0,8 s). */
+@media (max-width:760px){
+  html.m-theme-fade *,html.m-theme-fade *::before,html.m-theme-fade *::after{transition:background-color .8s ease-in-out,color .8s ease-in-out,border-color .8s ease-in-out,box-shadow .8s ease-in-out!important}
+}
+</style>
+<script>
+/* Thème clair / sombre : la bascule passe par une transition (cercle qui s’étend, ou fondu de repli). */
+(function(){
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* Le clic reste celui du bureau (il bascule le thème) ; on ajoute seulement la classe qui anime les couleurs */
+  document.addEventListener('click',e=>{
+    if(!e.target.closest||!e.target.closest('#themeToggle')||reduce||!matchMedia('(max-width:760px)').matches)return;
+    const root=document.documentElement;
+    root.classList.add('m-theme-fade');
+    setTimeout(()=>root.classList.remove('m-theme-fade'),900);
+  },true);
 })();
 </script>
 <script>

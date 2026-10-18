@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Devis Transitaires</string>
+    <string name="title_activity_main">Devis Transitaires</string>
+    <string name="package_name">com.ms2026.chinadevisapp</string>
+    <string name="custom_url_scheme">com.ms2026.chinadevisapp</string>
+</resources>

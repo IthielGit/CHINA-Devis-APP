@@ -1,0 +1,41 @@
+const assert=require('node:assert/strict'),path=require('node:path');
+const {pathToFileURL}=require('node:url');
+const {chromium}=require('C:/Users/My PC/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
+ try{
+  const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(pathToFileURL(path.join(__dirname,'../Devis Transitaires.html')).href);
+  await page.locator('#f_wt').fill('');await page.locator('#bSave').click();
+  assert.match(await page.locator('#reviewTitle').innerText(),/corriger/);assert.match(await page.locator('.calendar-dialog').innerText(),/poids/);
+  await page.locator('#reviewCancel').click();await page.locator('#f_wt').fill('0.08');
+  await page.locator('#tab-params').click();await page.locator('#p_usd').fill('0');await page.locator('#returnQuote').click();await page.locator('#bSave').click();
+  assert.match(await page.locator('.calendar-dialog').innerText(),/taux/);await page.locator('#reviewCancel').click();
+  await page.locator('#tab-params').click();await page.locator('#p_usd').fill('4850');await page.locator('#returnQuote').click();
+  await page.locator('[data-price-mode=manual]').click();await page.locator('#f_pvR').fill('1');await page.locator('#bSave').click();
+  assert.match(await page.locator('.calendar-dialog').innerText(),/Vente à perte/);await page.locator('#reviewCancel').click();
+  assert.equal(await page.evaluate(()=>S.quotes.length),0);
+  await page.locator('[data-price-mode=auto]').click();await page.locator('#bSave').click();
+  assert.match(await page.locator('.calendar-dialog').innerText(),/passé/);await page.locator('#reviewConfirm').click();
+  await page.locator('#tab-histo').click();await page.locator('[data-a=dup]').click();await page.locator('#f_name').fill('Second produit');await page.locator('#f_qty').fill('9');await page.locator('#bSave').click();await page.locator('#reviewConfirm').click();
+  const before=await page.evaluate(()=>JSON.stringify(S.quotes));
+  await page.locator('#tab-histo').click();await page.locator('#groupPayment').click();
+  await page.locator('#paymentName').fill('Paiement test');await page.locator('[name=member]').nth(0).check();await page.locator('[name=member]').nth(1).check();
+  assert.match(await page.locator('#paymentPreview').innerText(),/10 pièces/);
+  await page.locator('#paymentCancel').click();assert.equal(await page.evaluate(()=>JSON.stringify(S.quotes)),before);
+  await page.locator('#groupPayment').click();await page.locator('#paymentName').fill('Paiement test');await page.locator('[name=member]').nth(0).check();await page.locator('[name=member]').nth(1).check();
+  await page.locator('dialog form button[type=submit]').click();
+  assert.equal(await page.evaluate(()=>S.paymentGroups.length),1);
+  const sums=await page.evaluate(()=>({fees:S.quotes.reduce((a,q)=>a+q.res.transacLot,0),total:S.paymentGroups[0].totalAr}));assert.ok(Math.abs(sums.fees-sums.total)<1e-8);
+  await page.reload();assert.equal(await page.locator('[data-ungroup]').count(),1);
+  await page.locator('[data-a=edit]').first().click();assert.equal(await page.locator('#hlist').isVisible(),true);
+  await page.locator('[data-a=view]').first().click();assert.match(await page.locator('#ov').innerText(),/Paiement groupé/);await page.locator('#ovc').click();
+  await page.locator('#returnQuote').click();assert.equal(await page.locator('#f_qty').isDisabled(),true);
+  await page.locator('#tab-histo').click();await page.locator('[data-ungroup]').click();await page.locator('#reviewCancel').click();assert.equal(await page.evaluate(()=>S.paymentGroups.length),1);
+  await page.locator('[data-ungroup]').click();await page.locator('#reviewConfirm').click();assert.equal(await page.evaluate(()=>JSON.stringify(S.quotes)),before);
+  await page.reload();assert.equal(await page.evaluate(()=>S.paymentGroups.length),0);
+  await page.setViewportSize({width:390,height:844});await page.locator('#groupPayment').click();
+  assert.ok(await page.locator('dialog').evaluate(el=>el.getBoundingClientRect().width<=innerWidth));await page.locator('#paymentCancel').click();
+  assert.deepEqual(errors,[]);console.log('PASS: missing-weight/rate errors, loss/stale-date confirmation, two-quote grouping preview/cancel/commit, fee conservation, reload, edit lock, quote details, ungroup cancellation/exact restoration, mobile dialog.');
+ }finally{await browser.close()}
+})().catch(e=>{console.error(e.message);process.exitCode=1});

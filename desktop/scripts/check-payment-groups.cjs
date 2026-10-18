@@ -1,0 +1,23 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'../Devis Transitaires.html'),'utf8');
+const script=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+const context=vm.createContext({localStorage:{getItem:()=>null},console,setTimeout,clearTimeout});
+vm.runInContext(script.split('/* ---------- shell')[0]+'\n'+script.slice(script.indexOf('function checkQuote('),script.indexOf('function reviewDialog(')),context);
+const run=code=>vm.runInContext(code,context),close=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
+run(`globalThis.records=[1,9].map((qty,i)=>{const inputs={...exampleDraft('G'+i),qty};return {no:inputs.no,inputs,res:snapshot(inputs,compute(inputs))}}); globalThis.allocation=allocatePayment(records,2,793.5); globalThis.group={id:'g',name:'Test',created:'2026-10-15',feeCny:2,rate:793.5,...allocation}; globalThis.changed=records.map((q,i)=>applyPaymentShare(q,allocation.shares[i],group));`);
+close(context.allocation.totalAr,1587);
+close(context.allocation.shares[0].shareAr,158.7);close(context.allocation.shares[1].shareAr,1428.3);
+close(context.changed.reduce((sum,q)=>sum+q.res.transacLot,0),1587);
+for(const q of context.changed){close(q.res.costP*q.inputs.qty,q.res.costLot);close(q.res.margeLot,q.res.pv*q.inputs.qty-q.res.costLot);}
+assert.equal(context.records[0].paymentGroupId,undefined);
+run(`globalThis.legacy=JSON.parse(JSON.stringify(records[0]));legacy.res.costP-=legacy.res.transacLot;globalThis.fixed=applyPaymentShare(legacy,allocation.shares[0],group)`);
+close(context.fixed.res.costP*context.fixed.inputs.qty,context.fixed.res.costLot);
+run(`globalThis.recomputed=compute(changed[0].inputs);`);close(context.recomputed.costP,context.changed[0].res.costP);
+assert.throws(()=>run('allocatePayment(changed,2,793.5)'));
+assert.throws(()=>run('allocatePayment(records,2,0)'));
+assert.throws(()=>run('allocatePayment(records,-2,793.5)'));
+run(`globalThis.small=allocatePayment([1,1,1].map((qty,i)=>({...records[0],no:'S'+i,inputs:{...records[0].inputs,qty}})),0.01,1)`);
+close(context.small.shares.reduce((s,q)=>s+q.shareAr,0),0.01);
+run(`globalThis.zero=allocatePayment(records,0,793.5);globalThis.invalid=checkQuote({...exampleDraft('bad'),qty:0,wt:null,dims:'',price:null},compute({...exampleDraft('bad'),wt:null,dims:''}));globalThis.badRate=checkQuote(exampleDraft('bad'),compute(exampleDraft('bad')),{...S.params,usd:0});globalThis.loss=checkQuote({...exampleDraft('loss'),pvRetenu:1},compute({...exampleDraft('loss'),pvRetenu:1}));globalThis.old=checkQuote({...exampleDraft('old'),pay:'2000-01-01'},compute({...exampleDraft('old'),pay:'2000-01-01'}));`);
+close(context.zero.totalAr,0);assert.ok(context.invalid.errors.length>=3);assert.ok(context.badRate.errors.length);assert.ok(context.loss.warnings.some(s=>s.includes('perte')));assert.ok(context.old.warnings.some(s=>s.includes('passé')));
+console.log('PASS: weighted shared fee, exact total including cent rounding, zero fee, no original-record mutation, group recomputation, double-group rejection, invalid rates/inputs, outdated dates and below-cost warnings.');

@@ -1,0 +1,16 @@
+{
+  "name": "china-devis-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Devis Transitaires - application mobile locale",
+  "scripts": {
+    "sync": "npx cap sync",
+    "android": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
+  }
+}

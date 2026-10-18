@@ -1,0 +1,1501 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><style id="ux-fixes">
+/* 1. Phone: tab row scrolls, fade shows there is more to the right */
+@media(max-width:860px){.tabs{-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent);padding-right:24px}}
+
+/* 3. Touch targets: 44px minimum for controls on touch screens */
+@media(pointer:coarse){.btn,.seg button,.tab,.inp,.sel{min-height:44px}button[data-rm],button[data-rm]{min-width:36px;min-height:36px}}
+button[data-rm]{min-width:28px;min-height:28px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
+
+/* 6. Readable minimum text size */
+.estimate-note{grid-column:1/-1;font-size:12px;color:var(--muted);margin-top:-4px}
+
+/* 12. The panel summary already gives the title, so hide the duplicate heading inside it */
+details[data-detail="cost"] h2{display:none}
+/* 15. Desktop: the sale summary stays in view while the left column scrolls */
+@media(min-width:861px){#right{position:sticky;top:20px;align-self:start}}
+/* 9. Visible label above the history search field */
+.field-stack{display:flex;flex-direction:column;gap:6px}
+.field-stack>label{font-size:12px;color:var(--muted)}
+/* 10. Quote number stays on one line */
+.quotebar .no{white-space:nowrap}
+/* 12. The panel summary already gives the title, so hide the duplicate heading inside it */
+details[data-detail="cost"] h2{display:none}
+/* 14. Destructive reset is separated from the export and import buttons */
+#bReset{margin-left:auto}
+/* Cost table on phones: fit the card, first column wraps, value columns stay on one line */
+@media(max-width:600px){.cost-table{display:table;table-layout:fixed;width:100%;font-size:12px}.cost-table th,.cost-table td{padding-inline:6px}.cost-table th:first-child,.cost-table td:first-child{width:auto;white-space:normal}.cost-table th:not(:first-child),.cost-table td:not(:first-child){width:31%;white-space:nowrap}.cost-table thead th:not(:first-child){white-space:normal;line-height:1.3}}
+</style>
+<style>
+/* Variables du comparatif (reprises de la version mobile) */
+.cmp,.offer-card,.offer-empty,.cmp-ctx{--m-surface:var(--surface);--m-surface2:var(--surface2);--m-ink:var(--ink);--m-muted:var(--muted);--m-accent:var(--accent)}
+/* Comparer les offres : cartes compactes */
+.cmp{display:grid;gap:12px;padding:16px 0 calc(120px + env(safe-area-inset-bottom,0px))}
+.cmp-ctx{display:flex;align-items:center;justify-content:flex-start;gap:12px;width:fit-content;max-width:100%;padding:8px 12px;border-radius:12px;background:var(--m-surface,var(--surface));box-shadow:var(--m-shadow,var(--shadow));font-size:14px;color:var(--m-muted,var(--muted))}
+.cmp-ctx>span{min-width:0;overflow-wrap:anywhere}
+.cmp-ctx .btn{flex:0 0 auto}
+.cmp-ctx b{color:var(--m-ink,var(--ink))}
+.cmp-ctrl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp-ctrl .btn{min-height:44px;justify-content:center}
+.offer-list{display:grid;gap:12px}
+.offer-card{display:grid;gap:10px;background:var(--m-surface);border:1px solid var(--m-surface2);border-radius:18px;padding:16px;box-shadow:0 1px 2px #0000000d;min-width:0}
+.oc-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:16px;font-weight:600;color:var(--m-ink)}
+.oc-badge{font-size:12px;font-weight:600;color:var(--accent);background:#0b7f7720;border-radius:999px;padding:3px 9px}
+.oc-price{display:grid;gap:2px}
+.oc-fig{font-size:26px;font-weight:700;color:var(--m-ink);letter-spacing:-.3px;line-height:1.15}
+.oc-lbl{font-size:14px;color:var(--m-muted)}
+.oc-line{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:14px;color:var(--m-ink)}
+.st{font-style:normal;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px}
+.st.warn{color:#b45309;background:#f59e0b24}
+.oc-qual{font-size:14px;color:var(--m-muted)}
+.oc-pick{width:100%;min-height:48px;justify-content:center}
+.oc-more summary{list-style:none;cursor:pointer;min-height:44px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:600;font-size:14px}
+.oc-more summary::-webkit-details-marker{display:none}
+.oc-body{display:grid;gap:12px;padding-top:8px;border-top:1px solid var(--m-surface2)}
+.oc-kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;font-size:14px;color:var(--m-ink)}
+.oc-notes{margin:0;padding-left:18px;font-size:14px;color:var(--m-muted);display:grid;gap:6px}
+.offer-empty{background:var(--m-surface);border-radius:18px;padding:16px;font-size:14px;color:var(--m-muted)}
+.cmp-check{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px}
+.cmp-check input{width:18px;height:18px;accent-color:var(--accent)}
+/* Fenêtre Filtres du comparatif */
+.more-list{display:grid;gap:10px;margin-top:12px}
+.more-item{background:var(--surface2);color:var(--ink);justify-content:flex-start;padding:0 18px}
+.m-close{margin-top:6px;color:var(--muted)}
+</style>
+</head><body>
+<title>Devis Transitaires</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700&display=swap">
+<style>
+/* Layout: left icon sidebar + soft canvas; white rounded cards; pastel KPI tiles (dashboard look). */
+:root{
+  --bg:#eceff6; --surface:#ffffff; --surface2:#f5f7fc; --line:#e2e6f0; --ink:#17203a; --muted:#69728f;
+  --accent:#0b7f77; --accent-ink:#ffffff; --accent-soft:#dcf3f0;
+  --in-bg:#f1f5ff; --in-fg:#1d4fc4; --in-line:#cfdcf7; --off-bg:#eef0f5; --off-fg:#8f98b0;
+  --good:#17803d; --good-bg:#dff3e5; --warn:#a15c00; --warn-bg:#fdeed2; --bad:#b3261e; --bad-bg:#fbe3e0;
+  --t1:#dcf3ef; --t2:#e2eaff; --t3:#fdf0cb; --t4:#fde3da; --shadow:0 1px 2px #1a244a0d,0 6px 20px #1a244a0d;
+  --f-head:'Schibsted Grotesk',system-ui,sans-serif; --f-body:'IBM Plex Sans',system-ui,sans-serif; --f-num:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1221; --surface:#151c33; --surface2:#1a2340; --line:#273250; --ink:#e8ecf8; --muted:#98a2c3;
+  --accent:#3fd0c3; --accent-ink:#04221f; --accent-soft:#143a42;
+  --in-bg:#1a2745; --in-fg:#a9c2ff; --in-line:#2f4474; --off-bg:#1c2540; --off-fg:#6c7799;
+  --good:#58d487; --good-bg:#16372436; --warn:#f0b254; --warn-bg:#3a2c12; --bad:#ff8a80; --bad-bg:#3d1b18;
+  --t1:#143a3c; --t2:#1b2a55; --t3:#3a3216; --t4:#3d2622; --shadow:0 1px 2px #0006; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1221; --surface:#151c33; --surface2:#1a2340; --line:#273250; --ink:#e8ecf8; --muted:#98a2c3;
+  --accent:#3fd0c3; --accent-ink:#04221f; --accent-soft:#143a42;
+  --in-bg:#1a2745; --in-fg:#a9c2ff; --in-line:#2f4474; --off-bg:#1c2540; --off-fg:#6c7799;
+  --good:#58d487; --good-bg:#16372436; --warn:#f0b254; --warn-bg:#3a2c12; --bad:#ff8a80; --bad-bg:#3d1b18;
+  --t1:#143a3c; --t2:#1b2a55; --t3:#3a3216; --t4:#3d2622; --shadow:0 1px 2px #0006; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.wrap{max-width:1280px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-head);margin:0;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+/* app bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);padding-top:12px;border-bottom:1px solid var(--line);margin:0 -2px}
+.bar-top{display:flex;gap:12px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;padding:0 2px}
+.bar h1{font-size:19px;letter-spacing:-.01em}
+.bar .sub{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:2px;overflow-x:auto;margin-top:8px;padding:0 2px;scrollbar-width:none}
+.tab{border:0;background:none;padding:9px 12px;border-bottom:3px solid transparent;color:var(--muted);cursor:pointer;white-space:nowrap;font-weight:500}
+.tab[aria-selected=true]{color:var(--accent);border-color:var(--accent)}
+.tab:hover{color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* buttons */
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 13px;border-radius:6px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.dng{color:var(--bad)}
+.btn.sm{padding:3px 9px;font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* result strip */
+.result{background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:14px 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 22px;margin-top:14px}
+.result .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;opacity:.8}
+.result .big{font-family:var(--f-num);font-size:24px;font-weight:500;line-height:1.2}
+.result .small{font-size:12px;opacity:.9}
+.quotebar{display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.quotebar .no{font-family:var(--f-num);font-weight:500;font-size:17px}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+.pill.good{background:var(--good-bg);color:var(--good);border-color:transparent}
+.pill.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.pill.bad{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+/* layout */
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.card+.card{margin-top:16px}
+.stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+.stack>.card+.card{margin-top:0}
+.grid2>.card+.card{margin-top:0}
+.calendar-filters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:12px;align-items:end;margin:18px 0 10px}
+.calendar-filters label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;min-width:0}
+.calendar-filters .inp,.calendar-filters .sel{width:100%;min-width:0}
+@media(max-width:1100px){.calendar-filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.calendar-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.calendar-filters .btn{grid-column:1/-1}}
+.card h2{font-size:15px;margin-bottom:10px;letter-spacing:-.005em}
+.card h2 small{font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
+.field{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:4px 12px;padding:7px 0;border-top:1px solid var(--line);align-items:center}
+.field:first-of-type{border-top:0}
+.field label{font-weight:500}
+.field .help{grid-column:1/-1;color:var(--muted);font-size:12px;margin-top:-2px}
+.field .note{grid-column:1/-1;font-size:12px}
+@media(max-width:520px){.field{grid-template-columns:minmax(0,1fr)}}
+.inp,.sel{width:100%;min-width:0;background:var(--in-bg);color:var(--in-fg);border:1px solid var(--in-line);border-radius:5px;padding:6px 8px;font-family:var(--f-num)}
+.sel{font-family:var(--f-body)}
+.inp.txt{font-family:var(--f-body)}
+.inp:disabled,.sel:disabled,.inp.off{background:var(--off-bg);color:var(--off-fg);border-color:var(--line)}
+textarea.inp{font-family:var(--f-body);resize:vertical}
+.unit{display:flex;gap:6px;align-items:center}
+.unit span{color:var(--muted);font-size:12px;white-space:nowrap}
+/* tables */
+.tw{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%}
+th,td{padding:6px 9px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;white-space:nowrap;background:var(--surface2)}
+td.r,th.r{text-align:right}
+tr.total td{font-weight:600;border-top:2px solid var(--ink);background:var(--surface2)}
+tr.sel td{background:var(--accent-soft)}
+tr.dim td{color:var(--off-fg)}
+td.best{background:var(--good-bg);color:var(--good);font-weight:600}
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;padding:3px 0}
+.kv>div:nth-child(odd){color:var(--muted)}
+.kv>div:nth-child(even){text-align:right}
+.hint{color:var(--muted);font-size:12px}
+.warn{color:var(--warn)}.badtxt{color:var(--bad)}.goodtxt{color:var(--good)}
+.tbl-edit input,.tbl-edit select{min-width:70px}
+.tbl-edit td{padding:4px}
+.tbl-edit .inp{padding:4px 6px}
+details.cats{position:relative}
+details.cats summary{cursor:pointer;background:var(--in-bg);color:var(--in-fg);border:1px solid var(--in-line);border-radius:5px;padding:4px 7px;min-width:130px;list-style:none;font-size:13px}
+details.cats .menu{position:absolute;z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px;box-shadow:0 6px 20px #0003;min-width:200px}
+details.cats .menu label{display:flex;gap:6px;align-items:center;padding:2px 0;cursor:pointer}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--surface2);border:1px solid var(--line);border-radius:99px;padding:2px 4px 2px 10px}
+.chip button{border:0;background:none;cursor:pointer;color:var(--muted);font-size:15px;line-height:1;padding:0 4px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:max(20px,env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:6px;z-index:50;box-shadow:0 6px 24px #0004;max-width:90vw}
+.overlay{position:fixed;inset:0;background:#0008;z-index:40;display:flex;align-items:flex-start;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) 16px 24px;overflow:auto}
+.overlay .card{max-width:760px;width:100%}
+.guide p{max-width:68ch;margin:4px 0 10px}
+.guide h3{margin-top:18px;font-size:15px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--surface);padding:8px 6px;cursor:pointer;font-weight:500;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+details.adv summary{cursor:pointer;font-family:var(--f-head);font-weight:600;font-size:15px}
+details.adv summary small{font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
+details.adv[open] summary{margin-bottom:8px}
+.market-compare{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}
+.market-compare summary{cursor:pointer;color:var(--accent);font-weight:500}
+.market-result{display:grid;gap:4px;background:var(--surface2);border-radius:6px;padding:9px 10px;font-size:13px}
+.category-assist{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+.category-assist summary{cursor:pointer;color:var(--accent);font-weight:500}
+.category-questions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px;margin-top:6px}
+.category-advice{padding:8px 10px;background:var(--surface2);border-radius:6px;font-size:13px}
+@media(max-width:520px){.category-questions{grid-template-columns:minmax(0,1fr)}}
+.fm{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media(prefers-reduced-motion:no-preference){.tab,.btn{transition:color .12s,border-color .12s}}
+
+/* ---- dashboard skin ---- */
+.field[hidden]{display:none}
+body{padding-block:0 32px}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);gap:22px;max-width:1500px;margin:0 auto;padding-top:16px;align-items:start}
+.side{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:16px 12px;display:flex;flex-direction:column;gap:18px;min-height:calc(100vh - 48px)}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px}
+.brand b{font-family:var(--f-head);font-size:16px;letter-spacing:-.01em}
+.brand .sub{font-size:11px;color:var(--muted)}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.tabs{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;overflow:visible}
+.tab{display:flex;align-items:center;gap:11px;width:100%;border:0;border-radius:10px;padding:10px 12px;color:var(--muted);text-align:left;font-weight:500;background:none}
+.tab svg{flex:none}
+.tab span:first-of-type{flex:1}
+.tab[aria-selected=true]{background:var(--accent-soft);color:var(--accent);border:0}
+.tab:hover{background:var(--surface2);color:var(--ink)}
+.tab[aria-selected=true]:hover{background:var(--accent-soft);color:var(--accent)}
+.count{background:var(--accent);color:var(--accent-ink);border-radius:99px;font-size:11px;padding:0 7px;line-height:18px}
+.side-foot{margin-top:auto;background:var(--surface2);border-radius:12px;padding:10px 12px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.side-foot b{color:var(--ink);font-weight:500}
+.main{min-width:0}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 2px 0}
+.top h1{font-size:24px;letter-spacing:-.02em}
+.card{border-radius:16px;box-shadow:var(--shadow);border-color:transparent;padding:18px 20px}
+.card h2{font-size:16px}
+.result{background:none;color:inherit;padding:0;border-radius:0;gap:14px;margin-top:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.tile{border-radius:16px;padding:14px 18px;color:#17203a;box-shadow:var(--shadow)}
+.tile.t1{background:var(--t1)}.tile.t2{background:var(--t2)}.tile.t3{background:var(--t3)}.tile.t4{background:var(--t4)}
+.tile .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);opacity:1}
+.tile .big{font-family:var(--f-num);font-size:23px;font-weight:500;line-height:1.25;color:var(--ink);margin-top:2px}
+.tile .small{font-size:12px;color:var(--muted)}
+.quotebar{margin-top:10px}
+.btn{border-radius:10px;padding:8px 15px}
+.btn.sm{border-radius:8px}
+.btn.pri{box-shadow:0 2px 8px #0b7f7740}
+.inp,.sel{border-radius:9px;padding:8px 10px}
+.seg{border-radius:12px;padding:3px;gap:3px;background:var(--surface2);border:0}
+.seg button{border:0;border-radius:9px;background:none;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
+th{background:none;border-bottom:1px solid var(--line)}
+td{border-bottom:1px solid var(--line)}
+tr.sel td{background:var(--in-bg)}
+tr.total td{background:var(--accent-soft);border-top:0;color:var(--ink)}
+tr.total td:first-child{border-radius:10px 0 0 10px}tr.total td:last-child{border-radius:0 10px 10px 0}
+.pill{border-radius:99px}
+.overlay .card{box-shadow:0 20px 60px #0006}
+@media(max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr);gap:12px}
+  .side{position:static;min-height:0;flex-direction:row;align-items:center;gap:8px;padding:8px;border-radius:14px;overflow:hidden}
+  .brand{display:none}.side-foot{display:none}
+  .tabs{flex-direction:row;overflow-x:auto;scrollbar-width:none;width:100%}
+  .tab{width:auto;white-space:nowrap;padding:9px 12px}
+  .top h1{font-size:20px}
+}
+</style>
+
+<style>
+input[type=number]{appearance:textfield;-moz-appearance:textfield}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.price-summary{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;grid-column:1/-1}.sale-hero .big{font-size:42px;font-weight:600;color:var(--accent);letter-spacing:-1px}.sale-hero .lbl{font-size:12px;color:var(--muted)}.summary-facts{display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:12px}.summary-facts span{display:block;color:var(--muted);margin-bottom:4px}.summary-facts b{font-size:14px}.summary-offer{grid-column:1/-1;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}.inactive-row{color:var(--muted);background:var(--surface2)}.inactive-row td{opacity:.7}.return-quote{position:sticky;top:10px;z-index:21;margin:12px 0;background:var(--surface)!important}.filter-bar{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0}.filter-bar label{display:flex;flex-direction:column;gap:5px;font-size:12px;min-width:160px}.calendar-dialog{width:min(520px,calc(100vw - 32px));max-height:90vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:24px;margin:auto}.calendar-dialog::backdrop{background:#0007}.calendar-dialog h2{font-size:20px;margin-bottom:15px}.calendar-dialog .field{grid-template-columns:1fr}.calendar-dialog .row{justify-content:flex-end;margin-top:20px}.calendar-dialog textarea{min-height:90px}.btn:disabled{opacity:.45;cursor:not-allowed}@media(max-width:600px){.price-summary{grid-template-columns:1fr;padding:20px;gap:18px}.sale-hero .big{font-size:36px}.summary-facts{gap:15px}.return-quote{top:65px}}
+</style>
+<style>
+.result-table{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:12px 22px;align-items:center;grid-column:1/-1}.result-table .col-label{font-size:12px;color:var(--muted)}.result-table .result-cost{font-size:28px;font-weight:600;color:var(--accent)}.result-table .row-label{font-size:13px;font-weight:500}.delivery-line{grid-column:1/-1;border-top:1px solid var(--line);padding-top:14px;font-size:13px;display:flex;flex-wrap:wrap;gap:8px 18px}.summary-note{grid-column:1/-1;font-size:11px;color:var(--muted)}.price-choice{margin-bottom:16px}.price-choice button{min-height:42px}.tariff-dialog{width:min(760px,calc(100vw - 32px))}.tariff-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}.tariff-fields .wide{grid-column:1/-1}.tariff-fields legend{font-weight:600;margin:16px 0 5px}.tariff-fields fieldset{border:0;padding:0}.tariff-list td:first-child{min-width:160px}.tariff-list .row{flex-wrap:nowrap}.return-quote{position:static!important}.manual-note{padding:12px;border:1px solid var(--line);border-radius:7px;background:var(--accent-soft);font-size:12px;margin:12px 0}@media(max-width:600px){.result-table{grid-template-columns:1fr 1fr;gap:10px}.result-table .row-label{grid-column:1/-1;margin-top:8px}.result-table .result-cost{font-size:23px}.result-table>.empty-heading{display:none}.tariff-fields{grid-template-columns:1fr}.tariff-fields .wide{grid-column:auto}}
+</style>
+<style>
+.result-table .result-cost{font-size:16px;font-weight:500;color:var(--ink)}
+.result-table #sellingPrice,.result-table #sellingPrice+b{font-size:34px;font-weight:700;letter-spacing:-.8px;line-height:1.25;color:var(--accent);font-variant-numeric:tabular-nums}
+.result-table .row-label:has(+ #sellingPrice){font-size:15px;font-weight:600;color:var(--accent)}
+.result-table .delivery-line{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));border-radius:9px;padding:17px 20px;align-items:center;margin-top:6px}
+.delivery-line>span:first-child{font-size:13px;font-weight:650;color:var(--accent)}
+.delivery-line>b{font-size:24px;letter-spacing:-.4px;color:var(--accent)}
+.delivery-line>.hint{flex-basis:100%;font-size:11px}
+@media(max-width:600px){.result-table #sellingPrice,.result-table #sellingPrice+b{font-size:27px}.result-table .delivery-line{padding:15px;gap:7px}.delivery-line>span:first-child{flex-basis:100%}.delivery-line>b{font-size:23px}}
+</style>
+<style>
+.result-table.single-unit{grid-template-columns:1.15fr 1fr}
+.result-table.single-unit>.command-total{display:none}
+@media(max-width:600px){.result-table.single-unit{grid-template-columns:minmax(0,1fr)}.result-table.single-unit>.col-label{grid-column:1/-1}}
+</style>
+<style id="ux-refinement">
+/* Shared semantic tokens keep the portable app consistent across themes. */
+:root{--bg:#f6f7f9;--surface:#fff;--surface2:#f1f4f5;--line:#e1e6e8;--ink:#202e36;--muted:#5f6f79;--accent:#167567;--accent-soft:#e8f4ef;--in-bg:#f1f5ff;--in-fg:#1d4fc4;--in-line:#cfdcf7;--shadow:0 1px 3px #142c3406;--f-head:'IBM Plex Sans',system-ui,sans-serif}
+body{padding:0 24px 40px;line-height:1.55}.app{max-width:1540px;grid-template-columns:220px minmax(0,1fr);gap:36px;padding-top:28px}.side{top:28px;border:0;box-shadow:none;background:transparent;padding:10px 0;min-height:calc(100vh - 70px)}.brand{padding:0 12px 24px}.brand b{font-size:19px;letter-spacing:-.5px}.brand .sub{margin-top:3px}.logo{width:38px;height:38px;border-radius:11px}.tabs{gap:5px}.tab{min-height:44px;padding:11px 14px;font-size:13px;border-radius:8px}.tab[aria-selected=true]{font-weight:600}.side-foot{border:1px solid var(--line);background:var(--surface);padding:16px;gap:8px}.side-foot:before{content:'TAUX DE CHANGE';font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--muted)}
+.top{padding:6px 0 24px;border-bottom:1px solid var(--line);align-items:center}.top h1{font-size:28px;letter-spacing:-.8px;line-height:1.3}.page-kicker{font-size:11px;letter-spacing:.12em;color:var(--accent);font-weight:600;margin-bottom:6px}.page-subtitle{font-size:13px;color:var(--muted);margin:7px 0 0}.header-tools{display:flex;align-items:center;gap:10px}.local-label{font-size:11px;color:var(--muted);white-space:nowrap}.local-label:before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px}.theme-button{min-width:40px}
+.quotebar{margin:22px 0 0;gap:10px}.quotebar .no{font-size:13px}.quotebar .pill{font-size:11px}.btn{min-height:39px;padding:8px 14px;border-radius:7px;font-size:12px;box-shadow:var(--shadow);display:inline-flex;align-items:center;justify-content:center;gap:7px}.btn:hover{background:var(--surface2)}.btn.pri{box-shadow:none}.btn.pri:hover{background:color-mix(in srgb,var(--accent) 88%,var(--ink));color:var(--accent-ink)}.btn.sm{min-height:32px;padding:5px 10px}.btn svg{width:15px;height:15px}.pill{border-radius:5px;padding:3px 8px}
+.result{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:22px 0 26px}.tile{background:var(--surface)!important;border:1px solid var(--line);border-radius:10px;padding:18px 19px;min-width:0;box-shadow:var(--shadow)}.tile.t1{background:var(--accent-soft)!important;border-color:color-mix(in srgb,var(--accent) 20%,var(--line))}.tile .lbl{font-size:11px;letter-spacing:.06em;min-height:16px}.tile .big{font-family:var(--f-body);font-size:26px;font-weight:600;letter-spacing:-.8px;margin:9px 0 5px;overflow-wrap:anywhere}.tile.t1 .big{color:var(--accent)}.tile .small{font-size:11px;line-height:1.5}.cols{grid-template-columns:minmax(0,1.04fr) minmax(0,1fr);gap:22px}.stack{gap:20px}.card{border:1px solid var(--line);border-radius:10px;padding:23px 24px;box-shadow:var(--shadow)}.card h2{font-size:16px;letter-spacing:-.25px;margin-bottom:17px}.card h2 small{display:block;margin:4px 0 0;font-size:12px}.section-index{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:7px;background:var(--accent-soft);color:var(--accent);font-size:12px;margin-right:9px;vertical-align:middle}.product-fields{display:grid;grid-template-columns:1fr 1fr;gap:17px 18px}.product-fields .field{display:flex;flex-direction:column;align-items:stretch;border:0;padding:0;gap:7px}.product-fields .field:first-child{grid-column:1/-1}.field label{font-size:12px;font-weight:500}.inp,.sel{min-height:40px;border-radius:6px;font-size:13px;padding:9px 11px}.inp:focus,.sel:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent);outline:none}.unit{position:relative;gap:0}.unit .inp{padding-right:60px}.unit>span{position:absolute;right:11px;pointer-events:none;font-size:11px}.note:empty{display:none}.help,.hint,.field .note{font-size:12px;line-height:1.6}.seg{padding:4px;border:1px solid var(--line);border-radius:8px}.seg button{border-radius:5px;font-size:12px;min-height:36px}.seg button[aria-pressed=true]{color:var(--ink)}#offerInfo{padding:14px 0 0;line-height:1.8}#offerInfo b{font-weight:500;color:var(--ink)}#offerInfo .pill{display:table;margin-top:6px;font-size:11px}.adv summary{font-size:14px!important}.adv summary small{display:block;margin:4px 0 0!important;font-size:11px!important}.adv[open] summary{margin-bottom:18px}.field{padding:11px 0}.tw{border:1px solid var(--line);border-radius:7px}th{background:var(--surface2);font-size:11px;padding:11px 12px}td{padding:11px 12px;font-size:12px}.num{font-size:12px;font-variant-numeric:tabular-nums}.tile .big{font-variant-numeric:tabular-nums}.kv{gap:12px;font-size:12px}.kv>div{min-width:0;overflow-wrap:anywhere}.kv>div:nth-child(even){max-width:300px}.cost-details summary{font-size:13px;cursor:pointer;font-weight:500;color:var(--muted)}.cost-details[open] summary{margin-bottom:16px}.dates-details>summary{list-style-position:inside}.dates-details>summary h2{display:inline-block;margin:0}.empty{padding:55px 20px}.toast{font-size:13px;border-radius:9px;padding:13px 20px}.grid2{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}.skip-link{position:fixed;top:8px;left:8px;transform:translateY(-160%);z-index:60;background:var(--surface);padding:12px;border:2px solid var(--accent);border-radius:6px}.skip-link:focus{transform:none}
+@media(min-width:1200px){.result .tile:first-child{position:relative}.result .tile:first-child:after{content:'ESTIMATION';position:absolute;right:15px;top:-9px;font-size:8px;letter-spacing:.08em;background:var(--accent);color:var(--accent-ink);padding:2px 7px;border-radius:4px}}
+@media(max-width:1200px){.app{grid-template-columns:190px minmax(0,1fr);gap:24px}.result{grid-template-columns:repeat(2,minmax(0,1fr))}.card{padding:20px}.cols{grid-template-columns:1fr}.local-label{display:none}}
+@media(max-width:860px){body{padding:0 18px 28px}.app{display:block;padding-top:0}.side{position:sticky;top:0;min-height:0;padding:9px 0;background:var(--bg);border-radius:0;border-bottom:1px solid var(--line);z-index:20}.tabs{overflow-x:auto;gap:4px}.tab{min-height:42px;font-size:12px;flex-shrink:0;padding:9px 12px}.top{padding:24px 0 20px}.top h1{font-size:26px}.main{padding-top:0}.tab svg{width:16px;height:16px}}
+@media(max-width:520px){body{padding-inline:14px}.top{align-items:flex-start}.top h1{font-size:24px}.page-subtitle{max-width:250px;font-size:12px}.header-tools{padding-top:18px}.result{gap:10px;margin-block:18px}.tile{padding:14px}.tile .big{font-size:23px}.tile .lbl{font-size:10px}.tile .small{font-size:11px}.quotebar{gap:8px}.quotebar>span[style]{display:none}.quotebar .no{flex:1}.quotebar .btn{flex:1 0 42%;min-height:43px}.card{padding:18px 16px}.product-fields{gap:15px 12px}.product-fields .field:nth-child(2){grid-column:1/-1}.product-fields .field:nth-last-child(2){grid-column:1/-1}.inp,.sel{font-size:16px}.seg button{font-size:11px}.tile .big[style]{font-size:16px!important}.kv{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.tab{min-height:44px}.overlay{padding:12px}.cols{gap:20px}.result .tile{min-height:116px}}
+@media(prefers-reduced-motion:no-preference){.btn,.inp,.sel{transition:background .15s,border-color .15s,box-shadow .15s}}
+</style>
+<a class="skip-link" href="#view">Aller au contenu</a>
+<style>
+/* Keep attention on results and active controls. */
+.inp,.sel{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.inp:focus,.sel:focus{background:var(--surface);border-color:var(--accent)}
+.hint,.help,.note,.page-subtitle,.summary-note,.summary-offer{color:color-mix(in srgb,var(--ink) 74%,var(--surface));font-size:13px;line-height:1.6}
+.card{box-shadow:none}.card h2 small{line-height:1.6}.cost-details>summary{color:var(--ink)}
+.field label{font-size:13px}.field{border-top-color:color-mix(in srgb,var(--line) 65%,var(--surface))}
+.result-table .result-cost{font-size:26px;font-weight:650;letter-spacing:-.5px}
+.summary-note summary{cursor:pointer;font-weight:500}.summary-note p{margin:8px 0 0}
+.result-alert{grid-column:1/-1;margin:0;padding:10px 14px;border-left:3px solid var(--warn);background:var(--surface2);font-size:13px}
+.quote-cols>.stack:first-child{gap:14px}.quote-cols>.stack:first-child>.stack{gap:14px}
+.calendar-card .seg{display:inline-flex;width:auto}.calendar-card .seg button{flex:0 0 auto;padding-inline:18px;white-space:nowrap}
+.calendar-actions{align-items:flex-start;flex-wrap:nowrap}.row-actions>summary{list-style:none;cursor:pointer}.row-actions>summary::-webkit-details-marker{display:none}
+.row-actions>div{display:flex;flex-direction:column;gap:6px;margin-top:8px}.row-actions .btn{width:100%}
+.calendar-card td{font-size:13px}.calendar-card td:nth-child(4){white-space:nowrap}
+.params-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin-top:16px;align-items:start}
+.params-grid .stack{gap:16px}.params-advanced{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.params-advanced>summary{cursor:pointer;font-size:14px;font-weight:600}.params-advanced[open]>summary{margin-bottom:12px}
+.params-grid .field{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+:is(button,summary,a):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(max-width:900px){.params-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.result-table .result-cost{font-size:24px}.calendar-card .seg button{padding-inline:12px}.params-grid .field{grid-template-columns:minmax(0,1fr)}.calendar-card>.row{gap:12px}}
+</style>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg></span><div><b>Devis Transit</b><div class="sub">Chine → Madagascar</div></div></div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <div class="side-foot" id="rateInfo"></div>
+  </aside>
+  <div class="main">
+    <header class="top"><div><div class="page-kicker">CHINE → MADAGASCAR</div><h1 id="pageTitle"></h1><p class="page-subtitle" id="pageSubtitle"></p></div><div class="header-tools"><span class="local-label">Sur cet appareil</span><button class="btn theme-button" id="themeToggle" aria-label="Changer le thème" title="Changer le thème">◐</button></div></header>
+    <button class="btn return-quote" id="returnQuote" onclick="go('devis')" hidden>← Retour au devis</button>
+    <main id="view" tabindex="-1"></main>
+  </div>
+</div>
+<div id="layer"></div>
+
+<script>
+const SEED = {"T":[{"tr":"Arizato","mode":"Avion","svc":"Standard","cats":"Général","tarif":67000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Dimanche","c1":1,"d2":null,"c2":null,"h":12,"note":"Danger. Poids réel / volumétrique à préciser. Clôture non communiquée (1 j avant supposé).","base":null},{"tr":"Arizato","mode":"Avion","svc":"Standard","cats":"Téléphone","tarif":50000,"unit":"pièce","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Dimanche","c1":1,"d2":null,"c2":null,"h":12,"note":"Unité à préciser. Clôture supposée.","base":null},{"tr":"Arizato","mode":"Avion","svc":"Express","cats":"Général","tarif":80000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":3,"dmax":5,"d1":"Samedi","c1":1,"d2":"Lundi","c2":1,"h":12,"note":"Aucun minimum facturable. Clôture supposée.","base":null},{"tr":"Arizato","mode":"Avion","svc":"Standard","cats":"Aimant","tarif":69000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Dimanche","c1":1,"d2":null,"c2":null,"h":12,"note":"Faire accepter l’aimant et la référence exacte. Clôture supposée.","base":null},{"tr":"Arizato","mode":"Avion","svc":"Express","cats":"Aimant","tarif":82000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":3,"dmax":5,"d1":"Samedi","c1":1,"d2":"Lundi","c2":1,"h":12,"note":"Sensible ≠ tout produit dangereux. Clôture supposée.","base":null},{"tr":"Arizato","mode":"Avion","svc":"Standard","cats":"Ordinateur/tablette","tarif":130000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":null,"dmax":null,"d1":null,"c1":null,"d2":null,"c2":null,"h":null,"note":"Admission avec batterie à confirmer. Délai et départ à obtenir.","base":null},{"tr":"E-SOA","mode":"Avion","svc":"Normal","cats":"Général","tarif":65800,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":7,"dmax":10,"d1":"Lundi","c1":2,"d2":null,"c2":null,"h":12,"note":"Prix TTC (affiche E-SOA). Fin de réception des colis : samedi avant 12 h, heure de Chine.","base":null},{"tr":"E-SOA","mode":"Avion","svc":"Express","cats":"Général","tarif":78800,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":3,"dmax":5,"d1":"Lundi","c1":2,"d2":"Jeudi","c2":1,"h":12,"note":"Prix TTC (affiche E-SOA). Fin de réception : samedi 12 h (départ lundi) et mercredi 12 h (départ jeudi), heure de Chine.","base":null},{"tr":"E-SOA","mode":"Avion","svc":"Standard","cats":"Batterie","tarif":128000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Jeudi","c1":0,"d2":null,"c2":null,"h":12,"note":"Prix TTC (affiche E-SOA). Fin de réception : jeudi avant 12 h, heure de Chine. Faire confirmer qu’un colis reçu le jeudi matin part bien le jour même.","base":null},{"tr":"E-SOA","mode":"Avion","svc":"Standard","cats":"Poudre/liquide; Aimant","tarif":88000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Jeudi","c1":0,"d2":null,"c2":null,"h":12,"note":"Prix TTC (affiche E-SOA). Fin de réception : jeudi avant 12 h, heure de Chine (à confirmer : départ le jour même). Composition et quantité à déclarer.","base":null},{"tr":"E-SOA","mode":"Maritime","svc":"Standard","cats":"Général","tarif":360,"unit":"m³","cur":"USD","palier":null,"tarif2":null,"min":null,"dmin":45,"dmax":60,"d1":null,"c1":null,"d2":null,"c2":null,"h":null,"note":"Prix TTC (affiche E-SOA). Délai jusqu’à l’arrivée à Tana. Aucun minimum facturable. Jour de départ non indiqué.","base":null},{"tr":"E-SOA","mode":"Maritime","svc":"Standard","cats":"Batterie","tarif":425,"unit":"m³","cur":"USD","palier":null,"tarif2":null,"min":null,"dmin":45,"dmax":60,"d1":null,"c1":null,"d2":null,"c2":null,"h":null,"note":"Prix TTC (affiche E-SOA). Délai jusqu’à l’arrivée à Tana. Valider la référence ; ne couvre pas le gaz. Jour de départ non indiqué.","base":null},{"tr":"Importation Express","mode":"Avion","svc":"Express","cats":"Général","tarif":77500,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":0.2,"dmin":3,"dmax":5,"d1":"Lundi","c1":2,"d2":"Jeudi","c2":1,"h":12,"note":"Prix TTC (message du 14/10/2026). Minimum 200 g. Fin de réception : samedi 12 h (départ lundi) et mercredi 12 h (départ jeudi), heure de Chine.","base":null},{"tr":"Importation Express","mode":"Avion","svc":"Normal","cats":"Général","tarif":67000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":5,"dmax":10,"d1":"Vendredi","c1":1,"d2":null,"c2":null,"h":12,"note":"Message du 12/10/2026. Facturé au poids volumétrique. Fin de réception : jeudi 12 h, heure de Chine. Aucun minimum facturable.","base":"Poids volumétrique"},{"tr":"Importation Express","mode":"Maritime","svc":"Standard","cats":"Général","tarif":410,"unit":"m³","cur":"USD","palier":0.25,"tarif2":360,"min":null,"dmin":45,"dmax":60,"d1":"Vendredi","c1":1,"d2":null,"c2":null,"h":12,"note":"Message du 12/10/2026 : volume inférieur à 0,25 m³ → 410 USD/m³ ; volume supérieur à 0,25 m³ → 360 USD/m³. Aucun minimum facturable. Arrivée 45 à 60 jours. Jour de départ (vendredi) et clôture repris de l’ancienne info : à confirmer.","base":null},{"tr":"Importation Express","mode":"Maritime","svc":"Standard","cats":"Danger","tarif":null,"unit":"m³","cur":"USD","palier":null,"tarif2":null,"min":null,"dmin":null,"dmax":null,"d1":null,"c1":null,"d2":null,"c2":null,"h":null,"note":"Tarif, délai et admission du produit exact à obtenir (mention « 410 » à clarifier).","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Fast","cats":"Général","tarif":82500,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":0.1,"dmin":2,"dmax":2,"d1":null,"c1":1,"d2":null,"c2":null,"h":12,"note":"FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Habillement, bijoux, alimentaire. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Fast","cats":"Électronique","tarif":90000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":0.1,"dmin":2,"dmax":2,"d1":null,"c1":1,"d2":null,"c2":null,"h":12,"note":"FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Électronique, pièces, matériel médical. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Fast","cats":"Poudre/liquide; Aimant","tarif":100000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":0.1,"dmin":2,"dmax":2,"d1":null,"c1":1,"d2":null,"c2":null,"h":12,"note":"FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Cosmétique, poudre, liquide, aimant, piles. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Fast","cats":"Téléphone","tarif":90000,"unit":"pièce","cur":"Ar","palier":null,"tarif2":null,"min":0.1,"dmin":2,"dmax":2,"d1":null,"c1":1,"d2":null,"c2":null,"h":12,"note":"FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Smartphone, powerbank : prix par pièce. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Fast","cats":"Ordinateur/tablette; Batterie","tarif":120000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":0.1,"dmin":2,"dmax":2,"d1":null,"c1":1,"d2":null,"c2":null,"h":12,"note":"FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Ordinateur portable, appareil avec batterie. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Fast","cats":"Batterie brute","tarif":200000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":0.1,"dmin":2,"dmax":2,"d1":null,"c1":1,"d2":null,"c2":null,"h":12,"note":"FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Batteries seules. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Normal","cats":"Général","tarif":67500,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":5,"dmax":7,"d1":"Lundi","c1":2,"d2":null,"c2":null,"h":10,"note":"Départ chaque lundi, durée annoncée 7 jours, colis à déposer avant samedi 10 h (heure de Chine). Habillement, bijoux, alimentaire. Cosmétiques, liquides, batteries et smartphones NON autorisés en Normal. Maximum 500 kg par colis. Aucun minimum facturable.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Normal","cats":"Électronique","tarif":67500,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":5,"dmax":7,"d1":"Lundi","c1":2,"d2":null,"c2":null,"h":10,"note":"Départ chaque lundi, durée annoncée 7 jours, colis à déposer avant samedi 10 h (heure de Chine). Électronique, pièces, matériel médical (sans batterie). Maximum 500 kg par colis. Aucun minimum facturable.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Plus","cats":"Général","tarif":73000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Lundi","c1":2,"d2":null,"c2":null,"h":10,"note":"Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Habillement, bijoux, alimentaire. Maximum 500 kg par colis. Aucun minimum facturable.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Plus","cats":"Électronique","tarif":78000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Lundi","c1":2,"d2":null,"c2":null,"h":10,"note":"Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Électronique, pièces, matériel médical. Maximum 500 kg par colis. Aucun minimum facturable.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Plus","cats":"Poudre/liquide; Aimant","tarif":80000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Lundi","c1":2,"d2":null,"c2":null,"h":10,"note":"Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Cosmétique, poudre, liquide, aimant, piles. Maximum 500 kg par colis. Aucun minimum facturable.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Plus","cats":"Téléphone","tarif":75000,"unit":"pièce","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Lundi","c1":2,"d2":null,"c2":null,"h":10,"note":"Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Smartphone, powerbank : prix par pièce. Maximum 500 kg par colis. Aucun minimum facturable.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Plus","cats":"Ordinateur/tablette; Batterie","tarif":90000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Lundi","c1":2,"d2":null,"c2":null,"h":10,"note":"Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Ordinateur portable, appareil avec batterie. Maximum 500 kg par colis. Aucun minimum facturable.","base":null},{"tr":"Importation de l’Asie","mode":"Avion","svc":"Plus","cats":"Batterie brute","tarif":150000,"unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Lundi","c1":2,"d2":null,"c2":null,"h":10,"note":"Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Batteries seules. Maximum 500 kg par colis. Aucun minimum facturable.","base":null},{"tr":"Importation Express","mode":"Avion","svc":"Normal","unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Vendredi","c1":1,"d2":null,"c2":null,"h":12,"base":"Poids volumétrique","cats":"Poudre/liquide","tarif":80000,"note":"Liquide et poudre. Message transmis (date non précisée). Envoi normal par avion. Départ vendredi ; fin de réception jeudi 12 h, heure de Chine. Délai 10 à 15 jours. Facturé au poids volumétrique."},{"tr":"Importation Express","mode":"Avion","svc":"Normal","unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Vendredi","c1":1,"d2":null,"c2":null,"h":12,"base":"Poids volumétrique","cats":"Aimant","tarif":80000,"note":"Entana sensible (interprété comme aimant ; à confirmer). Message transmis (date non précisée). Envoi normal par avion. Départ vendredi ; fin de réception jeudi 12 h, heure de Chine. Délai 10 à 15 jours. Facturé au poids volumétrique."},{"tr":"Importation Express","mode":"Avion","svc":"Normal","unit":"kg","cur":"Ar","palier":null,"tarif2":null,"min":null,"dmin":10,"dmax":15,"d1":"Vendredi","c1":1,"d2":null,"c2":null,"h":12,"base":"Poids volumétrique","cats":"Batterie","tarif":120000,"note":"Produit avec batterie ou pile. Message transmis (date non précisée). Envoi normal par avion. Départ vendredi ; fin de réception jeudi 12 h, heure de Chine. Délai 10 à 15 jours. Facturé au poids volumétrique."}],"C":[{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-02","note":"Dates publiées pour octobre 2026. Ajoutez les dates de novembre dès qu’elles sont publiées."},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-04","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-05","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-06","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-08","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-10","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-12","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-14","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-15","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-16","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-18","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-20","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-21","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-22","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-24","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-26","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-28","note":null},{"tr":"Importation de l’Asie","svc":"Fast","date":"2026-10-30","note":null}]};
+const JOURS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const ARR_P=[0.01,0.1,0.5,1], ARR_V=[1e-10,0.001,0.01,0.1];
+const KEY='devis-transitaires-v1';
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const isNum=x=>typeof x==='number'&&isFinite(x);
+const N=x=>isNum(x)?x:0;
+const nf=new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0});
+const ar=x=>isNum(x)?nf.format(Math.round(x)).replace(/ /g,' ')+' Ar':'';
+const dec=(x,d=2)=>isNum(x)?x.toLocaleString('fr-FR',{maximumFractionDigits:d}):'';
+const dayNum=s=>{if(!s)return null;const [y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/864e5};
+const dayStr=n=>new Date(n*864e5).toISOString().slice(0,10);
+const fd=n=>isNum(n)?new Date(Math.floor(n+1e-9)*864e5).toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'}):'';
+const fdt=iso=>iso?new Date(iso).toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}):'';
+const wdIso=d=>((d+3)%7+7)%7+1;
+const mod=(a,b)=>((a%b)+b)%b;
+const r6=x=>Math.round(x*1e6)/1e6;
+
+/* ---------- state ---------- */
+const LEGACY_CALENDAR_MAPPINGS=[
+  {tr:'E-SOA',mode:'Maritime',serviceQuote:'',serviceCalendar:'Standard Maritime'},
+  {tr:'E-SOA',mode:'Maritime',serviceQuote:'',serviceCalendar:'Maritime standard'},
+  {tr:'E-SOA',mode:'Maritime',serviceQuote:'',serviceCalendar:'Maritime normal'},
+  {tr:'E-SOA',mode:'Avion',serviceQuote:'Normal',serviceCalendar:'Standard Avion'},
+  {tr:'E-SOA',mode:'Avion',serviceQuote:'Normal',serviceCalendar:'Avion standard'},
+  {tr:'E-SOA',mode:'Avion',serviceQuote:'Normal',serviceCalendar:'Avion normal'},
+  {tr:'E-SOA',mode:'Maritime',serviceQuote:'',serviceCalendar:'Maritime'},
+  {tr:'E-SOA',mode:'Maritime',serviceQuote:'',serviceCalendar:'Normal'},
+  {tr:'Importation de l’Asie',mode:'Avion',serviceQuote:'Fast',serviceCalendar:'Fast'}
+];
+function defaultParams(){return{usd:4850,marge:0.07,cnyUsd:6.54,div:6000,arrP:0.01,arrV:1e-10,dispo:3,mAvion:4,mMar:10,dimanche:'Non',calendarClosePolicy:'exclude',
+  cats:['Général','Électronique','Téléphone','Ordinateur/tablette','Aimant','Batterie','Batterie brute','Poudre/liquide','Danger'],
+  trs:['Arizato','E-SOA','Importation Express','Importation de l’Asie'],svcs:['Standard','Express','Normal','Fast','Plus'],
+  margins:[0.1,0.2,0.3,0.5,0.75,1,1.5,2]}}
+function calendarServices(tr,mode){
+  if(mode==='Maritime')return S.tarifs.some(t=>t.tr===tr&&t.mode===mode)?['']:[];
+  return [...new Set(S.tarifs.filter(t=>t.tr===tr&&t.mode===mode).map(t=>t.svc||''))].sort((a,b)=>a.localeCompare(b,'fr'));
+}
+function blankDraft(no){return{no,name:'',cat:'Général',catManual:false,batteryStatus:'',handling:'',dangerous:'',magnet:'',deviceType:'',price:null,qty:1,dims:'',wt:null,mode:'prix',offer:'',base:'Le plus élevé',
+  pay:dayStr(Math.floor(Date.now()/864e5)),delai:2,heure:16,livCh:0,exclus:0,livFin:0,trans:2,marge:0.5,pvRetenu:null,marketPrice:null}}
+function exampleDraft(no){return{...blankDraft(no),name:'Spray anti-pluie 50 ml',cat:'Poudre/liquide',catManual:true,price:4.04,qty:1,dims:'14 x 6 x 6',wt:0.08,mode:'prix',pay:'2026-10-10',marge:0.5}}
+function norm(d){if(typeof d.marge==='string'&&Number.isFinite(Number(d.marge)))d.marge=Number(d.marge);if(d.dims===undefined)d.dims=d.L?`${d.L} x ${d.W} x ${d.H}`:'';if(!d.mode)d.mode=d.offer?'manuel':'prix';if(d.catManual===undefined)d.catManual=true;for(const k of ['batteryStatus','handling','dangerous','magnet','deviceType'])if(d[k]===undefined)d[k]='';if(d.marketPrice===undefined)d.marketPrice=null;return d}
+function serviceKey(x){return String(x||'').trim().toLocaleLowerCase('fr').replace(/\s+/g,' ')}
+function quoteService(t){return String(t.svc||'')}
+function normalizeLegacyOffer(d){
+  const match=String(d.offer||'').match(/^E-SOA \| (Maritime standard|Maritime normal|Avion standard|Avion normal) \| (.+)$/i);
+  if(match)d.offer=`E-SOA | ${match[1].toLowerCase().startsWith('avion')?'Avion Normal':'Maritime'} | ${match[2]}`;
+}
+function copyData(value){return JSON.parse(JSON.stringify(value))}
+function normAll(s){
+  const defaults=defaultParams();
+  const legacyMappings=s.params?.calendarServiceVersion===4?[]:
+    Array.isArray(s.params?.calendarMappings)?s.params.calendarMappings:LEGACY_CALENDAR_MAPPINGS;
+  for(const mapping of legacyMappings)if(mapping.tr==='E-SOA'){
+    if(mapping.mode==='Avion'&&['avion standard','standard avion','avion normal'].includes(serviceKey(mapping.serviceQuote)))
+      mapping.serviceQuote='Normal';
+    if(mapping.mode==='Maritime')mapping.serviceQuote='';
+  }
+  s.params={...defaults,...s.params};
+  if(!['exclude','keep'].includes(s.params.calendarClosePolicy))s.params.calendarClosePolicy='exclude';
+  s.quotes??=[];s.cal??=[];
+  for(const tariff of s.tarifs){
+    if(tariff.tr==='E-SOA'&&tariff.mode==='Avion'&&tariff.svc==='Standard')tariff.svc='Normal';
+    if(tariff.mode==='Maritime')tariff.svc='';
+  }
+  for(const entry of s.cal){
+    if(entry.tr==='E-SOA'&&entry.mode==='Avion'&&['avion standard','standard avion','avion normal'].includes(serviceKey(entry.svc)))entry.svc='Normal';
+    if(entry.mode==='Maritime')entry.svc='';
+    else if(entry.tr==='E-SOA'&&!entry.mode&&/maritime/i.test(entry.svc||'')){entry.mode='Maritime';entry.svc=''}
+  }
+  for(const entry of s.cal)if(entry.mode){
+    const services=[...new Set(s.tarifs.filter(t=>t.tr===entry.tr&&t.mode===entry.mode&&
+      (serviceKey(t.svc)===serviceKey(entry.svc)||serviceKey(`${entry.mode} ${t.svc}`)===serviceKey(entry.svc))).map(t=>t.svc||''))];
+    if(services.length===1)entry.svc=services[0];
+  }
+  if(s.params.calendarServiceVersion!==4)for(const c of s.cal){
+    const mapped=legacyMappings.filter(m=>m.tr===c.tr&&
+      (serviceKey(m.serviceCalendar)===serviceKey(c.svc)||serviceKey(m.serviceQuote)===serviceKey(c.svc)));
+    const tariffModes=s.tarifs.filter(t=>t.tr===c.tr&&
+      (serviceKey(t.svc)===serviceKey(c.svc)||serviceKey(quoteService(t))===serviceKey(c.svc)||
+       serviceKey(`${t.mode} ${t.svc}`)===serviceKey(c.svc))).map(t=>t.mode);
+    const legacyStandardModes=c.tr==='E-SOA'&&serviceKey(c.svc)==='standard'?['Avion','Maritime']:[];
+    const modes=[...new Set([...mapped.map(m=>m.mode),...(c.mode?[c.mode]:[...tariffModes,...legacyStandardModes])])];
+    if(!c.mode)c.mode=modes.length===1?modes[0]:'';
+    if(c.mode){
+      const oldNames=mapped.filter(m=>m.mode===c.mode&&serviceKey(m.serviceCalendar)===serviceKey(c.svc)).map(m=>m.serviceQuote);
+      const names=oldNames.length?oldNames:[c.svc];
+      const services=[...new Set(s.tarifs.filter(t=>t.tr===c.tr&&t.mode===c.mode&&
+        names.some(name=>serviceKey(t.svc)===serviceKey(name)||serviceKey(quoteService(t))===serviceKey(name)||
+          serviceKey(`${t.mode} ${t.svc}`)===serviceKey(name))).map(t=>t.svc||''))];
+      if(services.length===1)c.svc=services[0];
+    }
+  }
+  for(const entry of s.cal)if(entry.mode==='Maritime')entry.svc='';
+  delete s.params.calendarMappings;
+  s.params.calendarServiceVersion=4;
+  norm(s.draft);normalizeLegacyOffer(s.draft);normalizeLegacyMaritimeOffer(s.draft,s.tarifs);s.quotes.forEach(q=>norm(q.inputs));s.paymentGroups??=[];return s;
+}
+function normalizeLegacyMaritimeOffer(d,tarifs){
+  const match=String(d.offer||'').match(/^(.+) \| Maritime .+ \| (.+)$/i);
+  if(!match)return;
+  const tariff=tarifs.find(t=>t.tr===match[1]&&t.mode==='Maritime'&&t.cats===match[2]);
+  if(tariff)d.offer=`${tariff.tr} | Maritime | ${tariff.cats||''}`;
+}
+function guessCat(n){n=(n||'').toLowerCase();
+  const R=[['Batterie brute',/batterie seule|cellule|18650|21700/],['Batterie',/batterie|power ?bank|piles?\b|lithium/],['Téléphone',/t[ée]l[ée]phone|smartphone|iphone|phone/],
+  ['Ordinateur/tablette',/ordinateur|laptop|tablette|tablet|pc portable|macbook/],['Aimant',/aimant|magn[ée]t/],
+  ['Poudre/liquide',/spray|liquide|poudre|cr[èe]me|parfum|huile|gel\b|shampo|savon|cosm[ée]tique|vernis|colle|encre|s[ée]rum|lotion/],
+  ['Électronique',/led\b|c[âa]ble|chargeur|[ée]couteur|casque|montre|usb|capteur|lampe|enceinte|[ée]lectr|camera|cam[ée]ra|souris|clavier/]];
+  for(const [c,r] of R)if(r.test(n))return c;return null}
+function categoryRecommendation(d){
+  let category,reason;
+  if(d.dangerous==='yes'){category='Danger';reason='Vous indiquez que le produit peut être dangereux.'}
+  else if(d.batteryStatus==='separate'){category='Batterie brute';reason='La batterie est expédiée séparément du produit.'}
+  else if(d.batteryStatus==='integrated'){category='Batterie';reason=`Le produit contient une batterie intégrée${d.deviceType==='phone'?' et est identifié comme un téléphone':d.deviceType==='computer'?' et est identifié comme un ordinateur ou une tablette':''}.`}
+  else if(['liquid','powder','aerosol'].includes(d.handling)){category='Poudre/liquide';reason=({liquid:'Le produit est liquide.',powder:'Le produit est en poudre.',aerosol:'Le produit est un aérosol.'})[d.handling]}
+  else if(d.magnet==='yes'){category='Aimant';reason='Vous indiquez que le produit contient un aimant.'}
+  else if(d.deviceType==='phone'){category='Téléphone';reason='Le type d’article sélectionné est téléphone.'}
+  else if(d.deviceType==='computer'){category='Ordinateur/tablette';reason='Le type d’article sélectionné est ordinateur ou tablette.'}
+  else if(d.deviceType==='electronics'){category='Électronique';reason='Le type d’article sélectionné est autre appareil électronique.'}
+  else if(d.deviceType==='general'){category='Général';reason='Le type d’article sélectionné est produit général.'}
+  else {category=guessCat(d.name);reason=category?'Suggestion basée sur le nom du produit.':'Répondez aux questions pour obtenir une suggestion.'}
+  if(!category)return null;
+  const risks=Number(d.batteryStatus==='integrated'||d.batteryStatus==='separate')+
+    Number(['liquid','powder','aerosol'].includes(d.handling))+Number(d.dangerous==='yes')+Number(d.magnet==='yes');
+  const warning=risks>1?'Plusieurs caractéristiques particulières sont indiquées : confirmez la catégorie et l’acceptation du colis auprès du transitaire.'
+    :(d.batteryStatus==='integrated'||d.batteryStatus==='separate'||d.dangerous==='yes'||['liquid','powder','aerosol'].includes(d.handling)||d.magnet==='yes')?'Cette suggestion ne remplace pas les consignes du transitaire : confirmez que cette offre accepte ce type de produit.'
+    :d.deviceType==='phone'||d.deviceType==='computer'?'Si l’appareil contient une batterie, vérifiez les consignes du transitaire pour les batteries intégrées.':'';
+  return{category,reason,warning};
+}
+function categoryAdvice(d){
+  const recommendation=categoryRecommendation(d),countFor=category=>S.tarifs.filter(t=>catList(t.cats).includes(category)).length;
+  const currentCount=countFor(d.cat);
+  if(!recommendation)return `<div class="category-advice" role="status">Répondez aux questions pour obtenir une suggestion. Votre catégorie actuelle « ${esc(d.cat)} » est acceptée par ${currentCount} offre${currentCount===1?'':'s'} configurée${currentCount===1?'':'s'}.</div>${currentCount===0?'<div class="badtxt">Aucune offre configurée n’accepte cette catégorie.</div>':''}`;
+  const proposedCount=countFor(recommendation.category),available=S.params.cats.includes(recommendation.category);
+  return `<div class="category-advice" role="status"><b>Catégorie proposée : ${esc(recommendation.category)}</b><br>${esc(recommendation.reason)}<br>Offres configurées acceptant cette catégorie : <b>${proposedCount}</b>${d.cat!==recommendation.category?`<br>Votre choix actuel « ${esc(d.cat)} » est accepté par ${currentCount} offre${currentCount===1?'':'s'} configurée${currentCount===1?'':'s'}.`:''}
+    ${recommendation.warning?`<div class="warn" style="margin-top:5px">${esc(recommendation.warning)}</div>`:''}
+    ${!available?'<div class="badtxt" style="margin-top:5px">Cette catégorie n’est pas dans la liste configurée des catégories.</div>':''}
+    ${proposedCount===0?'<div class="badtxt" style="margin-top:5px">Aucune offre configurée n’accepte cette catégorie.</div>':''}
+    ${d.cat!==recommendation.category&&currentCount===0?'<div class="badtxt" style="margin-top:5px">Attention : aucune offre configurée n’accepte votre catégorie actuelle.</div>':''}
+    ${d.cat!==recommendation.category&&available?`<button type="button" class="btn sm" style="margin-top:7px" data-category-suggestion="${esc(recommendation.category)}">Utiliser cette catégorie</button>`:''}</div>`;
+}
+let S=load();
+function load(){
+  try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.params)return normAll(j)}catch(e){}
+  return normAll({params:defaultParams(),tarifs:JSON.parse(JSON.stringify(SEED.T)),cal:JSON.parse(JSON.stringify(SEED.C)),quotes:[],draft:exampleDraft('DEV-0001'),editing:null,tab:'devis'});
+}
+let saveT;
+function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}},150)}
+function nextNo(){const m=S.quotes.reduce((a,q)=>Math.max(a,parseInt(q.no.replace(/\D/g,''))||0),0);return 'DEV-'+String(m+1).padStart(4,'0')}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500)}
+
+/* ---------- calculation engine (port of the workbook formulas) ---------- */
+const yuanRate=p=>p.cnyUsd?Math.round(p.usd*(1+p.marge)/p.cnyUsd*100)/100:null;
+const catList=t=>String(t||'').split(';').map(s=>s.trim()).filter(Boolean);
+const offerLabel=t=>t.tr+' | '+t.mode+(t.svc?' '+t.svc:'')+' | '+(t.cats||'');
+const tariffTransportLabel=t=>t.svc||t.mode;
+function savedOfferLabel(value){return String(value||'').replace(/^(.+ \| )Maritime .+ \| (.+)$/i,'$1Maritime | $2')}
+function savedTransportService(quote){
+  return /^Maritime(?:\s+.+)?$/i.test(quote.res?.svc||'')?'Maritime':quote.res?.svc||'';
+}
+function dimsOf(d){if(typeof d.dims!=='string')return[N(d.L),N(d.W),N(d.H)];const a=(d.dims.match(/\d+(?:[.,]\d+)?/g)||[]).map(x=>+x.replace(',','.'));return a.length===3?a:[0,0,0]}
+function compute(d,p=S.params,tarifs=S.tarifs,cal=S.cal){
+  const qty=Math.max(1,N(d.qty));
+  const dm=dimsOf(d), reel=N(d.wt), prod=dm[0]*dm[1]*dm[2];
+  const vol_w=prod?prod/p.div:null, vol=prod?prod/1e6:null;
+  const arr=d.pay?dayNum(d.pay)+N(d.delai)+N(d.heure)/24:null;
+  const yr=yuanRate(p), achat=N(d.price)*N(yr);
+  const transactionTotal=d.paymentAllocation?d.paymentAllocation.shareAr:(isNum(yr)?N(d.trans)*yr:null);
+  const transactionPerPiece=isNum(transactionTotal)?transactionTotal/qty:null;
+  const offers=tarifs.filter(t=>t.tr).map((t,i)=>{
+    const o={i,t,label:offerLabel(t)};
+    o.compat=catList(t.cats).includes(d.cat);
+    const eff=t.base||d.base;
+    let v=null;
+    if(t.unit==='m³'){ if(vol) v=Math.ceil(r6(vol/p.arrV))*p.arrV }
+    else if(t.unit==='pièce') v=1;
+    else if(eff==='Poids réel'){ if(reel) v=Math.ceil(r6(reel/p.arrP))*p.arrP }
+    else if(eff==='Poids volumétrique'){ if(vol_w) v=Math.ceil(r6(vol_w/p.arrP))*p.arrP }
+    else { const m=Math.max(reel,N(vol_w)); if(m) v=Math.ceil(r6(m/p.arrP))*p.arrP }
+    if(v!==null&&isNum(t.min)) v=Math.max(v,t.min);
+    o.qty=v;
+    o.tarif=!isNum(t.tarif)?null:(t.unit==='m³'&&isNum(t.palier)&&v>t.palier?t.tarif2:t.tarif);
+    o.E=(o.tarif!==null&&isNum(o.tarif)&&v!==null)?v*o.tarif*(t.cur==='USD'?p.usd:1):null;
+    // départ
+    o.F=null;o.excludedDates=[];o.keptCloseDate=null;o.calendarNotice='';
+    if(arr!==null){
+      const lim=(c)=>Math.ceil(Math.round((arr+N(c)-N(t.h)/24)*1e9)/1e9);
+      o.arr=arr;
+      const service=quoteService(t);
+      const dates=cal.filter(c=>c.tr===t.tr&&c.mode===t.mode&&serviceKey(c.svc)===serviceKey(service)&&c.date).map(c=>dayNum(c.date));
+      if(!dates.length)o.calendarNotice=`Aucune date publiée pour ${t.tr} · ${service||t.mode}.`;
+      if(dates.length){
+        const arrivalDay=Math.floor(arr),cutoff=lim(t.c1);
+        o.excludedDates=dates.filter(x=>x>=arrivalDay&&x<cutoff).map(date=>({date,cutoff:date-N(t.c1)+N(t.h)/24}));
+        const ok=p.calendarClosePolicy==='keep'?dates.filter(x=>x>=arrivalDay):dates.filter(x=>x>=cutoff);
+        o.F=ok.length?Math.min(...ok):null;
+        if(o.F!==null)o.calendarEntry=cal.find(c=>c.tr===t.tr&&c.mode===t.mode&&serviceKey(c.svc)===serviceKey(service)&&dayNum(c.date)===o.F)||null;
+        if(p.calendarClosePolicy==='keep')o.keptCloseDate=o.excludedDates.find(x=>x.date===o.F)||null;
+      }
+      else if(t.d1){
+        const nx=(day,c)=>{const b=lim(c);return b+mod(JOURS.indexOf(day)+1-wdIso(b),7)};
+        const a=nx(t.d1,t.c1);
+        o.F=t.d2?Math.min(a,nx(t.d2,t.c2)):a;
+      }
+    }
+    o.G=(o.F!==null&&isNum(t.dmax))?o.F+t.dmax:null;
+    o.Hh=o.G!==null?o.G+p.dispo+((p.dimanche==='Non'&&wdIso(o.G+p.dispo)===7)?1:0):null;
+    o.I=o.Hh!==null?o.Hh+(t.mode==='Maritime'?p.mMar:p.mAvion):null;
+    o.earliest=(o.F!==null&&isNum(t.dmin))?o.F+t.dmin:null;
+    o.J=o.E!==null?achat+o.E+(N(d.livCh)+N(d.exclus)+N(d.livFin))/qty+N(transactionPerPiece):null;
+    const ub=t.unit==='kg'&&!t.base;
+    o.fl={base:ub?1:0,dims:(t.unit==='m³'||(t.unit==='kg'&&eff!=='Poids réel'))?1:0,wt:(t.unit==='kg'&&eff!=='Poids volumétrique')?1:0};
+    return o;
+  });
+  const comp=offers.filter(o=>o.compat);
+  comp.forEach(o=>{
+    o.rP=isNum(o.J)?comp.filter(x=>isNum(x.J)&&x.J<o.J).length+1:null;
+    o.rD=isNum(o.I)?comp.filter(x=>isNum(x.I)&&x.I<o.I).length+1:null;
+  });
+  const bestP0=comp.find(o=>o.rP===1)||null, bestD0=comp.find(o=>o.rD===1)||null, mode=d.mode||'manuel';
+  const sel=mode==='prix'?bestP0:mode==='rapide'?(bestD0||bestP0):(comp.find(o=>o.label===d.offer)||null);
+  // field usage: 2 = used, 1 = used by other offers only, 0 = unused
+  const use=k=>{ if(!comp.length)return 2; if(sel)return sel.fl[k]?2:(comp.some(o=>o.fl[k])?1:0); return comp.some(o=>o.fl[k])?2:0 };
+  const R={qty,reel:reel||null,vol_w,vol,arr,yr,achat:isNum(yr)&&d.price?achat:null,offers,comp,sel,use:{base:use('base'),dims:use('dims'),wt:use('wt')}};
+  const transP=sel&&isNum(sel.E)?sel.E:null;
+  R.transP=transP;
+  R.livChP=N(d.livCh)?d.livCh/qty:null; R.exclP=N(d.exclus)?d.exclus/qty:null; R.livFinP=N(d.livFin)?d.livFin/qty:null;
+  R.transacLot=transactionTotal;
+  R.transacP=transactionPerPiece;
+  if(transP!==null){
+    R.costP=N(R.achat)+transP+N(R.livChP)+N(R.exclP)+N(R.livFinP)+N(R.transacP);
+    R.costLot=N(R.achat)*qty+transP*qty+N(d.livCh)+N(d.exclus)+N(R.transacLot)+N(d.livFin);
+  } else {R.costP=null;R.costLot=null}
+  R.pvAdvised=isNum(R.costP)?Math.ceil(R.costP*(1+N(d.marge))/100)*100:null;
+  R.pv=isNum(d.pvRetenu)?d.pvRetenu:R.pvAdvised;
+  R.margeP=isNum(R.pv)&&isNum(R.costP)?R.pv-R.costP:null;
+  R.revenueLot=isNum(R.pv)?R.pv*qty:null;
+  R.margeLot=isNum(R.revenueLot)&&isNum(R.costLot)?R.revenueLot-R.costLot:null;
+  R.margeRate=isNum(R.margeP)&&R.costP?R.margeP/R.costP:null;
+  R.markRate=isNum(R.margeP)&&R.pv?R.margeP/R.pv:null;
+  R.bestP=comp.find(o=>o.rP===1)||null; R.bestD=comp.find(o=>o.rD===1)||null;
+  return R;
+}
+function calendarFeedback(o){
+  const hour=x=>String(Math.round((x-Math.floor(x))*24)).padStart(2,'0')+' h';
+  const notes=[];
+  if(o.calendarNotice)notes.push(o.calendarNotice);
+  const arrival=`${fd(Math.floor(o.arr))} à ${hour(o.arr)}`;
+  const describe=(item,action)=>`Départ du ${fd(item.date)} ${action} : arrivée estimée au dépôt ${arrival}, après l’heure limite du ${fd(Math.floor(item.cutoff))} à ${hour(item.cutoff)}.`;
+  if(o.keptCloseDate)notes.push(describe(o.keptCloseDate,'conservé malgré l’heure limite'));
+  else for(const item of o.excludedDates||[])notes.push(describe(item,'écarté'));
+  return notes;
+}
+function snapshot(d,R,p=S.params){
+  const s=R.sel;
+  return{costP:R.costP,costLot:R.costLot,pv:R.pv,margeP:R.margeP,dateClient:s?s.I:null,tr:s?s.t.tr:'',svc:s?tariffTransportLabel(s.t):'',
+    qty:R.qty,achat:R.achat,transP:R.transP,yr:R.yr,usd:p.usd,depart:s?s.F:null,arrMax:s?s.G:null,dispo:s?s.Hh:null,
+    transacLot:R.transacLot,transacP:R.transacP,revenueLot:R.revenueLot,margeLot:R.margeLot,note:s?s.t.note:''};
+}
+function allocatePayment(records,feeCny,rate){
+  if(records.length<2||!isNum(feeCny)||feeCny<0||!isNum(rate)||rate<=0)throw Error('Sélectionnez au moins deux devis et saisissez des frais et un taux valides.');
+  if(records.some(q=>q.paymentGroupId||!Number.isInteger(q.inputs.qty)||q.inputs.qty<=0||!isNum(q.res.costLot)||!isNum(q.res.costP)||!isNum(q.inputs.marge)||q.inputs.marge<0))throw Error('Un devis est déjà groupé ou contient des valeurs invalides.');
+  const quantity=records.reduce((n,q)=>n+q.inputs.qty,0),cents=Math.round(feeCny*rate*100);
+  if(!Number.isSafeInteger(quantity)||!Number.isSafeInteger(cents))throw Error('Quantité ou montant trop élevé.');
+  const shares=records.map(q=>({no:q.no,qty:q.inputs.qty,cents:Math.floor(cents*q.inputs.qty/quantity),fraction:(cents*q.inputs.qty/quantity)%1}));
+  let remaining=cents-shares.reduce((n,s)=>n+s.cents,0);
+  [...shares].sort((a,b)=>b.fraction-a.fraction).slice(0,remaining).forEach(s=>s.cents++);
+  return {quantity,totalAr:cents/100,shares:shares.map(s=>({...s,shareAr:s.cents/100}))};
+}
+function applyPaymentShare(q,share,group){
+  const next=JSON.parse(JSON.stringify(q)),r=next.res,qty=next.inputs.qty,delta=share.shareAr-N(r.transacLot);
+  r.costLot+=delta;r.costP=r.costLot/qty;r.transacLot=share.shareAr;r.transacP=share.shareAr/qty;
+  r.pv=isNum(next.inputs.pvRetenu)?next.inputs.pvRetenu:Math.ceil(r.costP*(1+next.inputs.marge)/100)*100;
+  r.margeP=r.pv-r.costP;r.revenueLot=r.pv*qty;r.margeLot=r.revenueLot-r.costLot;
+  if(['costP','costLot','pv','margeP','revenueLot','margeLot'].some(k=>!isNum(r[k])))throw Error('Les montants de ce devis dépassent les limites de calcul.');
+  next.paymentGroupId=group.id;next.inputs.paymentAllocation={groupId:group.id,name:group.name,shareAr:share.shareAr,totalAr:group.totalAr,quantity:group.quantity,feeCny:group.feeCny,rate:group.rate};
+  next.modified=group.created;return next;
+}
+/* ---------- shell ---------- */
+const TABS=[['devis','Devis','M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7'],['histo','Historique','M12 7v5l3 2M3.5 12a8.5 8.5 0 1 0 2.6-6.1M3 4v4h4'],['comp','Comparer','M5 20V10M12 20V4M19 20v-7'],['tarifs','Tarifs','M3 12V4h8l10 10-8 8zM7.5 8.5h.01'],['cal','Calendrier','M4 6h16v14H4zM4 10h16M8 3v4M16 3v4'],['params','Paramètres','M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6'],['guide','Mode d’emploi','M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01']];
+function drawTabs(){
+  $('#tabs').innerHTML=TABS.map(([k,l,ic])=>`<button class="tab" id="tab-${k}" role="tab" aria-controls="view" tabindex="${S.tab===k?0:-1}" aria-selected="${S.tab===k}" data-k="${k}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ic}"/></svg><span>${l}</span>${k==='histo'&&S.quotes.length?`<span class="count">${S.quotes.length}</span>`:''}</button>`).join('');
+  const yr=yuanRate(S.params);$('#rateInfo').innerHTML=isNum(yr)?`<div>1 ¥ = <b class="num">${dec(yr)}</b> Ar</div><div>1 USD = <b class="num">${nf.format(S.params.usd)}</b> Ar</div>`:'';
+}
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)go(b.dataset.k)});
+$('#tabs').addEventListener('keydown',e=>{const index=TABS.findIndex(t=>t[0]===S.tab);let next=index;if(['ArrowDown','ArrowRight'].includes(e.key))next=(index+1)%TABS.length;else if(['ArrowUp','ArrowLeft'].includes(e.key))next=(index-1+TABS.length)%TABS.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=TABS.length-1;else return;e.preventDefault();go(TABS[next][0]);$('#tab-'+TABS[next][0]).focus()});
+const pageCopy={devis:['Devis d’importation','Renseignez votre produit. Comparez le transport. Fixez votre prix.'],histo:['Vos devis enregistrés','Retrouvez vos simulations et reprenez un devis en quelques clics.'],comp:['Comparer les offres',''],tarifs:['Tarifs des transitaires','Gérez les offres, leurs conditions et les catégories acceptées.'],cal:['Calendrier des départs','Retrouvez les dates publiées et préparez vos expéditions.'],params:['Vos paramètres','Ajustez le change, les règles de calcul et vos sauvegardes.'],guide:['Un devis, pas à pas','Les repères pour passer du prix d’achat au prix de vente.']};
+function go(k){S.tab=k;persist();drawTabs();$('#returnQuote').hidden=k==='devis';$('#pageTitle').textContent=pageCopy[k][0];$('#pageSubtitle').textContent=pageCopy[k][1];const old=$('#view'),v=old.cloneNode(false);old.replaceWith(v);v.setAttribute('role','tabpanel');v.setAttribute('aria-labelledby','tab-'+k);({devis:viewDevis,histo:viewHisto,comp:viewComp,tarifs:viewTarifs,cal:viewCal,params:viewParams,guide:viewGuide})[k](v);window.scrollTo(0,0)}
+
+/* ---------- DEVIS ---------- */
+function opts(arr,cur,blank){return (blank!==undefined?`<option value="">${esc(blank)}</option>`:'')+arr.map(x=>`<option${x===cur?' selected':''}>${esc(x)}</option>`).join('')}
+function numField(id,label,key,help,unit,step='any'){
+  return `<div class="field"><label for="${id}">${label}</label><div class="unit"><input class="inp" id="${id}" data-k="${key}" type="number" min="0" step="${step}" inputmode="decimal">${unit?`<span>${unit}</span>`:''}</div>
+  <div class="note hint" id="${id}_n"></div>${help?`<div class="help">${help}</div>`:''}</div>`}
+function viewDevis(v){
+  v.innerHTML=`
+  <div class="quotebar"><span class="no" id="qNo"></span><span id="qStat"></span><span style="flex:1"></span>
+    <button class="btn" id="bNew"><span aria-hidden="true">＋</span>Nouveau devis</button><button class="btn pri" id="bSave">Enregistrer le devis <span aria-hidden="true">↗</span></button></div>
+  <div class="result" id="result"></div>
+  <div class="cols quote-cols">
+   <div class="stack">
+    <section class="card"><h2><span class="section-index">1</span>Votre produit <small>Prix et mesures d’une pièce, emballage compris.</small></h2><div class="product-fields">
+      <div class="field"><label for="f_name">Nom du produit</label><input class="inp txt" id="f_name" data-k="name" type="text" placeholder="ex. Lampe LED 10 W"></div>
+      <div class="field"><label for="f_cat">Catégorie</label><select class="sel" id="f_cat" data-k="cat"></select><div class="note hint" id="f_cat_n"></div><div id="categoryAdvice"></div></div>
+      <details class="category-assist"><summary>Aide au choix : caractéristiques de transport</summary>
+        <div class="category-questions">
+          <div class="field"><label for="f_batteryStatus">Batterie</label><select class="sel" id="f_batteryStatus" data-k="batteryStatus"><option value="">Je ne sais pas</option><option value="none">Aucune</option><option value="integrated">Intégrée au produit</option><option value="separate">Expédiée séparément</option></select></div>
+          <div class="field"><label for="f_handling">Liquide, poudre ou aérosol</label><select class="sel" id="f_handling" data-k="handling"><option value="">Je ne sais pas</option><option value="none">Aucun</option><option value="liquid">Liquide</option><option value="powder">Poudre</option><option value="aerosol">Aérosol</option></select></div>
+          <div class="field"><label for="f_dangerous">Autre produit potentiellement dangereux</label><select class="sel" id="f_dangerous" data-k="dangerous"><option value="">Je ne sais pas</option><option value="no">Non</option><option value="yes">Oui</option></select></div>
+          <div class="field"><label for="f_magnet">Présence d’un aimant</label><select class="sel" id="f_magnet" data-k="magnet"><option value="">Je ne sais pas</option><option value="no">Non</option><option value="yes">Oui</option></select></div>
+          <div class="field"><label for="f_deviceType">Type d’article</label><select class="sel" id="f_deviceType" data-k="deviceType"><option value="">À préciser</option><option value="phone">Téléphone</option><option value="computer">Ordinateur/tablette</option><option value="electronics">Autre appareil électronique</option><option value="general">Produit général</option></select></div>
+        </div>
+      </details>
+      ${numField('f_price','Prix d’achat','price','','¥ / pièce')}
+      <div class="field"><label for="f_qty">Quantité</label><div class="unit"><input class="inp" id="f_qty" data-k="qty" type="number" min="1" step="1"><span>pièces</span></div><div class="note hint" id="f_qty_n"></div></div>
+      <div class="field"><label for="f_dims">Dimensions emballées</label><div class="unit"><input class="inp" id="f_dims" data-k="dims" type="text" inputmode="text" enterkeyhint="done" placeholder="14 x 6 x 6" autocomplete="off"><span>cm</span></div><div class="note hint" id="f_dims_n"></div></div>
+      ${numField('f_wt','Poids emballé','wt','','kg')}</div>
+    </section>
+    <div class="stack"><section class="card"><h2><span class="section-index">2</span>Votre transport <small>Choisissez ce qui compte le plus pour cet envoi.</small></h2>
+      <div class="seg" role="group" aria-label="Choix de l’offre"><button type="button" data-mode="prix">Moins cher</button><button type="button" data-mode="rapide">Plus rapide</button><button type="button" data-mode="manuel">Choix manuel</button></div>
+      <div id="offerInfo" class="hint" style="margin-top:8px"></div>
+      <div class="field" id="offerRow" style="border:0"><label for="f_offer">Offre</label><select class="sel" id="f_offer" data-k="offer"></select></div>
+    </section>
+    <details class="card adv"><summary>Dates et frais supplémentaires <small>Paiement, dépôt, douane et livraisons</small></summary>
+      <div class="field"><label for="f_pay">Date de paiement</label><input class="inp" id="f_pay" data-k="pay" type="date"><div class="help">Mise à jour automatiquement à la date du jour pour un nouveau devis.</div></div>
+      <div class="field"><label for="f_delai">Livraison vendeur → dépôt</label><select class="sel" id="f_delai" data-k="delai">${opts(['2','3'],'')}</select><div class="help">2 ou 3 jours. En cas de doute : 3.</div></div>
+      <div class="field"><label for="f_heure">Heure d’arrivée au dépôt</label><select class="sel" id="f_heure" data-k="heure">${Array.from({length:24},(_,i)=>`<option value="${i}">${i} h</option>`).join('')}</select></div>
+      <div class="field"><label for="f_base">Base de facturation avion</label><select class="sel" id="f_base" data-k="base">${opts(['Le plus élevé','Poids réel','Poids volumétrique'],'')}</select><div class="note hint" id="f_base_n"></div></div>
+      ${numField('f_livCh','Livraison en Chine (commande entière)','livCh','','Ar')}
+      ${numField('f_exclus','Frais exclus (commande entière)','exclus','Douane, retrait…','Ar')}
+      ${numField('f_livFin','Livraison finale (commande entière)','livFin','','Ar')}
+      ${numField('f_trans','Frais de transaction (commande entière)','trans','Mettez 0 si ces frais sont déjà comptés dans un autre devis payé en même temps.','¥')}
+    </details></div>
+   </div>
+   <div class="stack" id="right"></div>
+  </div>`;
+  const fill=()=>{
+    $('#f_cat').innerHTML=opts(S.params.cats,S.draft.cat);
+    document.querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k;if(!(k in S.draft))return;const val=S.draft[k];el.value=val===null||val===undefined?'':String(val)});
+  };
+  v.addEventListener('input',onDevisInput);v.addEventListener('change',onDevisInput);v.addEventListener('click',e=>{const suggestion=e.target.closest('[data-category-suggestion]');if(suggestion){S.draft.cat=suggestion.dataset.categorySuggestion;S.draft.catManual=false;$('#f_cat').value=S.draft.cat;dirty=true;persist();refresh();return}if(e.target.closest('[data-mode]'))onDevisInput(e)});
+  // Keep blur-triggered recalculation from replacing the summary before its click.
+  v.addEventListener('mousedown',e=>{if(e.target.closest('.dates-details > summary'))e.preventDefault()});
+  $('#bNew').onclick=()=>{S.draft={...blankDraft(nextNo()),marge:S.draft.marge,delai:S.draft.delai,heure:S.draft.heure,trans:S.draft.trans,base:S.draft.base};S.editing=null;persist();go('devis')};
+  $('#bSave').onclick=()=>saveQuote();
+  fill();refresh();
+}
+function syncOffers(R){
+  const sel=$('#f_offer');if(!sel)return;
+  const key=R.comp.map(o=>o.label).join('§');
+  if(sel.dataset.key!==key){sel.dataset.key=key;sel.innerHTML=`<option value="">— Choisissez une offre —</option>`+R.comp.map(o=>`<option value="${esc(o.label)}">${esc(o.label)}</option>`).join('')}
+  sel.value=R.sel?R.sel.label:(S.draft.mode==='manuel'?'':'');
+}
+let dirty=false,autoT;
+function onDevisInput(e){
+  const mb=e.target.closest('[data-mode]');
+  if(mb){const R=compute(S.draft);S.draft.mode=mb.dataset.mode;if(mb.dataset.mode==='manuel'&&R.sel)S.draft.offer=R.sel.label;dirty=true;persist();refresh();return}
+  const el=e.target.closest('[data-k]');if(!el)return;const k=el.dataset.k;
+  let val=el.value;
+  if(el.type==='number')val=val===''?null:Number(val);
+  else if(['delai','heure','marge'].includes(k))val=Number(val);
+  S.draft[k]=val;
+  if(k==='offer'){S.draft.mode='manuel'}
+  if(k==='cat')S.draft.catManual=true;
+  if(k==='name'||['batteryStatus','handling','dangerous','magnet','deviceType'].includes(k)){
+    const recommendation=categoryRecommendation(S.draft);
+    if(!S.draft.catManual&&recommendation&&S.params.cats.includes(recommendation.category)){S.draft.cat=recommendation.category;$('#f_cat').value=recommendation.category}
+  }
+  dirty=true;persist();refresh();
+  // Saved quotes require an explicit save so warnings cannot be bypassed by auto-save.
+}
+function useTxt(st,el,note){
+  const inp=$(el),n=$(note);if(!inp)return;
+  inp.classList.toggle('off',st!==2);inp.disabled=st===0;
+  if(n)n.textContent=st===2?'':st===1?'Pas utilisé par l’offre choisie, sert au comparatif.':'Inutile pour cette catégorie.';
+}
+function refresh(){
+  const d=S.draft,R=compute(d);
+  const feeInput=$('#f_trans');if(feeInput){feeInput.disabled=!!d.paymentAllocation;feeInput.closest('.field').querySelector('.help').textContent=d.paymentAllocation?`Paiement « ${d.paymentAllocation.name} » : part attribuée ${dec(d.paymentAllocation.shareAr,2)} Ar. Dissociez le paiement dans l’historique pour modifier ce devis.`:'Mettez 0 si ces frais sont déjà comptés dans un autre devis payé en même temps.';}
+  $('#qNo').textContent=d.no;
+  const exists=S.quotes.find(q=>q.no===d.no);
+  $('#qStat').innerHTML=!exists?'<span class="pill">Pas encore enregistré</span>':dirty?'<span class="pill warn">Modifications non enregistrées</span>':'<span class="pill good">Enregistré</span>';
+  ['dims:f_dims','wt:f_wt','base:f_base'].forEach(s=>{const[k,id]=s.split(':');useTxt(R.use[k],'#'+id,'#'+id+'_n')});
+  syncOffers(R);
+  const dm=dimsOf(d);$('#f_dims_n').textContent=d.dims&&!dm[0]?'Écrivez 3 nombres : longueur x largeur x hauteur.':(R.use.dims!==2?(dm[0]?'Pas utilisé par l’offre choisie.':''):(dm[0]?dm.join(' × ')+' cm':''));
+  $('#f_cat_n').textContent='';
+  $('#categoryAdvice').innerHTML=categoryAdvice(d);
+  document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===d.mode)));
+  $('#offerRow').hidden=d.mode!=='manuel';
+  $('#f_qty_n').innerHTML=R.sel&&R.sel.t.unit==='pièce'?'Offre facturée à la pièce.':'';
+  const oi=$('#offerInfo'),so=R.sel;
+  oi.innerHTML=!R.comp.length?'<span class="warn">Aucune offre pour cette catégorie : ajoutez-en une dans Tarifs.</span>':!so?(d.mode==='manuel'?'<span class="warn">Choisissez une offre dans la liste.</span>':'<span class="warn">Aucune offre chiffrée : complétez les tarifs.</span>'):
+   `<b>${esc(so.label)}</b><br><span class="num">${isNum(so.J)?ar(so.J)+' / pièce':'tarif à obtenir'}${isNum(so.I)?' · client : '+fd(so.I):''}</span>${d.mode==='manuel'?'':' <span class="pill good">choisie automatiquement</span>'}`;
+  if(R.sel&&R.sel.t.base)$('#f_base_n').textContent='Imposée par ce transitaire : '+R.sel.t.base;
+  const s=R.sel;
+$('#result').innerHTML=`<div class="price-summary"><div class="result-table${R.qty===1?' single-unit':''}"><div class="empty-heading row-label">RÉSULTAT</div><div class="col-label">Pour 1 pièce</div><div class="col-label command-total">Commande complète · ${R.qty} pièce${R.qty>1?'s':''}</div><div class="row-label">Coût de revient Madagascar</div><div class="result-cost">${isNum(R.costP)?ar(R.costP):'—'}</div><div class="result-cost command-total">${isNum(R.costLot)?ar(R.costLot):'—'}</div><div class="row-label">Prix de vente ${isNum(d.pvRetenu)?'fixé manuellement':'calculé avec votre marge'}</div><b id="sellingPrice">${isNum(R.pv)?ar(R.pv):'—'}</b><b class="command-total">${isNum(R.revenueLot)?ar(R.revenueLot):'—'}</b><div class="estimate-note">Estimation à confirmer avec le transitaire. La livraison inclut votre marge de sécurité.</div><div class="row-label">Marge commerciale</div><div>${isNum(R.margeP)?ar(R.margeP):'—'}</div><div class="command-total">${isNum(R.margeLot)?ar(R.margeLot):'—'}</div><div class="summary-note">La commande complète correspond à la quantité saisie : ${R.qty} pièce${R.qty>1?'s':''} du même produit.${N(R.transacLot)?' Les frais de transaction de '+ar(R.transacLot)+' sont payés une seule fois et répartis sur les pièces ; ils sont inclus dans tous les coûts et marges affichés.':''}</div><div class="delivery-line"><span>Date de livraison CLIENT</span><b>${s&&isNum(s.I)?fd(s.I):'À confirmer avec le transitaire'}</b><span class="hint">Estimation avec votre marge de sécurité</span></div></div><div class="summary-offer">${s?esc(s.label):'Aucune offre disponible'}</div></div>`;
+  const note=$('#result .summary-note'),explanation=document.createElement('details');explanation.className='summary-note';
+  explanation.innerHTML='<summary>Quantité et frais inclus</summary><p></p>';explanation.querySelector('p').textContent=note.textContent;note.replaceWith(explanation);
+  const alerts=[!s?'Sélectionnez une offre compatible pour obtenir le coût et la livraison.':'',isNum(R.margeP)&&R.margeP<0?'Vente à perte : le prix choisi est inférieur au coût de revient.':''];
+  alerts.filter(Boolean).forEach(message=>{const alert=document.createElement('p');alert.className='result-alert';alert.setAttribute('role','status');alert.textContent=message;$('#result .price-summary').appendChild(alert)});
+  const right=$('#right');
+  const live=document.activeElement&&right.contains(document.activeElement)?document.activeElement.id:null;
+  const pv=$('#f_pvR');const pvVal=pv?pv.value:null;
+  const openDetails=new Set([...right.querySelectorAll('details[open][data-detail]')].map(el=>el.dataset.detail));if(!right.dataset.seen){openDetails.add('cost');right.dataset.seen=1}
+  right.innerHTML=saleCard(d,R)+`<details class="cost-details" data-detail="cost"><summary class="card">Le détail de votre coût</summary>${costCard(d,R)}</details>`+datesCard(R)+`<details class="card cost-details" data-detail="measures"><summary>Voir les mesures et bases de calcul</summary>${measuresCard(R)}</details><details class="cost-details" data-detail="alternatives"><summary class="card">Les alternatives · offres compatibles</summary>${bestCard(d,R)}</details>`;
+  const supportingCards=document.createElement('div');supportingCards.className='stack';
+  while(right.children.length>1)supportingCards.appendChild(right.children[1]);
+  right.appendChild(supportingCards);
+  right.querySelectorAll('details[data-detail]').forEach(el=>el.open=openDetails.has(el.dataset.detail));
+  const p2=$('#f_pvR');if(p2){p2.value=d.pvRetenu===null||d.pvRetenu===undefined?'':d.pvRetenu;}
+  const marketInput=$('#f_marketPrice');if(marketInput)marketInput.value=d.marketPrice===null||d.marketPrice===undefined?'':d.marketPrice;
+  const m2=$('#f_marge');if(m2)m2.value=String(d.marge);
+  if(live){const e=$('#'+live);if(e){e.focus();if(e.setSelectionRange&&e.type!=='number'){}}}
+  if(d.paymentAllocation){document.querySelectorAll('#view [data-k],#view [data-mode],#view [data-price-mode],#view [data-pick]').forEach(el=>el.disabled=true);$('#qStat').innerHTML='<span class="pill">Paiement groupé · modification verrouillée</span>';}
+}
+function row(label,p,lot,calc){const unused=!N(p)&&!N(lot);return `<tr class="${unused?'inactive-row':''}"><td>${label}${unused?' <span class="hint">(non appliqué)</span>':''}${calc?`<div class="hint">${calc}</div>`:''}</td><td class="r num">${isNum(p)?ar(p):'—'}</td><td class="r num">${isNum(lot)?ar(lot):'—'}</td></tr>`}
+function costCard(d,R){
+  const q=R.qty,ok=isNum(R.transP);
+  return `<section class="card"><h2>Le détail de votre coût <small>De l’achat à la livraison à Madagascar</small></h2><div class="tw"><table class="cost-table">
+  <thead><tr><th>Poste</th><th class="r">Pour 1 pièce</th><th class="r">Commande · ${q} pièce${q>1?'s':''}</th></tr></thead><tbody>
+  ${row('① Achat du produit',R.achat,isNum(R.achat)?R.achat*q:'','prix yuan × taux yuan'+(isNum(R.yr)?' ('+dec(R.yr)+' Ar/¥)':''))}
+  ${row('② Transport Chine → Madagascar',ok?R.transP:'',ok?R.transP*q:'','transport d’une pièce × quantité')}
+  ${row('③ Livraison en Chine',R.livChP,N(d.livCh)?d.livCh:'')}
+  ${row('④ Frais exclus',R.exclP,N(d.exclus)?d.exclus:'')}
+  ${row('⑤ Frais de transaction',R.transacP,R.transacLot,d.paymentAllocation?'Part du paiement groupé « '+esc(d.paymentAllocation.name)+' » : frais communs répartis sur '+d.paymentAllocation.quantity+' pièces au total.':'Frais payés une seule fois pour toute la commande : yuans × taux yuan, puis répartis sur les pièces.')}
+  ${row('⑥ Livraison finale',R.livFinP,N(d.livFin)?d.livFin:'')}
+  <tr class="total"><td>TOTAL COÛT DE REVIENT</td><td class="r num">${ok?ar(R.costP):'<span class="warn">Tarif à obtenir</span>'}</td><td class="r num">${ok?ar(R.costLot):''}</td></tr></tbody></table></div>
+  <div class="hint" style="margin-top:8px">${R.sel&&ok?'Base du transport (1 pièce) : '+dec(R.sel.qty,4)+' '+esc(R.sel.t.unit)+' × '+nf.format(R.sel.tarif)+' '+esc(R.sel.t.cur)+' / '+esc(R.sel.t.unit):''}</div></section>`}
+function measuresCard(R){return `<section><h2>Mesures d’une pièce <small>calculées</small></h2>
+  <div class="kv"><div>Poids réel</div><div class="num">${R.reel?dec(R.reel,3)+' kg':'—'}</div>
+  <div>Poids volumétrique <span class="hint">(L×l×H ÷ ${nf.format(S.params.div)})</span></div><div class="num">${R.vol_w?dec(R.vol_w,3)+' kg':'—'}</div>
+  <div>Volume</div><div class="num">${R.vol?dec(R.vol,6)+' m³':'—'}</div>
+  <div>Arrivée prévue au dépôt (Chine)</div><div class="num">${R.arr!==null?fd(R.arr)+' '+String(Math.round((R.arr%1)*24)).padStart(2,'0')+' h':'—'}</div></div></section>`}
+function datesCard(R){const s=R.sel;const g=x=>!s?'—':isNum(x)?fd(x):'<span class="warn">À obtenir</span>';
+  return `<details class="cost-details dates-details" data-detail="dates"><summary class="card">Le calendrier de votre envoi</summary><section class="card"><h2>Le calendrier de votre envoi <small>Dates prévisionnelles pour l’offre choisie</small></h2><div class="kv">
+  <div>Départ réservable</div><div class="num">${g(s&&s.F)}</div>
+  <div>Arrivée au plus tôt (délai min)</div><div class="num">${g(s&&s.earliest)}</div>
+  <div>Arrivée au plus tard (délai max)</div><div class="num">${g(s&&s.G)}</div>
+  <div>Disponibilité estimée à Tana</div><div class="num">${g(s&&s.Hh)}</div>
+  <div><b>Date à annoncer au client</b> <span class="hint">(avec marge)</span></div><div class="num"><b>${g(s&&s.I)}</b></div></div>
+  ${s?calendarFeedback(s).map(m=>`<div class="manual-note" role="status">${esc(m)}</div>`).join(''):''}
+  ${s&&s.t.note?`<div class="hint" style="margin-top:8px"><b>Points à vérifier :</b> ${esc(s.t.note)}</div>`:''}</section></details>`}
+function bestCard(d,R){
+  const b=R.bestP,f=R.bestD;
+  const btn=o=>o?` <button class="btn sm" data-pick="${esc(o.label)}">Choisir</button>`:'';
+  return `<section class="card"><h2>Les alternatives <small>Offres compatibles avec votre catégorie</small></h2><div class="kv">
+  <div>Coût de revient le moins cher</div><div>${b?esc(b.label)+'<div class="num hint">'+ar(b.J)+' / pièce · '+(isNum(b.I)?fd(b.I):'date à obtenir')+'</div>'+btn(b):'Aucune offre chiffrée'}</div>
+  <div>Le plus rapide (date client)</div><div>${f?esc(f.label)+'<div class="num hint">'+fd(f.I)+(isNum(f.J)?' · '+ar(f.J)+' / pièce':'')+'</div>'+btn(f):'Aucune offre datée'}</div></div></section>`}
+function marketComparison(d,R){
+  if(!isNum(d.marketPrice))return '';
+  const messages=[];
+  let profitability='';
+  if(isNum(R.pv)){
+    const delta=R.pv-d.marketPrice,pct=d.marketPrice>0?` (${dec(Math.abs(delta)/d.marketPrice*100,1)} % du prix marché)`:'';
+    messages.push(delta===0?'Votre prix est égal au repère marché.':`Votre prix est ${delta>0?'au-dessus':'en dessous'} du repère marché de ${ar(Math.abs(delta))}${pct}.`);
+  }else messages.push('Votre prix de vente n’est pas encore calculable.');
+  if(isNum(R.costP)){
+    const margin=d.marketPrice-R.costP;
+    profitability=`<div class="${margin>0?'goodtxt':margin<0?'badtxt':'hint'}">${margin>0?`Au prix du marché : rentable, marge estimée ${ar(margin)} / pièce.`:margin<0?`Au prix du marché : non rentable, perte de ${ar(-margin)} / pièce.`:'Au prix du marché : à l’équilibre.'}</div>`;
+  }else profitability='<div class="hint">Rentabilité au prix du marché indisponible : le coût de revient n’est pas encore calculé.</div>';
+  return `<div class="market-result" role="status">${messages.map(message=>`<div>${message}</div>`).join('')}${profitability}</div>`;
+}
+function saleCard(d,R){
+  const manual=isNum(d.pvRetenu);
+  return `<section class="card"><h2><span class="section-index">3</span>Votre prix de vente <small>Choisissez une seule méthode de calcul.</small></h2>
+  <div class="seg price-choice" role="group" aria-label="Méthode du prix de vente"><button type="button" data-price-mode="auto" aria-pressed="${!manual}">Calculer avec la marge</button><button type="button" data-price-mode="manual" aria-pressed="${manual}">Fixer mon prix</button></div>
+  ${manual?`<div class="manual-note">Votre prix est fixé manuellement. Pour faire varier le prix avec la marge, choisissez « Calculer avec la marge ».</div><div class="field"><label for="f_pvR">Mon prix de vente pour 1 pièce</label><div class="unit"><input class="inp" id="f_pvR" data-k="pvRetenu" type="number" min="0" step="any"><span>Ar</span></div></div>`:`<div class="field"><label for="f_marge">Marge ajoutée au coût</label><select class="sel" id="f_marge" data-k="marge">${S.params.margins.map(m=>`<option value="${m}">${Math.round(m*100)} % du coût</option>`).join('')}</select><div class="help">Changer la marge modifie le prix de vente, jamais le coût d’achat ou de transport. Arrondi aux 100 Ar.</div></div>`}
+  <div class="kv" style="border-top:1px solid var(--line);margin-top:16px;padding-top:16px"><div>Prix de vente / pièce</div><b>${isNum(R.pv)?ar(R.pv):'—'}</b><div>Marge / pièce</div><b>${isNum(R.margeP)?ar(R.margeP):'—'}</b><div title="Marge par pièce divisée par le coût de revient">Marge / coût</div><span>${isNum(R.margeRate)?dec(R.margeRate*100,1)+' %':'—'}</span></div>
+  ${isNum(R.margeP)&&R.margeP<0?'<div class="badtxt" style="margin-top:6px">⚠ Vous vendez à perte.</div>':''}
+  <details class="market-compare" data-detail="market"><summary>Comparer au prix du marché</summary><div class="field"><label for="f_marketPrice">Prix observé sur le marché</label><div class="unit"><input class="inp" id="f_marketPrice" data-k="marketPrice" type="number" min="0" step="any" inputmode="decimal"><span>Ar / pièce</span></div><div class="help">Saisissez le prix actuel observé pour un produit comparable.</div></div>${marketComparison(d,R)}</details></section>
+  `}
+document.addEventListener('click',e=>{const price=e.target.closest('[data-price-mode]');if(price){const R=compute(S.draft);S.draft.pvRetenu=price.dataset.priceMode==='manual'?(R.pv??0):null;dirty=true;persist();refresh();const target=$('#f_marge')||$('#f_pvR');target?.focus();return}const b=e.target.closest('[data-pick]');if(b){S.draft.offer=b.dataset.pick;S.draft.mode='manuel';dirty=true;persist();if(S.tab==='devis')refresh();else go('devis')}});
+
+function checkQuote(d,R,p=S.params){
+  const errors=[],warnings=[];
+  const today=dayNum(new Intl.DateTimeFormat('sv-SE',{timeZone:'Indian/Antananarivo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()));
+  if(!d.name?.trim())errors.push('Renseignez le nom du produit.');
+  if(!Number.isInteger(d.qty)||d.qty<1)errors.push('La quantité doit être un nombre entier supérieur à 0.');
+  if(!isNum(d.price)||d.price<0)errors.push('Renseignez un prix d’achat valide (0 est accepté).');
+  for(const key of ['usd','cnyUsd','div','arrP','arrV'])if(!isNum(p[key])||p[key]<=0)errors.push('Paramètres invalides : les taux de change, le diviseur et les arrondis doivent être supérieurs à 0.');
+  if(!isNum(p.marge)||p.marge<0||!isNum(yuanRate(p))||yuanRate(p)<=0)errors.push('Le taux yuan ou la marge de sécurité du change est invalide.');
+  for(const key of ['livCh','exclus','livFin','trans','marge'])if(!isNum(d[key])||d[key]<0)errors.push('Les frais et la marge doivent être des nombres positifs ou nuls.');
+  if(!R.sel)errors.push('Choisissez une offre compatible.');
+  if(R.use.dims===2&&(!/^\s*\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*$/i.test(d.dims||'')||dimsOf(d).some(n=>n<=0)))errors.push('Renseignez trois dimensions positives : longueur × largeur × hauteur.');
+  if(R.use.wt===2&&(!isNum(d.wt)||d.wt<=0))errors.push('Renseignez un poids emballé supérieur à 0.');
+  if(!isNum(R.costP)||!isNum(R.costLot)||!isNum(R.pv)||R.pv<0)errors.push('Le coût ou le prix de vente ne peut pas être calculé. Vérifiez les tarifs.');
+  if(R.sel&&(!isNum(R.sel.F)||!isNum(R.sel.I)))warnings.push('Départ ou livraison non déterminé : le calendrier peut être incomplet ou dépassé.');
+  else if(R.sel&&R.sel.F<today)warnings.push('Le départ calculé est déjà passé. Vérifiez la date de paiement et le calendrier.');
+  if(isNum(R.margeLot)&&R.margeLot<0)warnings.push('Vente à perte : le prix de vente est inférieur au coût de revient.');
+  return {errors:[...new Set(errors)],warnings};
+}
+function reviewDialog(title,messages,confirmLabel,onConfirm){
+  const opener=document.activeElement,dialog=document.createElement('dialog');dialog.className='calendar-dialog';dialog.setAttribute('aria-labelledby','reviewTitle');
+  dialog.innerHTML=`<h2 id="reviewTitle">${esc(title)}</h2><ul class="guide-list">${messages.map(m=>`<li>${esc(m)}</li>`).join('')}</ul><div class="row"><button class="btn" id="reviewCancel">${onConfirm?'Revenir au devis':'Fermer'}</button>${onConfirm?`<button class="btn pri" id="reviewConfirm">${esc(confirmLabel)}</button>`:''}</div>`;
+  document.body.appendChild(dialog);dialog.showModal();dialog.addEventListener('close',()=>{dialog.remove();if(opener?.isConnected)opener.focus()});$('#reviewCancel',dialog).onclick=()=>dialog.close();if(onConfirm)$('#reviewConfirm',dialog).onclick=()=>{dialog.close();onConfirm()};
+}
+function saveQuote(silent,acknowledged=false){
+  const d=S.draft,R=compute(d);
+  if(S.quotes.find(q=>q.no===d.no)?.paymentGroupId){toast('Ce devis appartient à un paiement groupé. Dissociez le paiement dans l’historique avant de le modifier.');return}
+  const checks=checkQuote(d,R);
+  if(checks.errors.length){if(silent!==true)reviewDialog('À corriger avant l’enregistrement',checks.errors);return}
+  if(checks.warnings.length&&!acknowledged){if(silent!==true)reviewDialog('Vérifiez ces points',checks.warnings,'Enregistrer malgré ces alertes',()=>saveQuote(false,true));return}
+  if(!d.name.trim()){if(silent!==true){toast('Donnez un nom au produit avant d’enregistrer.');$('#f_name').focus()}return}
+  if(!R.sel){if(silent!==true)toast('Aucune offre disponible : vérifiez la catégorie et les tarifs.');return}
+  const now=new Date().toISOString(),i=S.quotes.findIndex(q=>q.no===d.no);
+  const inputs={...copyData(d),mode:'manuel',offer:R.sel.label};
+  const rec={no:d.no,created:i>=0?S.quotes[i].created:now,modified:now,inputs,res:snapshot(d,R),offer:R.sel.label};
+  const quotes=[...S.quotes];if(i>=0)quotes[i]=rec;else quotes.push(rec);
+  if(!commitPaymentState({...S,quotes,editing:d.no}))return;
+  dirty=false;drawTabs();refresh();if(silent!==true)toast('Devis '+d.no+' enregistré dans l’historique.');
+}
+
+/* ---------- HISTORIQUE ---------- */
+let hq='';
+function viewHisto(v){
+  v.innerHTML=`<div class="card" style="margin-top:16px"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="margin:0">Historique des devis</h2>
+   <div class="fm"><button class="btn pri" id="groupPayment">Grouper un paiement</button><div class="field-stack"><label for="hq">Rechercher un produit</label><input class="inp txt" id="hq" type="search" placeholder="Nom du produit ou numéro" value="${esc(hq)}"></div></div></div>
+   <p class="hint" style="margin-top:0">Du plus récent au plus ancien. Chaque devis garde les tarifs, taux et résultats du jour de l’enregistrement.</p>
+   <div class="tw" id="hlist"></div><div id="paymentList"></div></div>`;
+  $('#hq').oninput=e=>{hq=e.target.value;drawHisto()};$('#groupPayment').onclick=groupPaymentDialog;drawHisto();
+}
+function commitPaymentState(next){
+  try{clearTimeout(saveT);localStorage.setItem(KEY,JSON.stringify(next));S=next;return true}catch{toast('Sauvegarde impossible : aucune modification appliquée. Exportez vos données.');return false}
+}
+function groupPaymentDialog(){
+  const available=S.quotes.filter(q=>!q.paymentGroupId);
+  if(available.length<2){reviewDialog('Deux devis nécessaires',['Enregistrez au moins deux devis non groupés, puis sélectionnez ceux payés ensemble.']);return}
+  const dialog=document.createElement('dialog');dialog.className='calendar-dialog tariff-dialog';dialog.setAttribute('aria-labelledby','paymentTitle');
+  dialog.innerHTML=`<form><h2 id="paymentTitle">Un paiement pour plusieurs produits</h2><p class="hint">Sélectionnez les devis payés ensemble. Leurs anciens frais de transaction seront remplacés par leur part des frais communs. Les prix automatiques et les marges seront recalculés ; les prix manuels seront conservés.</p><div class="field"><label for="paymentName">Référence du paiement</label><input class="inp txt" id="paymentName" required placeholder="Ex. Commande fournisseur du 15 octobre"></div><div class="field"><label for="paymentFee">Frais payés une seule fois (¥)</label><input class="inp" id="paymentFee" type="number" min="0" step="any" value="2" required></div><div class="field"><label for="paymentRate">Taux commun (Ar / ¥)</label><input class="inp" id="paymentRate" type="number" min="0.01" step="any" value="${yuanRate(S.params)??''}" required><div class="help">Ce taux s’applique seulement aux frais communs. Les achats et transports conservent les valeurs enregistrées.</div></div><fieldset style="border:0;padding:12px 0"><legend>Produits de ce paiement</legend>${available.map(q=>`<label class="row" style="padding:8px 0"><input type="checkbox" name="member" value="${esc(q.no)}">${esc(q.no)} · ${esc(q.inputs.name)} · ${q.inputs.qty} pièce(s)</label>`).join('')}</fieldset><div id="paymentPreview" class="hint" aria-live="polite"></div><p id="paymentError" role="alert" class="badtxt"></p><div class="row"><button type="button" class="btn" id="paymentCancel">Annuler</button><button class="btn pri" type="submit">Confirmer le paiement groupé</button></div></form>`;
+  const read=()=>{const ids=[...dialog.querySelectorAll('[name=member]:checked')].map(el=>el.value);const records=S.quotes.filter(q=>ids.includes(q.no));const fee=$('#paymentFee',dialog).value,rate=$('#paymentRate',dialog).value;const allocation=allocatePayment(records,fee===''?NaN:Number(fee),rate===''?NaN:Number(rate));return {records,allocation,feeCny:Number(fee),rate:Number(rate)}};
+  const preview=()=>{try{const {records,allocation}=read();$('#paymentPreview',dialog).innerHTML=`<b>${ar(allocation.totalAr)} au total pour ${allocation.quantity} pièces</b><ul>${allocation.shares.map(s=>`<li>${esc(s.no)} : ${dec(s.shareAr,2)} Ar pour ${s.qty} pièce(s), soit ${dec(s.shareAr/s.qty,4)} Ar / pièce.</li>`).join('')}</ul><p>La confirmation met à jour ces ${records.length} devis. Dissocier le paiement restaurera leurs valeurs précédentes.</p>`}catch(e){$('#paymentPreview',dialog).textContent=e.message}};
+  document.body.appendChild(dialog);dialog.showModal();dialog.addEventListener('close',()=>{dialog.remove();$('#groupPayment')?.focus()});$('#paymentCancel',dialog).onclick=()=>dialog.close();dialog.addEventListener('input',preview);preview();
+  $('form',dialog).onsubmit=e=>{e.preventDefault();try{const {records,allocation,feeCny,rate}=read(),name=$('#paymentName',dialog).value.trim();if(!name)throw Error('Renseignez une référence.');const group={id:crypto.randomUUID(),name,feeCny,rate,...allocation,created:new Date().toISOString(),before:JSON.parse(JSON.stringify(records))};const updates=records.map(q=>applyPaymentShare(q,allocation.shares.find(s=>s.no===q.no),group));const next=JSON.parse(JSON.stringify(S));next.quotes=next.quotes.map(q=>updates.find(u=>u.no===q.no)||q);next.paymentGroups.push(group);if(updates.some(q=>q.no===next.draft.no))next.draft=JSON.parse(JSON.stringify(updates.find(q=>q.no===next.draft.no).inputs));const losses=updates.filter(q=>q.res.margeLot<0);const finish=()=>{if(commitPaymentState(next)){dialog.close();drawHisto();toast('Frais répartis et paiement enregistré.')}};if(losses.length)reviewDialog('Vente à perte après répartition',losses.map(q=>q.no+' : marge de '+ar(q.res.margeLot)),'Confirmer malgré la perte',finish);else finish()}catch(error){$('#paymentError',dialog).textContent=error.message}};
+}
+function ungroupPayment(id){
+  const group=S.paymentGroups.find(g=>g.id===id);if(!group)return;
+  reviewDialog('Dissocier ce paiement ?', ['Les devis retrouveront exactement leurs frais, prix et marges d’avant le regroupement. Les autres devis restent inchangés.'],'Dissocier le paiement',()=>{const next=JSON.parse(JSON.stringify(S));next.quotes=next.quotes.map(q=>group.before.find(old=>old.no===q.no)||q);next.paymentGroups=next.paymentGroups.filter(g=>g.id!==id);if(next.draft.paymentAllocation?.groupId===id)next.draft=JSON.parse(JSON.stringify(group.before.find(q=>q.no===next.draft.no).inputs));if(commitPaymentState(next)){drawHisto();toast('Paiement dissocié.')}});
+}
+function drawHisto(){
+  $('#paymentList').innerHTML=S.paymentGroups.map(g=>`<section class="card" style="margin-top:16px"><div class="row" style="justify-content:space-between"><div><b>${esc(g.name)}</b><p class="hint">${g.shares.length} produits · ${g.quantity} pièces · frais uniques ${dec(g.feeCny)} ¥ = ${ar(g.totalAr)} · ${g.shares.map(s=>esc(s.no)).join(', ')}</p></div><button class="btn" data-ungroup="${esc(g.id)}">Dissocier le paiement</button></div></section>`).join('');
+  $('#paymentList').querySelectorAll('[data-ungroup]').forEach(b=>b.onclick=()=>ungroupPayment(b.dataset.ungroup));
+  const L=S.quotes.filter(q=>!hq||(q.inputs.name+' '+q.no).toLowerCase().includes(hq.toLowerCase())).sort((a,b)=>b.modified.localeCompare(a.modified));
+  $('#hlist').innerHTML=!S.quotes.length?'<div class="empty">Aucun devis enregistré pour le moment.<br>Remplissez l’onglet Devis puis cliquez « Enregistrer le devis ».</div>':!L.length?'<div class="empty">Aucun résultat.</div>':
+  `<table><thead><tr><th>N°</th><th>Créé</th><th>Modifié</th><th>Produit</th><th class="r">Qté</th><th>Transitaire</th><th>Offre</th><th class="r">Coût commande</th><th class="r">Coût / pièce</th><th class="r">Vente / pièce</th><th>Date client</th><th></th></tr></thead><tbody>`+
+  L.map(q=>`<tr><td class="num">${esc(q.no)}${q.paymentGroupId?'<div class="pill">Paiement groupé · verrouillé</div>':''}</td><td>${fdt(q.created)}</td><td>${fdt(q.modified)}</td><td>${esc(q.inputs.name)}</td><td class="r num">${q.res.qty}</td><td>${esc(q.res.tr)}</td><td>${esc(savedTransportService(q))}</td>
+   <td class="r num">${ar(q.res.costLot)}</td><td class="r num">${ar(q.res.costP)}</td><td class="r num">${ar(q.res.pv)}</td><td class="num">${isNum(q.res.dateClient)?fd(q.res.dateClient):''}</td>
+   <td><div class="row" style="flex-wrap:nowrap" data-no="${esc(q.no)}"><button class="btn sm" data-a="view">Voir</button><button class="btn sm" data-a="edit">Modifier</button><button class="btn sm" data-a="dup">Dupliquer</button><button class="btn sm dng" data-a="del">Supprimer</button></div></td></tr>`).join('')+'</tbody></table>';
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const no=b.parentElement.dataset.no;const q=S.quotes.find(x=>x.no===no);if(!q)return;
+  const a=b.dataset.a;
+  if(q.paymentGroupId&&['edit','del'].includes(a)){toast('Dissociez d’abord le paiement groupé pour modifier ou supprimer ce devis.');return}
+  if(a==='view')showQuote(q);
+  else if(a==='edit'){S.draft=JSON.parse(JSON.stringify(q.inputs));normalizeLegacyOffer(S.draft);S.editing=no;dirty=false;go('devis')}
+  else if(a==='dup'){S.draft={...JSON.parse(JSON.stringify(q.inputs)),no:nextNo()};normalizeLegacyOffer(S.draft);delete S.draft.paymentAllocation;S.editing=null;dirty=true;go('devis');toast('Copie prête : '+S.draft.no+' (nouveau paiement, frais individuels).')}
+  else if(a==='del'){
+    if(b.dataset.sure){S.quotes=S.quotes.filter(x=>x.no!==no);persist();drawTabs();drawHisto();toast('Devis '+no+' supprimé.')}
+    else{b.dataset.sure=1;b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='Supprimer'}},3500)}
+  }
+});
+function showQuote(q){
+  const r=q.res,i=q.inputs;
+  const characteristicNames={batteryStatus:{none:'aucune batterie',integrated:'batterie intégrée',separate:'batterie expédiée séparément'},handling:{none:'ni liquide, ni poudre, ni aérosol',liquid:'liquide',powder:'poudre',aerosol:'aérosol'},dangerous:{no:'pas identifié comme dangereux',yes:'potentiellement dangereux'},magnet:{no:'sans aimant',yes:'avec aimant'},deviceType:{phone:'téléphone',computer:'ordinateur/tablette',electronics:'autre appareil électronique',general:'produit général'}};
+  const characteristics=Object.entries(characteristicNames).filter(([key])=>i[key]).map(([key,values])=>values[i[key]]).filter(Boolean);
+  $('#layer').innerHTML=`<div class="overlay" id="ov"><div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(q.no)} · ${esc(i.name)}</h2><button class="btn sm" id="ovc">Fermer</button></div>
+  <p class="hint">Consultation : valeurs figées au ${fdt(q.modified)}. Créé le ${fdt(q.created)}.</p>
+  ${i.paymentAllocation?`<p class="manual-note">Paiement groupé « ${esc(i.paymentAllocation.name)} » : frais uniques ${dec(i.paymentAllocation.feeCny)} ¥, soit ${ar(i.paymentAllocation.totalAr)} pour ${i.paymentAllocation.quantity} pièces. Part de ce devis : ${dec(i.paymentAllocation.shareAr,2)} Ar.</p>`:''}
+  <div class="grid2"><div><h3 style="font-size:14px;margin-bottom:6px">Produit et expédition</h3><div class="kv">
+   <div>Catégorie</div><div>${esc(i.cat)}</div><div>Prix d’achat</div><div class="num">${dec(i.price)} ¥</div><div>Quantité</div><div class="num">${r.qty}</div>
+   <div>Dimensions emballées</div><div class="num">${esc(i.dims||'')} cm</div><div>Poids emballé</div><div class="num">${dec(i.wt,3)} kg</div>
+   <div>Caractéristiques de transport</div><div>${characteristics.length?characteristics.map(esc).join(', '):'Non renseignées'}</div>
+   <div>Offre</div><div>${esc(savedOfferLabel(q.offer))}</div><div>Paiement</div><div class="num">${i.pay?fd(dayNum(i.pay)):''}</div>
+   <div>Départ</div><div class="num">${isNum(r.depart)?fd(r.depart):'—'}</div><div>Disponibilité Tana</div><div class="num">${isNum(r.dispo)?fd(r.dispo):'—'}</div>
+   <div><b>Date client</b></div><div class="num"><b>${isNum(r.dateClient)?fd(r.dateClient):'—'}</b></div></div></div>
+  <div><h3 style="font-size:14px;margin-bottom:6px">Résultats</h3><div class="kv">
+   <div>Taux yuan → Ar</div><div class="num">${dec(r.yr)}</div><div>Taux USD → Ar</div><div class="num">${nf.format(r.usd)}</div>
+   <div>Achat / pièce</div><div class="num">${ar(r.achat)}</div><div>Transport / pièce</div><div class="num">${ar(r.transP)}</div>
+   <div>Frais de la commande (Chine, exclus, final)</div><div class="num">${ar(N(i.livCh)+N(i.exclus)+N(i.livFin))}</div><div>Frais de transaction</div><div class="num">${ar(r.transacLot)}</div>
+   <div><b>Coût / pièce</b></div><div class="num"><b>${ar(r.costP)}</b></div><div><b>Coût de la commande · ${r.qty} pièce${r.qty>1?'s':''}</b></div><div class="num"><b>${ar(r.costLot)}</b></div>
+   <div>Prix de vente / pièce</div><div class="num">${ar(r.pv)}</div><div>Marge / pièce</div><div class="num">${ar(r.margeP)}</div>
+   <div>Prix observé sur le marché / pièce</div><div class="num">${isNum(i.marketPrice)?ar(i.marketPrice):'Non renseigné'}</div></div></div></div>
+  ${r.note?`<p class="hint"><b>Points ? v?rifier :</b> ${esc(r.note)}</p>`:''}</div></div>`;
+  $('#ovc').onclick=()=>$('#layer').innerHTML='';$('#ov').onclick=e=>{if(e.target.id==='ov')$('#layer').innerHTML=''};
+}
+
+/* ---------- COMPARATIF ---------- */
+let showAll=false,compCarrier='',compSort='cost';
+/* Lignes affichées : offres compatibles (ou toutes si le filtre est activé), triées. */
+function compRows(R){
+  const rows=R.offers.filter(o=>(showAll||o.compat)&&(!compCarrier||o.t.tr===compCarrier));
+  const byNum=(x,y,desc)=>{if(x===null||y===null)return (x===null)-(y===null);return desc?y-x:x-y};
+  rows.sort((a,b)=>{
+    if(compSort==='carrier')return a.t.tr.localeCompare(b.t.tr,'fr');
+    if(compSort==='date')return byNum(isNum(a.I)?a.I:null,isNum(b.I)?b.I:null,false);
+    return byNum(isNum(a.J)?a.J:null,isNum(b.J)?b.J:null,compSort==='costDesc');
+  });
+  return rows;
+}
+/* Une carte : qui, combien, quand, ce qui reste incertain. Le détail se déplie dans la carte. */
+function offerCard(R,o,isBest){
+  const what=[!isNum(o.tarif)&&'Tarif',!isNum(o.F)&&'Départ'].filter(Boolean);
+  const qual=!what.length?'Tarif et départ confirmés':what.length===2?'Tarif et départ à confirmer':`${what[0]} à confirmer`;
+  const hasDate=isNum(o.I);
+  const selected=R.sel===o;
+  const fig=isNum(o.J)?`${ar(o.J)} / pièce`:'Coût à confirmer';
+  const frais=isNum(o.J)&&isNum(o.E)&&isNum(R.achat)?ar(o.J-R.achat-o.E):'—';
+  const notes=[o.t.svc?`Service : ${o.t.svc}`:'',o.t.note||'',...calendarFeedback(o)].filter(Boolean);
+  return `<article class="offer-card">
+   <div class="oc-top"><span>${esc(o.t.tr)} · ${esc(o.t.mode)}</span>${isBest?'<span class="oc-badge">Coût estimé le plus bas</span>':''}${o.compat?'':'<span class="pill">Incompatible</span>'}</div>
+   <div class="oc-price"><span class="oc-fig num">${esc(fig)}</span><span class="oc-lbl">Coût total estimé</span></div>
+   <div class="oc-line"><span>Livraison client</span>${hasDate?`<b>${fd(o.I)}</b><em class="st warn">Date estimée</em>`:'<b>Dates non communiquées</b><em class="st warn">À confirmer</em>'}</div>
+   <div class="oc-qual">${qual}</div>
+   ${o.compat?`<button class="btn pri oc-pick" data-pick="${esc(o.label)}"${selected?' disabled':''}>${selected?'Offre Choisie':'Choisir cette offre'}</button>`:''}
+   <details class="oc-more"><summary>Voir le détail</summary><div class="oc-body">
+     <div class="oc-kv">
+       <div>Tarif</div><div class="num">${isNum(o.tarif)?`${nf.format(o.tarif)} ${esc(o.t.cur)} / ${esc(o.t.unit)}`:'À obtenir'}</div>
+       <div>Quantité facturée</div><div class="num">${o.qty!==null?`${dec(o.qty,4)} ${esc(o.t.unit)}`:'—'}</div>
+       <div>Produit / pièce</div><div class="num">${isNum(R.achat)?ar(R.achat):'—'}</div>
+       <div>Transport / pièce</div><div class="num">${isNum(o.E)?ar(o.E):'—'}</div>
+       <div>Frais annexes / pièce</div><div class="num">${frais}</div>
+       <div><b>Coût total / pièce</b></div><div class="num"><b>${isNum(o.J)?ar(o.J):'—'}</b></div>
+     </div>
+     <div class="oc-kv">
+       <div>Départ</div><div class="num">${isNum(o.F)?fd(o.F):'À confirmer'}</div>
+       <div>Arrivée max</div><div class="num">${isNum(o.G)?fd(o.G):'—'}</div>
+       <div>Disponible à Tana</div><div class="num">${isNum(o.Hh)?fd(o.Hh):'—'}</div>
+       <div>Livraison client</div><div class="num">${hasDate?fd(o.I):'Non communiquée'}</div>
+     </div>
+     ${notes.length?`<ul class="oc-notes">${notes.map(m=>`<li>${esc(m)}</li>`).join('')}</ul>`:''}
+   </div></details>
+  </article>`;
+}
+function renderComp(){viewComp($('#view'))}
+/* Filtres : transitaire, tri, offres incompatibles. Chaque changement met la liste à jour. */
+function openCompFilters(){
+  const layer=$('#layer'),carriers=[...new Set(S.tarifs.map(t=>t.tr))].sort((a,b)=>a.localeCompare(b,'fr'));
+  layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Filtres</h2>
+   <div class="field"><label for="fCarrier">Transitaire</label><select class="sel" id="fCarrier"><option value="">Tous les transitaires</option>${carriers.map(tr=>`<option value="${esc(tr)}"${tr===compCarrier?' selected':''}>${esc(tr)}</option>`).join('')}</select></div>
+   <div class="field"><label for="fSort">Trier par</label><select class="sel" id="fSort">${[['cost','Prix croissant'],['costDesc','Prix décroissant'],['date','Livraison client la plus proche'],['carrier','Transitaire A → Z']].map(([k,l])=>`<option value="${k}"${k===compSort?' selected':''}>${l}</option>`).join('')}</select></div>
+   <label class="cmp-check"><input type="checkbox" id="fAll"${showAll?' checked':''}> Afficher aussi les offres incompatibles</label>
+   <div class="more-list"><button class="btn pri m-close">Voir les offres</button><button class="btn more-item" id="fReset">Réinitialiser</button></div></div></div>`;
+  layer.onclick=e=>{if(e.target.classList.contains('overlay')||e.target.closest('.m-close'))layer.innerHTML=''};
+  const card=layer.querySelector('.card');
+  card.onchange=()=>{compCarrier=$('#fCarrier').value;compSort=$('#fSort').value;showAll=$('#fAll').checked;renderComp()};
+  $('#fReset').onclick=()=>{compCarrier='';compSort='cost';showAll=false;openCompFilters();renderComp()};
+}
+function viewComp(v){
+  const d=S.draft,R=compute(d),rows=compRows(R);
+  const comp=rows.filter(o=>o.compat);
+  // Badge « le plus bas » seulement si les offres comparées ont la même base de coût (même unité de facturation).
+  const sameBasis=comp.length>1&&comp.every(o=>isNum(o.J)&&o.t.unit===comp[0].t.unit);
+  const best=sameBasis?rows.find(o=>o.compat&&o.rP===1):null;
+  const active=(compCarrier?1:0)+(showAll?1:0)+(compSort==='date'||compSort==='carrier'?1:0);
+  v.innerHTML=`<section class="cmp">
+   <div class="cmp-ctx"><span><b>${R.qty} pièce${R.qty>1?'s':''}</b> · ${esc(d.cat)}</span><button class="btn sm" data-cmp-edit>Modifier</button></div>
+   <div class="cmp-ctrl"><button class="btn" data-cmp-filters>Filtres${active?` · ${active}`:''}</button><button class="btn" data-cmp-sort>${compSort==='costDesc'?'Prix décroissant ↑':'Prix croissant ↓'}</button></div>
+   <div class="offer-list">${rows.length?rows.map(o=>offerCard(R,o,best===o)).join(''):`<div class="offer-empty">Aucune offre compatible avec « ${esc(d.cat)} ». Ouvrez Filtres pour voir les offres incompatibles.</div>`}</div>
+  </section>`;
+  v.onclick=e=>{
+    if(e.target.closest('[data-cmp-edit]')){go('devis');return}
+    if(e.target.closest('[data-cmp-filters]')){openCompFilters();return}
+    if(e.target.closest('[data-cmp-sort]')){compSort=compSort==='costDesc'?'cost':'costDesc';renderComp()}
+  };
+}
+
+/* ---------- TARIFS ---------- */
+function viewTarifs(v){
+  const P=S.params;
+  v.innerHTML=`<section class="card tariff-card" style="margin-top:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Offres des transitaires</h2><button class="btn pri" id="tAdd">+ Ajouter une offre</button></div><p class="hint">Cette liste est en lecture seule.</p><div class="filter-bar"><label for="tariffSearch">Rechercher une offre<input class="inp txt" id="tariffSearch" type="search" placeholder="Transitaire, service, catégorie…"></label></div><div class="tw"><table class="tariff-list"><thead><tr><th>Transitaire / service</th><th>Catégories</th><th>Tarif</th><th>D?lai annonc?</th><th>Actions</th></tr></thead><tbody id="tb"></tbody></table></div></section>`;
+  const draw=()=>{const query=$('#tariffSearch').value.toLocaleLowerCase('fr');$('#tb').innerHTML=S.tarifs.map((t,i)=>({t,i})).filter(({t})=>offerLabel(t).toLocaleLowerCase('fr').includes(query)).map(({t,i})=>`<tr><td><b>${esc(t.tr)}</b><div class="hint">Transport : ${esc(t.mode)} · Service : ${t.svc?esc(t.svc):'—'}</div></td><td>${esc(t.cats||'À préciser')}</td><td>${isNum(t.tarif)?dec(t.tarif)+' '+esc(t.cur)+' / '+esc(t.unit):'<span class="pill warn">À obtenir</span>'}</td><td>${isNum(t.dmin)&&isNum(t.dmax)?t.dmin+'–'+t.dmax+' jours':'À confirmer'}</td><td><div class="row"><button class="btn sm" data-t-view="${i}">Voir</button><button class="btn sm" data-t-edit="${i}">Modifier</button><button class="btn sm dng" data-t-delete="${i}">Supprimer</button></div></td></tr>`).join('')||'<tr class="empty-row"><td colspan="5" class="empty">Aucune offre trouvée.</td></tr>'};
+  const editor=(index,readOnly=false)=>{
+    const original=index===null?null:S.tarifs[index];
+    const t=original?{...original}:{tr:P.trs[0]||'',mode:'Avion',svc:P.svcs[0]||'',cats:'Général',tarif:null,unit:'kg',cur:'Ar',palier:null,tarif2:null,min:null,dmin:null,dmax:null,d1:null,c1:null,d2:null,c2:null,h:null,note:null,base:null};
+    const opener=document.activeElement,dialog=document.createElement('dialog');dialog.className='calendar-dialog tariff-dialog';dialog.setAttribute('aria-labelledby','tariffTitle');
+    const select=(key,label,values,blank)=>`<div class="field"><label for="tf_${key}">${label}</label><select class="sel" id="tf_${key}" name="${key}"${blank===undefined?' required':''}>${opts([...new Set([...values,...(t[key]?[t[key]]:[])])],t[key],blank)}</select></div>`;
+    const serviceSelect=`<div class="field"><label for="tf_svc">Service</label><select class="sel" id="tf_svc" name="svc"></select></div>`;
+    const number=(key,label,max)=>`<div class="field"><label for="tf_${key}">${label}</label><input class="inp" id="tf_${key}" name="${key}" type="number" min="0" step="any" ${max===undefined?'':`max="${max}"`} value="${t[key]??''}"></div>`;
+    dialog.innerHTML=`<form><h2 id="tariffTitle">${readOnly?'Consulter l’offre':original?'Modifier l’offre':'Ajouter une offre'}</h2><p class="hint">Les valeurs vides restent « à obtenir ». Aucun changement n’est enregistré avant validation.</p><fieldset ${readOnly?'disabled':''} style="border:0;padding:0;margin:0"><div class="tariff-fields">${select('tr','Transitaire',P.trs)}${select('mode','Transport',['Avion','Maritime'])}${serviceSelect}${select('unit','Unité de facturation',['kg','pièce','m³'])}<fieldset class="wide"><legend>Catégories acceptées</legend><div class="row">${[...new Set([...P.cats,...catList(t.cats)])].map(c=>`<label><input type="checkbox" name="category" value="${esc(c)}"${catList(t.cats).includes(c)?' checked':''}> ${esc(c)}</label>`).join('')}</div></fieldset>${number('tarif','Tarif de base')}${select('cur','Devise',['Ar','USD'])}${number('min','Minimum facturable')}${select('base','Base poids imposée',['Poids réel','Poids volumétrique'],'Selon le devis')}<fieldset class="wide"><legend>Délais et départs</legend></fieldset>${number('dmin','Délai minimum (jours)')}${number('dmax','Délai maximum (jours)')}${select('d1','Premier départ',JOURS,'Non communiqué')}${number('c1','Clôture avant départ 1 (jours)')}${select('d2','Second départ',JOURS,'Aucun')}${number('c2','Clôture avant départ 2 (jours)')}${number('h','Heure limite en Chine (0–23)',23)}<div></div><details class="wide"${isNum(t.palier)||isNum(t.tarif2)?' open':''}><summary>Tarification par volume</summary><div class="tariff-fields">${number('palier','Seuil de volume (m³)')}${number('tarif2','Tarif au-delà du seuil')}</div></details><div class="field wide"><label for="tf_note">Conditions et points à vérifier</label><textarea class="inp" id="tf_note" name="note">${esc(t.note||'')}</textarea></div></div></fieldset><p class="badtxt" id="tariffError" role="alert"></p><div class="row"><button type="button" class="btn" id="tariffCancel">${readOnly?'Fermer':'Annuler'}</button>${readOnly?'':'<button class="btn pri" type="submit">Enregistrer</button>'}</div></form>`;
+    document.body.appendChild(dialog);dialog.showModal();
+    let lastAvionService=t.svc||P.svcs[0]||'';
+    const updateServiceOptions=()=>{
+      const noService=$('#tf_mode',dialog).value==='Maritime';
+      const service=$('#tf_svc',dialog);
+      if(service.value)lastAvionService=service.value;
+      service.disabled=noService;
+      service.required=!noService;
+      service.innerHTML=noService?'<option value="" selected></option>':opts([...new Set([...P.svcs,...(t.svc?[t.svc]:[])])],P.svcs.includes(lastAvionService)||lastAvionService===t.svc?lastAvionService:P.svcs[0]);
+    };
+    $('#tf_tr',dialog).onchange=updateServiceOptions;$('#tf_mode',dialog).onchange=updateServiceOptions;updateServiceOptions();
+    dialog.addEventListener('close',()=>{dialog.remove();if(opener?.isConnected)opener.focus()});$('#tariffCancel',dialog).onclick=()=>dialog.close();
+    $('form',dialog).onsubmit=e=>{e.preventDefault();if(readOnly)return;const data=new FormData(e.target),next={...t};for(const k of ['tr','svc','mode','unit','cur','base','d1','d2','note'])next[k]=String(data.get(k)||'').trim()||null;if(next.mode==='Maritime')next.svc='';for(const k of ['tarif','min','dmin','dmax','c1','c2','h','palier','tarif2']){const value=data.get(k);next[k]=value===''?null:Number(value)}next.cats=data.getAll('category').join('; ');const fail=message=>$('#tariffError',dialog).textContent=message;if(!next.cats)return fail('Sélectionnez au moins une catégorie.');if(isNum(next.dmin)&&isNum(next.dmax)&&next.dmin>next.dmax)return fail('Le délai maximum doit être supérieur ou égal au minimum.');if(isNum(next.palier)!==isNum(next.tarif2))return fail('Renseignez ensemble le seuil et le tarif au-delà, ou laissez les deux vides.');if(index===null)S.tarifs.push(next);else S.tarifs[index]=next;persist();draw();dialog.close();toast('Offre enregistrée. Les devis archivés restent inchangés.')};
+  };
+  const remove=index=>{const t=S.tarifs[index],dialog=document.createElement('dialog');dialog.className='calendar-dialog';dialog.setAttribute('aria-labelledby','deleteTariffTitle');dialog.innerHTML=`<h2 id="deleteTariffTitle">Supprimer cette offre ?</h2><p>${esc(offerLabel(t))}</p><p class="hint">Elle ne sera plus proposée dans les nouvelles simulations. Les devis enregistrés sont conservés.</p><div class="row"><button class="btn" id="cancelDeleteTariff">Annuler</button><button class="btn dng" id="confirmDeleteTariff">Supprimer l’offre</button></div>`;document.body.appendChild(dialog);dialog.showModal();dialog.addEventListener('close',()=>{dialog.remove();$('#tAdd').focus()});$('#cancelDeleteTariff',dialog).onclick=()=>dialog.close();$('#confirmDeleteTariff',dialog).onclick=()=>{S.tarifs.splice(index,1);persist();draw();dialog.close();toast('Offre supprimée.')};};
+  draw();$('#tariffSearch').oninput=draw;
+  v.onclick=e=>{if(e.target.closest('#tAdd'))editor(null);const view=e.target.closest('[data-t-view]'),edit=e.target.closest('[data-t-edit]'),del=e.target.closest('[data-t-delete]');if(view)editor(+view.dataset.tView,true);if(edit)editor(+edit.dataset.tEdit);if(del)remove(+del.dataset.tDelete)};
+}
+
+/* ---------- CALENDRIER ---------- */
+function viewCal(v){
+  const P=S.params;
+  let period='upcoming';
+  v.innerHTML=`<div class="card calendar-card" style="margin-top:16px"><div class="row" style="justify-content:space-between"><div class="seg" role="group" aria-label="Période des départs"><button type="button" data-cal-period="upcoming" aria-pressed="true">À venir</button><button type="button" data-cal-period="past" aria-pressed="false">Passés</button><button type="button" data-cal-period="all" aria-pressed="false">Tous</button></div>
+  <button class="btn pri" id="cAdd">+ Ajouter un départ</button></div>
+  <div class="calendar-filters" role="group" aria-label="Filtrer les départs"><label for="cDateFrom">Du<input class="inp" id="cDateFrom" type="date" aria-describedby="cDateError"></label><label for="cDateTo">Au<input class="inp" id="cDateTo" type="date" aria-describedby="cDateError"></label><label for="cTr">Transitaire<select class="sel" id="cTr"></select></label><label for="cMode">Mode<select class="sel" id="cMode"></select></label><label for="cSvc">Service<select class="sel" id="cSvc"></select></label><button class="btn" id="cReset" type="button">Réinitialiser</button></div>
+  <p class="badtxt" id="cDateError" role="alert" hidden></p>
+  <p class="hint" id="cCount" role="status" aria-live="polite"></p>
+  <div class="tw"><table><thead><tr><th>Transitaire</th><th>Mode</th><th>Service de l’offre</th><th>Date de départ</th><th>Remarque</th><th>Actions</th></tr></thead><tbody id="cb"></tbody></table></div></div>`;
+  const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Indian/Antananarivo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const filterFields=[['cTr','tr','Tous les transitaires'],['cMode','mode','Tous les modes'],['cSvc','svc','Tous les services']];
+  const draw=()=>{
+    filterFields.forEach(([id,key,label])=>{const el=$('#'+id),selected=el.value;const values=[...new Set(S.cal.map(c=>c[key]||''))].sort((a,b)=>a.localeCompare(b,'fr'));el.innerHTML=`<option value="">${label}</option>`+values.map(value=>`<option value="${esc(value||'__empty__')}">${esc(value||(key==='svc'?'Sans service':'À préciser'))}</option>`).join('');el.value=[...el.options].some(o=>o.value===selected)?selected:''});
+    const from=$('#cDateFrom').value,to=$('#cDateTo').value,invalid=!!(from&&to&&from>to);
+    $('#cDateFrom').max=to;$('#cDateTo').min=from;
+    ['cDateFrom','cDateTo'].forEach(id=>$('#'+id).setAttribute('aria-invalid',String(invalid)));
+    $('#cDateError').hidden=!invalid;$('#cDateError').textContent=invalid?'La date de fin doit être égale ou postérieure à la date de début.':'';
+    const currentDay=today(),inPeriod=c=>period==='all'||(period==='past'?c.date<currentDay:c.date>=currentDay);
+    const rows=S.cal.map((c,i)=>({c,i})).filter(({c})=>inPeriod(c)&&!invalid&&(!from||c.date>=from)&&(!to||c.date<=to)&&filterFields.every(([id,key])=>!$('#'+id).value||(c[key]||'__empty__')===$('#'+id).value)).sort((a,b)=>period==='past'?b.c.date.localeCompare(a.c.date):a.c.date.localeCompare(b.c.date));
+    v.querySelectorAll('[data-cal-period]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.calPeriod===period)));
+    $('#cCount').textContent=`${rows.length} départ${rows.length>1?'s':''} · ${period==='past'?'du plus récent au plus ancien · consultation uniquement':'par date de départ'}`;
+    $('#cReset').disabled=!from&&!to&&!filterFields.some(([id])=>$('#'+id).value);
+    $('#cb').innerHTML=rows.map(({c,i})=>{const past=c.date<currentDay;return `<tr><td>${esc(c.tr)}</td><td>${esc(c.mode||'À préciser')}</td><td>${esc(c.svc||'—')}</td><td><b>${esc(fd(dayNum(c.date)))}</b>${past&&period==='all'?' <span class="pill">Passé</span>':''}</td><td>${esc(c.note||'—')}</td><td><div class="row calendar-actions"><button class="btn sm" data-cal-view="${i}">Voir</button>${past?'':`<details class="row-actions" name="calendar-actions"><summary class="btn sm" aria-label="Autres actions pour ${esc(c.tr)} le ${esc(c.date)}">•••</summary><div><button class="btn sm" data-cal-edit="${i}">Modifier</button><button class="btn sm dng" data-cal-delete="${i}">Supprimer</button></div></details>`}</div></td></tr>`}).join('')||`<tr class="empty-row"><td colspan="6" class="empty">${invalid?'Corrigez la plage de dates pour afficher les départs.':!S.cal.length?'Aucun départ enregistré. Ajoutez votre premier départ.':from||to||filterFields.some(([id])=>$('#'+id).value)?'Aucun départ ne correspond aux filtres pour cette période.':period==='upcoming'?'Aucun départ à venir. Ajoutez une date ou consultez les départs passés.':'Aucun départ pour cette période.'}</td></tr>`;
+  };
+  const editor=(index,readOnly=false)=>{
+    const existing=index===null?null:S.cal[index];
+    if(existing&&existing.date<today()&&!readOnly)return;
+    const c=existing?{...existing}:{tr:P.trs[0]||'',mode:'Avion',svc:'',date:today(),note:''};
+    const services=(tr,mode)=>calendarServices(tr,mode);
+    const optionsHtml=(tr,mode,current,keepLegacy)=>{
+      const available=services(tr,mode);
+      if(mode==='Maritime')return'<option value="" selected></option>';
+      if(available.length===1&&available[0]==='')return'<option value="" selected></option>';
+      const options=available.map(service=>`<option value="${esc(service)}"${service===current?' selected':''}>${esc(service)}</option>`);
+      if(keepLegacy&&current&&!available.some(service=>serviceKey(service)===serviceKey(current)))
+        options.unshift(`<option value="${esc(current)}" selected>${esc(current)} · ancien nom à corriger</option>`);
+      return `<option value="">Choisir une offre</option>${options.join('')}`;
+    };
+    if(!c.svc||!services(c.tr,c.mode).some(service=>serviceKey(service)===serviceKey(c.svc)))
+      c.svc=services(c.tr,c.mode)[0]||c.svc;
+    let selectedPair={tr:c.tr,mode:c.mode};
+    const opener=document.activeElement;
+    const dialog=document.createElement('dialog');dialog.className='calendar-dialog';dialog.setAttribute('aria-labelledby','calTitle');
+    dialog.innerHTML=`<form><h2 id="calTitle">${readOnly?'Consulter le départ':existing?'Modifier le départ':'Ajouter le départ'}</h2><fieldset ${readOnly?'disabled':''} style="border:0;padding:0;margin:0"><div class="field"><label for="calTr">Transitaire</label><select class="sel" id="calTr" required>${opts([...new Set([...P.trs,c.tr])],c.tr)}</select></div><div class="field"><label for="calMode">Mode</label><select class="sel" id="calMode" required>${opts(['Avion','Maritime'],c.mode,'Choisir un mode')}</select><div class="help">Avion et Maritime ont des offres et des dates séparées.</div></div><div class="field"><label for="calSvc">Service de l’offre transitaire</label><select class="sel" id="calSvc">${optionsHtml(c.tr,c.mode,c.svc,true)}</select><div class="help">La liste reprend les noms de l’onglet « Tarifs ». Pour E-SOA Maritime, l’offre n’a pas de service distinct : laissez ce champ vide.</div><div class="hint" id="calServiceHint"></div></div><div class="field"><label for="calDate">Date de départ</label><input class="inp" id="calDate" type="date" required min="${today()}" value="${esc(c.date)}"></div><div class="field"><label for="calNote">Remarque</label><textarea class="inp" id="calNote">${esc(c.note||'')}</textarea></div></fieldset><p id="calError" class="badtxt" role="alert"></p><div class="row"><button type="button" class="btn" id="calCancel">${readOnly?'Fermer':'Annuler'}</button>${readOnly?'':'<button class="btn pri" type="submit">Enregistrer</button>'}</div></form>`;
+    document.body.appendChild(dialog);dialog.showModal();
+    dialog.addEventListener('close',()=>{dialog.remove();if(opener&&opener.isConnected)opener.focus()});
+    $('#calCancel',dialog).onclick=()=>dialog.close();
+    const updateServices=()=>{
+      const tr=$('#calTr',dialog).value,mode=$('#calMode',dialog).value,current=$('#calSvc',dialog).value;
+      const keepCurrent=selectedPair.tr===tr&&selectedPair.mode===mode;
+      const available=services(tr,mode),selected=keepCurrent&&available.some(service=>serviceKey(service)===serviceKey(current))?current:available[0]||'';
+      $('#calSvc',dialog).innerHTML=optionsHtml(tr,mode,selected,keepCurrent);
+      selectedPair={tr,mode};updateServiceHint();
+    };
+    const updateServiceHint=()=>{const tr=$('#calTr',dialog).value,mode=$('#calMode',dialog).value,available=services(tr,mode),maritime=mode==='Maritime';$('#calSvc',dialog).disabled=maritime;$('#calSvc',dialog).required=!maritime;$('#calServiceHint').textContent=maritime?(available.length?'Le transport Maritime n’a pas de service sélectionnable ; la date est liée au mode Maritime.':'Aucune offre Maritime enregistrée pour ce transitaire.') :available.some(service=>serviceKey(service)===serviceKey($('#calSvc',dialog).value))?'Ce service correspond directement au nom de l’offre dans Tarifs.':'Ancien nom non reconnu par une offre de ce mode : choisissez un service proposé pour relier cette date.'};
+    $('#calTr',dialog).onchange=updateServices;$('#calMode',dialog).onchange=updateServices;$('#calSvc',dialog).onchange=updateServiceHint;updateServiceHint();
+    $('form',dialog).onsubmit=e=>{e.preventDefault();if(readOnly)return;const date=$('#calDate',dialog).value,tr=$('#calTr',dialog).value,mode=$('#calMode',dialog).value,svc=mode==='Maritime'?'':$('#calSvc',dialog).value;if(date<today()||(existing&&existing.date<today())){$('#calError',dialog).textContent='Choisissez une date à partir d’aujourd’hui.';return}if(!services(tr,mode).some(service=>serviceKey(service)===serviceKey(svc))){$('#calError',dialog).textContent='Choisissez un service proposé dans Tarifs pour ce transitaire et ce mode.';return}const entry={tr,mode,svc,date,note:$('#calNote',dialog).value.trim()};if(index===null)S.cal.push(entry);else S.cal[index]=entry;persist();draw();dialog.close();toast('Départ enregistré.')};
+  };
+  draw();
+  v.onclick=e=>{
+    if(e.target.closest('#cReset')){['cDateFrom','cDateTo',...filterFields.map(([id])=>id)].forEach(id=>$('#'+id).value='');draw()}
+    if(e.target.closest('#cAdd'))editor(null);
+    const periodButton=e.target.closest('[data-cal-period]');if(periodButton){period=periodButton.dataset.calPeriod;draw()}
+    const view=e.target.closest('[data-cal-view]');if(view)editor(+view.dataset.calView,true);
+    const edit=e.target.closest('[data-cal-edit]');if(edit&&!edit.disabled)editor(+edit.dataset.calEdit);
+    const b=e.target.closest('[data-cal-delete]');if(b&&!b.disabled){const index=+b.dataset.calDelete;if(S.cal[index].date<today())return;if(b.dataset.sure){S.cal.splice(index,1);persist();draw();toast('Départ supprimé.')}else{b.dataset.sure='1';b.textContent='Confirmer ?';setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='Supprimer'}},4000)}}
+  };
+  v.onchange=e=>{if(e.target.closest('.calendar-filters'))draw()};
+  v.onkeydown=e=>{if(e.key==='Escape'){const menu=e.target.closest('.row-actions');if(menu){menu.open=false;menu.querySelector('summary').focus()}}};
+}
+
+/* ---------- PARAMETRES ---------- */
+function viewParams(v){
+  const P=S.params;
+  const pf=(id,label,key,help,unit,extra='')=>`<div class="field"><label for="${id}">${label}</label><div class="unit"><input class="inp" id="${id}" data-p="${key}" type="number" step="any" min="0" value="${P[key]}">${unit?`<span>${unit}</span>`:''}</div><div class="help">${help}</div></div>`;
+  const list=(key,label,help)=>`<section class="card"><h2>${label}</h2><div class="chips" data-list="${key}">${P[key].map((x,i)=>`<span class="chip">${key==='margins'?Math.round(x*100)+' %':esc(x)}<button data-rm="${key}:${i}" title="Retirer" aria-label="Retirer">×</button></span>`).join('')}</div>
+    <div class="row"><input class="inp txt" id="add_${key}" placeholder="${key==='margins'?'ex. 40 (pour 40 %)':'Nouvel élément'}" style="max-width:220px"><button class="btn" data-add="${key}">Ajouter</button></div><div class="hint" style="margin-top:6px">${help}</div></section>`;
+  v.innerHTML=`<div class="params-grid"><div class="stack">
+  <section class="card"><h2>Taux de change</h2>
+   ${pf('p_usd','Taux USD → Ar','usd','Taux de base. La marge de sécurité s’y ajoute pour le yuan.','Ar')}
+   ${pf('p_cny','¥ pour 1 USD','cnyUsd','Conversion yuan ↔ dollar réellement obtenue.','¥')}
+   <div class="field"><label for="p_marge">Marge de sécurité sur le change</label><div class="unit"><input class="inp" id="p_marge" data-p="marge" data-pct="1" type="number" step="any" min="0" value="${Number((P.marge*100).toPrecision(12))}"><span>%</span></div><div class="help">Couvre les frais et les variations de change.</div></div>
+   <div class="field"><label>Taux yuan → Ar (calculé)</label><div class="num" id="p_yr"></div><div class="help">Taux USD → Ar × (1 + marge) ÷ ¥ pour 1 USD.</div></div>
+   <details class="params-advanced"><summary>Règles de calcul avancées</summary>
+   ${pf('p_div','Diviseur poids volumétrique (avion)','div','L × l × H (cm) ÷ diviseur = kg volumétrique.','')}
+   <div class="field"><label for="p_arrP">Arrondi du poids facturé</label><select class="sel" id="p_arrP" data-p="arrP">${ARR_P.map(x=>`<option value="${x}"${x===P.arrP?' selected':''}>${dec(x,2)} kg</option>`).join('')}</select><div class="help">Palier supérieur : avec 0,01, 4,573 kg → 4,58 kg.</div></div>
+   <div class="field"><label for="p_arrV">Arrondi du volume facturé</label><select class="sel" id="p_arrV" data-p="arrV">${ARR_V.map(x=>`<option value="${x}"${x===P.arrV?' selected':''}>${x<1e-6?'volume exact':dec(x,3)+' m³'}</option>`).join('')}</select><div class="help">Volume exact : sans arrondi.</div></div></details>
+  </section>
+  <section class="card"><h2>Délais</h2>
+   ${pf('p_dispo','Mise à disposition après trajet','dispo','Douane, déchargement, traitement (exclus du délai annoncé).','jours')}
+   ${pf('p_mA','Marge client avion','mAvion','Prévoir 3 à 5 jours de réserve.','jours')}
+   ${pf('p_mM','Marge client maritime','mMar','Prévoir 7 à 14 jours.','jours')}
+   <div class="field"><label for="p_dim">Retrait possible le dimanche ?</label><select class="sel" id="p_dim" data-p="dimanche">${opts(['Oui','Non'],P.dimanche)}</select><div class="help">Si « Non », une disponibilité un dimanche passe au lundi.</div></div>
+   <div class="field"><label for="p_calendarClosePolicy">Dates publiées trop proches de l’heure limite</label><select class="sel" id="p_calendarClosePolicy" data-calendar-policy><option value="exclude"${P.calendarClosePolicy==='exclude'?' selected':''}>Écarter ces dates (recommandé)</option><option value="keep"${P.calendarClosePolicy==='keep'?' selected':''}>Les garder</option></select><div class="help">Garder une date trop proche, c’est promettre un départ que la marchandise peut rater si elle arrive après l’heure limite au dépôt.</div></div>
+  </section>
+  </div><div class="stack">
+  ${list('cats','Catégories de produit','Associez ensuite vos catégories aux offres dans Tarifs.')}
+  ${list('trs','Transitaires','Apparaissent dans les listes des onglets Tarifs et Calendrier.')}
+  ${list('svcs','Services','Standard, Express, Fast…')}
+  ${list('margins','Taux de marge proposés','Choix disponibles dans « Votre prix de vente ».')}
+  <section class="card"><h2>Sauvegarde des données</h2><p class="hint" style="margin-top:0">Tout est enregistré automatiquement dans ce navigateur. Exportez un fichier pour garder une copie ou changer d’appareil.</p>
+   <div class="row"><button class="btn pri" id="bExp">Exporter (JSON)</button><label class="btn" for="bImp">Importer…</label><input id="bImp" type="file" accept=".json,application/json" hidden><button class="btn dng" id="bReset">Réinitialiser</button></div><div id="expOut"></div></section></div></div>`;
+  const yr=()=>{$('#p_yr').textContent=isNum(yuanRate(P))?dec(yuanRate(P))+' Ar / ¥':'—';drawTabs()};yr();
+  v.oninput=v.onchange=e=>{const el=e.target;if(el.dataset.calendarPolicy!==undefined){P.calendarClosePolicy=el.value;persist();return}if(el.dataset.p){let x=el.tagName==='SELECT'&&el.id!=='p_dim'?Number(el.value):el.value;if(el.type==='number')x=el.value===''?0:Number(el.value);if(el.dataset.pct)x=x/100;P[el.dataset.p]=x;persist();yr()}};
+  v.onclick=e=>{
+    const r=e.target.closest('[data-rm]');if(r){const[k,i]=r.dataset.rm.split(':');P[k].splice(+i,1);persist();viewParams(v);return}
+    const a=e.target.closest('[data-add]');if(a){const k=a.dataset.add,inp=$('#add_'+k);let x=inp.value.trim();if(!x)return;if(k==='margins'){x=Number(x.replace(',','.'))/100;if(!isFinite(x)||x<0)return}if(P[k].includes(x))return;P[k].push(x);if(k==='margins')P[k].sort((a,b)=>a-b);persist();viewParams(v)}
+    if(e.target.id==='bExp')exportData();
+    if(e.target.id==='bReset'){const b=e.target;if(b.dataset.sure){localStorage.removeItem(KEY);S=load();location.reload()}else{b.dataset.sure=1;b.textContent='Tout effacer ? Cliquez encore';setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent='Réinitialiser'}},4000)}}
+  };
+  $('#bImp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const j=JSON.parse(await f.text());if(!j.params||!j.tarifs)throw 0;S=normAll(j);persist();toast('Données importées.');go('params');drawTabs()}catch(x){toast('Fichier invalide.')}};
+}
+async function exportData(){
+  const txt=JSON.stringify(S,null,1),name='devis-transitaires-'+dayStr(Math.floor(Date.now()/864e5))+'.json';
+  const url=URL.createObjectURL(new Blob([txt],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Téléchargement de la sauvegarde lancé.');
+}
+
+/* ---------- GUIDE ---------- */
+function viewGuide(v){
+  v.innerHTML=`<div class="card guide" style="margin-top:16px;max-width:820px"><h2>Mode d’emploi : faire un devis en 5 minutes</h2>
+  <p>Renseignez les champs du formulaire : les résultats se recalculent automatiquement. Le brouillon reste dans ce navigateur ; utilisez « Enregistrer le devis » pour le retrouver dans l’historique.</p>
+  <h3>Étape 1 : récupérer les infos du vendeur</h3><p>Demandez pour UN produit : taille emballée en cm, poids avec emballage en kg. Notez le prix d’une pièce en yuan.</p>
+  <h3>Étape 2 : classer le produit</h3><p>Dans le devis, ouvrez « Aide au choix : caractéristiques de transport » et indiquez, si vous les connaissez, la batterie (intégrée ou expédiée séparément), le liquide/poudre/aérosol, le danger, l’aimant et le type d’article. La catégorie proposée explique son motif et indique combien d’offres configurées l’acceptent. Confirmez les consignes particulières auprès du transitaire ; vous pouvez toujours choisir une autre catégorie manuellement.</p>
+  <h3>Étape 3 : remplir l’onglet Devis</h3><p>Six champs suffisent pour commencer : nom, prix, quantité, dimensions (écrivez par exemple 14 x 6 x 6), poids et catégorie. Vérifiez la catégorie proposée et le nombre d’offres correspondantes. Les frais annexes, dates et base de facturation sont dans « Dates et frais supplémentaires ».</p>
+  <h3>Étape 4 : choisir l’offre</h3><p>L’offre la moins chère est choisie automatiquement. Basculez sur « Plus rapide » ou « Choix manuel » si besoin. La section « Les alternatives » présente les meilleures offres. L’onglet Comparatif montre toutes les offres côte à côte.</p>
+  <h3>Étape 5 : lire le résultat</h3><p>Le résumé compare une pièce à la commande complète : si vous saisissez une quantité de 9, la commande contient 9 pièces du même produit. Les frais de transaction sont payés une seule fois, convertis en ariary puis répartis sur les pièces. Ils sont inclus dans le coût unitaire, le prix conseillé et la marge. La marge de la commande correspond au total des ventes moins le coût total. Mettez 0 si ces frais sont déjà comptés dans un autre devis payé en même temps. La date affichée est la livraison client estimée ; les autres étapes sont détaillées dans le calendrier.</p>
+  <h3>Étape 6 : prix de vente et marge</h3><p>Choisissez « Calculer avec la marge » pour obtenir un prix automatique ou « Fixer mon prix » pour saisir un prix manuel. Modifier la marge ne change jamais le coût de revient. Ouvrez « Comparer au prix du marché » pour saisir le prix observé d’un produit comparable et voir l’écart avec votre prix ainsi que la rentabilité estimée à ce prix de marché. Ce repère est facultatif et n’affecte pas le calcul du devis.</p>
+  <h3>Étape 7 : numéro de devis et historique</h3><p>Chaque devis a un numéro (DEV-0001, DEV-0002…). « Nouveau devis » ouvre un formulaire vide. « Enregistrer le devis » contrôle les mesures requises et les taux, puis signale les départs dépassés et les ventes à perte. Les erreurs bloquent l’enregistrement ; les alertes demandent votre confirmation. Le brouillon est conservé automatiquement, mais une modification d’un devis enregistré doit être enregistrée explicitement.</p>
+  <h3>Produits payés ensemble</h3><p>Dans Historique, « Grouper un paiement » permet de sélectionner au moins deux devis et de saisir une référence, les frais uniques en yuans et leur taux de conversion. Les frais sont répartis au prorata du nombre de pièces, avec un ajustement au centime pour que la somme soit exacte. Chaque devis remplace ses anciens frais par sa part commune. Les tarifs et achats enregistrés restent identiques ; les prix calculés avec la marge sont ajustés et les prix manuels restent fixes. Les devis groupés sont verrouillés. « Dissocier le paiement » restaure leurs valeurs avant regroupement. Une duplication démarre un nouveau paiement individuel.</p>
+  <h3>Mettre à jour les tarifs</h3><p>Onglet Tarifs : recherchez une offre, puis cliquez « Voir » ou « Modifier ». Seul « Enregistrer » applique vos modifications ; « Annuler » les abandonne. Une suppression demande confirmation. Nouveau transitaire : ajoutez-le dans Paramètres, puis ajoutez une offre.</p>
+  <h3>Calendrier des départs</h3><p>Les services du calendrier reprennent directement les offres enregistrées dans l’onglet Tarifs. Choisissez le transitaire et le mode : la liste affiche les noms d’offre correspondants. Il n’y a pas de table de correspondance à maintenir. Chez E-SOA, le transport Maritime n’a pas de service distinct : laissez le champ Service vide dans Tarifs et Calendrier. Les services Avion sont Normal et Express. Si un service manque, ajoutez ou corrigez d’abord l’offre dans Tarifs. Avion et Maritime restent séparés.</p>
+  <h3>Saisir une date de départ</h3><p>Dans Calendrier, choisissez le transitaire, le mode et le service de l’offre, puis la date. La date est appliquée aux tarifs ayant le même transitaire, mode et nom de service, quelle que soit la catégorie. Elle remplace leurs jours de départ habituels. Les devis déjà enregistrés ne changent pas ; seuls les nouveaux calculs et les devis modifiés utilisent les règles actuelles.</p>
+  <h3>Dates trop proches de l’heure limite</h3><p>Dans Paramètres, choisissez « Écarter ces dates » (par défaut et recommandé) ou « Les garder ». Quand une date publiée est écartée, le devis indique la date concernée, l’heure d’arrivée estimée au dépôt et l’heure limite manquée. « Les garder » permet de retenir cette date, mais le même avertissement s’affiche : promettre ce départ comporte le risque que la marchandise arrive après l’heure limite au dépôt et le rate.</p>
+  <h3>Mettre à jour les paramètres</h3><p>Onglet Paramètres : taux USD → Ar, marge de sécurité sur le change et ¥ pour 1 USD. Le taux yuan → Ar se calcule tout seul. Mettez aussi à jour les marges client et le retrait le dimanche.</p>
+<p>Chaque nouveau devis enregistré conserve une copie du tarif, des paramètres, de la correspondance et des dates calendrier utilisés. Dans Historique → Voir, ouvrez « Données sources et paramètres figés lors du calcul » pour consulter cette copie et vérifier que le recalcul redonne le même résultat. Modifier les tarifs ensuite ne change pas l’archive. Les anciens devis restent consultables, mais ceux enregistrés avant l’ajout de cet instantané sont signalés comme ne disposant pas des sources et paramètres d’origine.</p>
+  <h3>Sauvegarde</h3><p>Paramètres, section Sauvegarde : exportez un fichier JSON pour garder une copie ou utiliser l’outil sur un autre appareil, puis importez-le.</p>
+  <p class="hint">Un exemple est déjà rempli : 1 spray anti-pluie 50 ml à ¥4,04, colis estimé 14 × 6 × 6 cm et 0,08 kg. Cliquez « Nouveau devis » pour partir d’un formulaire vide.</p></div>`;
+}
+
+function applyTheme(theme){document.documentElement.dataset.theme=theme;const button=$('#themeToggle');button.textContent=theme==='dark'?'☀':'☾';button.setAttribute('aria-label',theme==='dark'?'Activer le thème clair':'Activer le thème sombre');button.title=button.getAttribute('aria-label')}
+let storedTheme;try{storedTheme=localStorage.getItem('devis-transitaires-theme')}catch{}
+applyTheme(storedTheme==='dark'||storedTheme==='light'?storedTheme:matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+$('#themeToggle').onclick=()=>{const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';applyTheme(theme);try{localStorage.setItem('devis-transitaires-theme',theme)}catch{}};
+document.documentElement.lang='fr';
+drawTabs();go(S.tab&&TABS.some(t=>t[0]===S.tab)?S.tab:'devis');
+</script>
+
+<style>
+/* ---- Mobile UX (application mobile uniquement) ---- */
+@media (max-width:760px){
+  body{padding:0 14px calc(96px + env(safe-area-inset-bottom,0px));background:var(--bg)}
+  .app{display:block;padding-top:0}
+  .side{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:30;min-height:0;flex-direction:row;align-items:stretch;gap:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border:0;border-top:1px solid var(--line);border-radius:18px 18px 0 0;background:var(--surface);box-shadow:0 -6px 24px #1a244a1a;overflow:visible}
+  .side .brand,.side .side-foot{display:none}
+  .tabs{display:flex;flex:1;width:100%;margin:0;padding:0;gap:0;overflow:visible;-webkit-mask-image:none;mask-image:none}
+  .tab{flex:1 1 0;min-width:0;min-height:58px;flex-direction:column;justify-content:center;gap:3px;padding:6px 0;border-radius:14px;font-size:11px;line-height:1.15;letter-spacing:-.1px;text-align:center;position:relative;white-space:normal}
+  .tab svg{width:22px;height:22px;flex-shrink:0}
+  .tab span{max-width:100%;overflow-wrap:anywhere;hyphens:auto}
+  .tab[aria-selected=true]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .tab .count{position:absolute;top:4px;right:calc(50% - 20px);font-size:11px;line-height:16px;padding:0 5px}
+  .top{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0;padding:calc(10px + env(safe-area-inset-top,0px)) 0 10px;background:var(--bg)}
+  .top .page-kicker,.top .page-subtitle,.top .local-label{display:none}
+  .top h1{font-size:20px;line-height:1.2;margin:0}
+  .header-tools{padding-top:0}
+  #returnQuote{width:100%;min-height:44px;margin:8px 0}
+  .btn,button.btn{min-height:44px;font-size:15px;border-radius:12px}
+  input,select,textarea,.inp,.sel,.txt{font-size:16px;min-height:44px}
+  .card{border-radius:16px;padding:16px;margin-top:12px;box-shadow:0 1px 2px #1a244a0d}
+  .quotebar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;align-items:center}
+  .quotebar .no,.quotebar #qStat{grid-column:1/-1}
+  .quotebar .btn{width:100%;justify-content:center}
+  .seg{display:flex;overflow-x:auto;scrollbar-width:none;width:100%}
+  .seg button{flex:1 0 auto;min-height:44px}
+  .overlay{align-items:flex-end;padding:0}
+  .overlay>.card{width:100%;max-width:none;margin:0;border-radius:20px 20px 0 0;max-height:88vh;overflow:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+  main table{display:block;overflow-x:auto;white-space:nowrap}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+}
+</style>
+<script>
+/* Retour : chaque écran et chaque fenêtre ouverte est une entrée d’historique. Le bouton Android (retour du système) et le bouton ‹ reviennent d’une étape : fenêtre, écran précédent, Devis. */
+(function(){
+  const navStack=[];let restoring=false,ignorePop=false,pendingFn=null,internal=false,wasOpen=false;
+  const goBase=go;
+  const layerEl=()=>document.getElementById('layer');
+  const layerOpen=()=>!!layerEl().innerHTML.trim();
+  const hasEntry=()=>!!(history.state&&history.state.chinaDevisApp);
+  function push(){try{history.pushState({chinaDevisApp:Date.now()},'')}catch(e){}}
+  function updateBack(){const b=document.getElementById('mBack');if(b)b.hidden=!(layerOpen()||navStack.length||S.tab!=='devis')}
+  go=function(k){
+    const prev=S.tab;goBase(k);
+    if(!restoring&&prev!==k){if(navStack[navStack.length-1]!==prev)navStack.push(prev);push()}
+    updateBack();
+  };
+  function closeLayerSilently(){internal=true;layerEl().innerHTML='';internal=false;wasOpen=false}
+  // Retour d’une étape, sans dépendre de l’historique du navigateur
+  function logicalBack(){
+    if(layerOpen()){closeLayerSilently();updateBack();return}
+    if(navStack.length){const t=navStack.pop();restoring=true;try{go(t)}finally{restoring=false}return}
+    if(S.tab!=='devis'){restoring=true;try{go('devis')}finally{restoring=false}}
+    updateBack();
+  }
+  // Fenêtre fermée par l’utilisateur (bouton Fermer, fond, éléments de menu) : on retire aussi son entrée d’historique
+  new MutationObserver(()=>{
+    const open=layerOpen();
+    if(open&&!wasOpen){wasOpen=true;if(!internal)push()}
+    else if(!open&&wasOpen){wasOpen=false;if(!internal){ignorePop=true;history.back()}}
+    updateBack();
+  }).observe(layerEl(),{childList:true});
+  window.addEventListener('popstate',()=>{
+    if(ignorePop){ignorePop=false;return}
+    if(pendingFn){const f=pendingFn;pendingFn=null;closeLayerSilently();f();return}
+    logicalBack();
+  });
+  window.mBack=()=>{if(hasEntry())history.back();else logicalBack()};
+  window.mAfterClose=fn=>{if(hasEntry()&&layerOpen()){pendingFn=fn;history.back()}else{closeLayerSilently();fn()}};
+  window.mGoFromMenu=k=>window.mAfterClose(()=>go(k));
+  const top=document.querySelector('.top');
+  const btn=document.createElement('button');
+  btn.id='mBack';btn.type='button';btn.className='m-back';btn.hidden=true;btn.setAttribute('aria-label','Retour');
+  btn.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+  btn.onclick=()=>window.mBack();
+  top.prepend(btn);
+  updateBack();
+})();
+</script>
+<style>
+/* ---- Mobile glassmorphisme : surfaces translucides, flou et bordures fines ---- */
+:root{--glass:rgba(255,255,255,.55);--glass-strong:rgba(255,255,255,.85);--glass-line:rgba(255,255,255,.75);--glass-shadow:0 8px 32px #1a244a1a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--glass:rgba(30,36,54,.55);--glass-strong:rgba(30,36,54,.88);--glass-line:rgba(255,255,255,.14);--glass-shadow:0 8px 32px #00000066}}
+:root[data-theme="dark"]{--glass:rgba(30,36,54,.55);--glass-strong:rgba(30,36,54,.88);--glass-line:rgba(255,255,255,.14);--glass-shadow:0 8px 32px #00000066}
+@media (max-width:760px){
+  body{background:var(--bg);font-size:15px;min-height:100vh;position:relative;isolation:isolate}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(60% 40% at 15% 10%,#7fd6c9 0%,transparent 70%),radial-gradient(55% 40% at 90% 30%,#b9c8ff 0%,transparent 70%),radial-gradient(60% 45% at 40% 95%,#ffd9b8 0%,transparent 70%)}
+  :root:not([data-theme="light"]) body::before{opacity:.35}
+  .top{background:transparent;margin:0;padding:14px 0 10px}
+  .top h1{font-size:20px;font-weight:600}
+  .theme-button,#returnQuote{display:none}
+  .quotebar #bSave{display:none}
+  .card{background:var(--glass)!important;}
+  .btn:not(.pri){background:var(--glass)!important}
+  .inp,.sel,.txt{background:var(--glass)!important}
+  .price-summary,.result,.result-table,.sale-hero,.tile{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+  .card{background:var(--glass);-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--glass-line);border-radius:22px;box-shadow:var(--glass-shadow);padding:18px 16px;margin:14px 0}
+  .card h2{font-size:16px;font-weight:600;margin:0 0 6px}
+  .btn{background:var(--glass);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid var(--glass-line);border-radius:14px;box-shadow:none;font-weight:500;color:var(--ink)}
+  .btn.pri{background:linear-gradient(135deg,rgba(11,127,119,.95),rgba(11,127,119,.75));border-color:transparent;color:var(--accent-ink);box-shadow:0 8px 22px #0b7f7745}
+  .btn:active{transform:scale(.98)}
+  .inp,.sel,.txt{background:var(--glass);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--glass-line);border-radius:14px;padding:11px 12px;box-shadow:none}
+  .inp:focus,.sel:focus,.txt:focus{border-color:var(--accent);box-shadow:0 0 0 3px #0b7f7726}
+  .field label,.field>label{font-weight:500;font-size:13px;color:var(--muted)}
+  .side{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));top:auto;z-index:30;min-height:0;padding:4px;border:1px solid var(--glass-line);border-radius:24px;background:var(--glass-strong);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);box-shadow:var(--glass-shadow);flex-direction:row;align-items:stretch;gap:0}
+  .side .brand,.side .side-foot{display:none}
+  .tabs{width:100%}
+  .tab{background:none;border-radius:18px;min-height:56px;color:var(--muted);font-weight:400}
+  .tab[aria-selected=true]{background:rgba(11,127,119,.16);color:var(--accent);font-weight:600}
+  .tab .count{background:var(--accent)}
+  .m-bar{position:fixed;z-index:25;display:flex;align-items:center;justify-content:space-between;gap:12px;left:10px;right:10px;bottom:calc(88px + env(safe-area-inset-bottom,0px));border:1px solid var(--glass-line);border-radius:22px;background:var(--glass-strong);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);box-shadow:var(--glass-shadow);padding:12px 12px 12px 18px}
+  .m-bar[hidden]{display:none}
+  .m-bar>div{min-width:0}
+  .m-bar small,.m-bar strong{display:block}
+  .m-bar strong{font-size:18px;font-weight:600;color:var(--accent)}
+  .m-bar small{font-size:12px;color:var(--muted)}
+  .m-bar .btn{min-height:46px;padding:0 18px;white-space:nowrap}
+  body:has(.m-bar:not([hidden])){padding-bottom:calc(200px + env(safe-area-inset-bottom,0px))}
+  body{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))}
+  .overlay{background:#0a0f1f59;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+  .overlay>.card{background:var(--glass-strong);border-radius:26px 26px 0 0;border-bottom:0;box-shadow:var(--glass-shadow);margin:0;padding:20px 16px}
+}
+</style>
+<div class="m-bar" id="mBar" hidden><div><small>Prix de vente / pièce</small><strong id="mPrice">—</strong></div><button class="btn pri" id="mSave" type="button">Enregistrer</button></div>
+<script>
+/* Barre de prix : reprend le prix de vente affiché et déclenche l’enregistrement existant. */
+(function(){
+  const bar=document.getElementById('mBar'),price=document.getElementById('mPrice');
+  document.getElementById('mSave').addEventListener('click',()=>{const b=document.getElementById('bSave');if(b)b.click()});
+  function sync(){
+    const on=S.tab==='devis';
+    if(bar.hidden===on)bar.hidden=!on;
+    const sp=document.getElementById('sellingPrice');
+    const v=on&&sp?sp.textContent.trim()||'—':'—';
+    if(price.textContent!==v)price.textContent=v;
+  }
+  new MutationObserver(sync).observe(document.body,{subtree:true,childList:true,characterData:true});
+  sync();
+})();
+</script>
+<style>
+/* ---- Mobile : tokens clair/sombre, cartes blanches, barre flottante, bouton retour ---- */
+@media (max-width:760px){
+  :root{--m-bg:#eef3fa;--m-surface:#ffffff;--m-surface2:#f4f6fb;--m-ink:#1f2933;--m-muted:#5b6575;--m-line:#e3e8f0;--m-nav:#1c2540;--m-nav-ink:#9aa4bd;--m-nav-on:#ffffff;--m-nav-on-ink:#0b7f77;--m-shadow:0 2px 12px #14213d12;--m-on-acc:#ffffff;--m-scrim:#14213d66}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--m-bg:#0e1321;--m-surface:#172033;--m-surface2:#1e2940;--m-ink:#e7ecf5;--m-muted:#a3aec4;--m-line:rgba(255,255,255,.09);--m-nav:#232e47;--m-nav-ink:#a3aec4;--m-nav-on:#33405f;--m-nav-on-ink:#6fd8cc;--m-shadow:0 2px 14px #00000059;--accent:#3cc0b2;--accent-soft:rgba(60,192,178,.16);--accent-ink:#0b1220;--m-on-acc:#0b1220;--m-scrim:#000000aa}}
+  :root[data-theme="dark"]{--m-bg:#0e1321;--m-surface:#172033;--m-surface2:#1e2940;--m-ink:#e7ecf5;--m-muted:#a3aec4;--m-line:rgba(255,255,255,.09);--m-nav:#232e47;--m-nav-ink:#a3aec4;--m-nav-on:#33405f;--m-nav-on-ink:#6fd8cc;--m-shadow:0 2px 14px #00000059;--accent:#3cc0b2;--accent-soft:rgba(60,192,178,.16);--accent-ink:#0b1220;--m-on-acc:#0b1220;--m-scrim:#000000aa}
+  body{background:var(--m-bg);color:var(--m-ink);padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+  body:has(.m-bar:not([hidden])){padding-bottom:calc(206px + env(safe-area-inset-bottom,0px))}
+  body::before{content:none}
+  .top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;box-sizing:border-box;width:auto;margin:0 -14px;padding:16px;background:var(--m-bg);border:0}
+  .top>div:first-child{flex:1;min-width:0}
+  .top h1{font-size:22px;font-weight:700;letter-spacing:-.3px;color:var(--m-ink)}
+  .m-back{flex:0 0 auto;width:42px;height:42px;border-radius:50%;border:0;background:var(--m-surface);color:var(--m-ink);box-shadow:var(--m-shadow);display:grid;place-items:center;cursor:pointer}
+  .m-back[hidden]{display:none}
+  #returnQuote,#bNew,.quotebar #bSave{display:none}
+  .theme-button{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;padding:0;box-shadow:none;background:transparent!important;border:0;color:var(--m-muted)}
+  .card{background:var(--m-surface)!important;border:0!important;border-radius:20px;box-shadow:var(--m-shadow);padding:18px;margin:12px 0;color:var(--m-ink)}
+  .card h2,.card strong,.card b{color:var(--m-ink)}
+  .btn{background:var(--m-surface)!important;border:0;border-radius:999px;box-shadow:var(--m-shadow);color:var(--m-ink);min-height:46px}
+  .btn.pri{background:var(--accent)!important;color:var(--m-on-acc)!important;box-shadow:0 6px 16px #0b7f7740}
+  .inp,.sel,.txt{background:var(--m-surface2)!important;border:0;border-radius:14px;color:var(--m-ink)}
+  .inp:focus,.sel:focus,.txt:focus{box-shadow:0 0 0 2px var(--accent)}
+  .field label,.field>label,.hint,.help,.note{color:var(--m-muted)}
+  .price-summary,.result,.result-table,.sale-hero,.tile{background:transparent!important;border:0!important;box-shadow:none!important}
+  /* Barre flottante */
+  .side{left:50%;transform:translateX(-50%);top:auto;bottom:calc(14px + env(safe-area-inset-bottom,0px));width:calc(100% - 28px);max-width:440px;z-index:30;min-height:0;display:flex;align-items:center;gap:4px;padding:8px;background:var(--m-nav);border:0;border-radius:999px;box-shadow:0 12px 30px #0000004d;overflow:visible}
+  .side .brand,.side .side-foot{display:none}
+  .tabs{flex:3 1 0;min-width:0;display:flex;margin:0;padding:0;gap:0;overflow:visible}
+  #tab-tarifs,#tab-cal,#tab-params,#tab-guide{display:none}
+  .tab,.nav-more{flex:1 1 0;min-width:0;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 0;border:0;border-radius:999px;background:none;color:var(--m-nav-ink);font-size:11px;font-weight:500}
+  .tab[aria-selected=true],.nav-more.is-on{background:var(--m-nav-on);color:var(--m-nav-on-ink);font-weight:600}
+  .tab .count{background:var(--accent);color:var(--m-on-acc)}
+  .nav-add{flex:0 0 auto;width:54px;height:54px;border-radius:50%;border:0;background:var(--accent);color:var(--m-on-acc);display:grid;place-items:center;box-shadow:0 8px 18px #0b7f7760;margin:0 2px}
+  .nav-add:active{transform:scale(.96)}
+  /* Barre de prix au-dessus de la navigation */
+  .m-bar{left:14px;right:14px;bottom:calc(92px + env(safe-area-inset-bottom,0px));border:0;border-radius:22px;background:var(--m-surface);box-shadow:var(--m-shadow);padding:12px 12px 12px 18px}
+  .m-bar strong{color:var(--m-ink)}
+  .m-bar small{color:var(--m-muted)}
+  /* Fenêtres */
+  .overlay{background:var(--m-scrim)}
+  .overlay>.card{background:var(--m-surface)!important;border-radius:24px 24px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom,0px))}
+  .more-list{display:grid;gap:10px;margin-top:12px}
+  .more-item{background:var(--m-surface2)!important;color:var(--m-ink);justify-content:flex-start;padding:0 18px}
+  .m-close{margin-top:6px;color:var(--m-muted)}
+}
+</style>
+<script>
+/* Navigation : Devis, Historique, « + » (nouveau devis), Comparatif, Plus. Le menu Plus se ferme avec Fermer ou en touchant le fond. */
+(function(){
+  const tabs=document.getElementById('tabs'),layer=document.getElementById('layer');
+  const addBtn=document.createElement('button');
+  addBtn.id='navAdd';addBtn.type='button';addBtn.className='nav-add';addBtn.setAttribute('aria-label','Nouveau devis');
+  addBtn.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  const moreBtn=document.createElement('button');
+  moreBtn.id='navMore';moreBtn.type='button';moreBtn.className='nav-more';moreBtn.setAttribute('aria-label','Plus');
+  moreBtn.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Plus</span>';
+  tabs.after(addBtn,moreBtn);
+  addBtn.onclick=()=>{go('devis');const b=document.getElementById('bNew');if(b)b.click()};
+  const MORE=[['tarifs','Tarifs des transitaires'],['cal','Calendrier des départs'],['params','Paramètres'],['guide','Mode d’emploi']];
+  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list">${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button></div></div></div>`};
+  layer.addEventListener('click',e=>{
+    const g=e.target.closest('[data-go]');
+    if(g){window.mGoFromMenu(g.dataset.go);return}
+    if(e.target.closest('[data-theme-toggle]')){document.getElementById('themeToggle').click();layer.innerHTML='';return}
+    if(e.target.classList.contains('overlay')||e.target.closest('.m-close')){layer.innerHTML=''}
+  });
+  const SECONDARY=['tarifs','cal','params','guide'];
+  function sync(){moreBtn.classList.toggle('is-on',SECONDARY.includes(S.tab));addBtn.hidden=S.tab==='comp'}
+  new MutationObserver(sync).observe(tabs,{childList:true,subtree:true,attributes:true});
+  sync();
+})();
+</script>
+<style>#hlist th:last-child,#hlist td:last-child{display:none}#hlist tbody tr{cursor:pointer}.dng{color:#c0392b}</style>
+<script>
+/* Historique : toucher un devis ouvre le menu Voir · Modifier · Dupliquer · Supprimer. */
+(function(){
+  const layer=document.getElementById('layer');
+  function openSheet(no){
+    const q=S.quotes.find(x=>x.no===no);if(!q)return;
+    const d=`data-no="${esc(q.no)}"`;
+    layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>${esc(q.no)} · ${esc(q.inputs.name)}</h2><p class="hint">${ar(q.res.pv)} / pièce · ${esc(q.res.tr)}</p><div class="more-list">
+      <button class="btn more-item" data-qa="view" ${d}>Voir</button>
+      <button class="btn more-item" data-qa="edit" ${d}>Modifier</button>
+      <button class="btn more-item" data-qa="dup" ${d}>Dupliquer</button>
+      <button class="btn more-item dng" data-qa="del" ${d}>Supprimer</button>
+      <button class="btn more-item m-close" data-close>Fermer</button></div></div></div>`;
+  }
+  function confirmDelete(no){
+    layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Supprimer ${esc(no)} ?</h2><p class="hint">Le devis sera retiré de l’historique. Son numéro ne sera pas réutilisé.</p><div class="more-list"><button class="btn more-item dng" data-qa="del-ok" data-no="${esc(no)}">Supprimer</button><button class="btn more-item m-close" data-close>Annuler</button></div></div></div>`;
+  }
+  window.mQuoteAction=(a,no)=>{
+    const q=S.quotes.find(x=>x.no===no);if(!q)return;
+    if(a==='view'){showQuote(q);return}
+    if(q.paymentGroupId&&(a==='edit'||a==='del')){toast('Dissociez d’abord le paiement groupé pour modifier ou supprimer ce devis.');return}
+    if(a==='del'){confirmDelete(no);return}
+    if(a==='del-ok'){window.mAfterClose(()=>{S.quotes=S.quotes.filter(x=>x.no!==no);persist();drawTabs();drawHisto();toast('Devis '+no+' supprimé.')});return}
+    if(a==='edit'){window.mAfterClose(()=>{S.draft=JSON.parse(JSON.stringify(q.inputs));normalizeLegacyOffer(S.draft);S.editing=no;dirty=false;go('devis')});return}
+    if(a==='dup'){window.mAfterClose(()=>{S.draft={...JSON.parse(JSON.stringify(q.inputs)),no:nextNo()};normalizeLegacyOffer(S.draft);delete S.draft.paymentAllocation;S.editing=null;dirty=true;go('devis');toast('Copie prête : '+S.draft.no+' (nouveau paiement, frais individuels).')});return}
+  };
+  document.addEventListener('click',e=>{
+    if(!e.target.closest||!e.target.closest('#hlist'))return;
+    if(e.target.closest('[data-a]'))return;
+    const tr=e.target.closest('tbody tr');if(!tr)return;
+    const no=tr.cells[0].childNodes[0].textContent.trim();
+    openSheet(no);
+  });
+  layer.addEventListener('click',e=>{const b=e.target.closest('[data-qa]');if(b)window.mQuoteAction(b.dataset.qa,b.dataset.no)});
+})();
+</script>
+<style>.fm{display:flex!important;flex-direction:column;align-items:stretch;gap:10px;margin-top:12px}.fm label[for=hq]{order:0;font-size:13px;font-weight:600;color:var(--m-muted)}.fm #hq{order:1;width:100%!important;max-width:none!important}.fm #groupPayment{order:2;width:100%;justify-content:center}</style>
+<style>
+/* Bouton Fermer (×) dans toutes les fenêtres modales (dialog) */
+dialog .dlg-x{position:absolute;top:10px;right:10px;z-index:2;width:44px;height:44px;border:0;border-radius:50%;background:var(--m-surface2,#eef2f7);color:var(--m-ink,#1b2430);display:grid;place-items:center;cursor:pointer;padding:0}
+dialog .dlg-x svg{width:20px;height:20px}
+dialog h2{padding-right:52px}
+/* Catégories acceptées : grille propre, case et texte alignés */
+dialog fieldset.wide .row{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+dialog fieldset.wide label{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 12px;border-radius:12px;background:var(--m-surface2,#eef2f7);font-size:14px;line-height:1.25;margin:0;cursor:pointer;min-width:0;overflow-wrap:anywhere}
+dialog fieldset.wide input[type=checkbox]{flex:0 0 auto;width:18px;height:18px;margin:0;accent-color:var(--m-accent,#0f766e)}
+dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
+/* Thème : déplacé dans Plus */
+#themeToggle{display:none!important}
+.nav-add[hidden]{display:none!important}
+@media(max-width:600px){
+  .tariff-card>.row:first-child{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  .tariff-card>.row:first-child .btn{width:100%}
+  .tariff-card .filter-bar label{display:grid;grid-template-columns:minmax(0,1fr);width:100%;gap:8px}
+  .tariff-card #tariffSearch{width:100%;max-width:none;min-height:48px}
+  .tariff-card .tw,.calendar-card .tw{overflow:visible}
+  .tariff-list,.calendar-card .tw table{border-collapse:separate;border-spacing:0;width:100%}
+  .tariff-list thead,.calendar-card .tw thead{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  .tariff-list tbody,.calendar-card .tw tbody{display:grid;gap:10px}
+  .tariff-list tbody tr:not(.empty-row),.calendar-card .tw tbody tr:not(.empty-row){display:grid;grid-template-columns:minmax(0,1fr);padding:8px 12px;background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px}
+  .tariff-list tbody td,.calendar-card .tw tbody td{display:grid;grid-template-columns:minmax(6.3rem,.75fr) minmax(0,1.25fr);gap:10px;padding:8px 2px;border:0;font-size:14px;white-space:normal}
+  .tariff-list tbody td::before,.calendar-card .tw tbody td::before{color:var(--m-muted);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .tariff-list tbody td:nth-child(1)::before{content:"Transitaire / service"}
+  .tariff-list tbody td:nth-child(2)::before{content:"Catégories"}
+  .tariff-list tbody td:nth-child(3)::before{content:"Tarif"}
+  .tariff-list tbody td:nth-child(4)::before{content:"Délai"}
+  .tariff-list tbody td:nth-child(5)::before{content:"Actions"}
+  .tariff-list tbody td:last-child .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .tariff-list tbody td:last-child .row .btn:last-child{grid-column:1/-1}
+  .tariff-list tbody td:last-child .btn{min-height:44px}
+  .calendar-card>.row:first-child{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  .calendar-card>.row:first-child>.seg,.calendar-card>.row:first-child>#cAdd{width:100%}
+  .calendar-card>.row:first-child>.seg button{min-height:44px}
+  .calendar-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .calendar-filters label{font-size:12px}
+  .calendar-filters .inp,.calendar-filters .sel{min-height:46px;font-size:14px}
+  .calendar-card .tw tbody td:nth-child(1)::before{content:"Transitaire"}
+  .calendar-card .tw tbody td:nth-child(2)::before{content:"Mode"}
+  .calendar-card .tw tbody td:nth-child(3)::before{content:"Service"}
+  .calendar-card .tw tbody td:nth-child(4)::before{content:"Date de départ"}
+  .calendar-card .tw tbody td:nth-child(5)::before{content:"Remarque"}
+  .calendar-card .tw tbody td:nth-child(6)::before{content:"Actions"}
+  .calendar-card .tw tbody td:nth-child(6){display:block;padding-top:10px;border-top:1px solid var(--m-line)}
+  .calendar-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .calendar-actions>.btn,.calendar-actions .row-actions>summary{display:flex;min-height:44px;align-items:center;justify-content:center;width:100%}
+  .calendar-actions .row-actions[open]{grid-column:1/-1}
+  .calendar-actions .row-actions>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .calendar-actions .row-actions>div .btn{min-height:44px}
+  .empty-row,.tariff-list .empty-row,.calendar-card .empty-row{display:block;padding:0;background:var(--m-surface2);border-radius:14px}
+  .empty-row td,.tariff-list .empty-row td,.calendar-card .empty-row td{display:block;padding:14px;border:0}
+  .empty-row td::before{content:none!important}
+  .tariff-list .empty-row td{grid-column:1/-1}
+}
+</style>
+<script>
+/* Chaque fenêtre (Ajouter une offre, Ajouter un départ, paiement groupé, avis…) reçoit un bouton × en haut à droite. */
+(function(){
+  const show=HTMLDialogElement.prototype.showModal;
+  HTMLDialogElement.prototype.showModal=function(){
+    show.call(this);
+    if(this.querySelector('.dlg-x'))return;
+    const b=document.createElement('button');
+    b.type='button';b.className='dlg-x';b.setAttribute('aria-label','Fermer');
+    b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    b.onclick=()=>this.close();
+    this.prepend(b);
+  };
+})();
+</script>
+</body></html>

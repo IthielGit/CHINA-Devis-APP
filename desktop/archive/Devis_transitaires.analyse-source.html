@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Devis transitaires</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#203C50; --ink-2:#2f5470; --bg:#F3F5F4; --surface:#FFFFFF; --surface-2:#EAEFEE;
+  --text:#1B2A33; --muted:#5D6B73; --line:#D6DEDD;
+  --in-bg:#FFF3BF; --in-line:#E4C95A; --in-text:#1546B5;
+  --ok:#2E7D4F; --ok-bg:#E1F2E7; --warn:#A32D2D; --warn-bg:#FBE7E5; --amber:#8A5A00; --amber-bg:#FFF0D1;
+  --gray-row:#EEF0F0; --gray-text:#8A9499;
+  --on-ink:#FFFFFF; --on-ink-muted:#B9CCD8; --accent:#F2B705; --primary:#203C50; --primary-h:#2f5470;
+  --radius-s:6px; --radius-m:10px;
+  --f-body:"Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --f-display:"Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+  color-scheme: light;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#16293a; --ink-2:#22405a; --bg:#0F1A22; --surface:#16232D; --surface-2:#1D2D38;
+    --text:#E4EBEF; --muted:#9AAAB3; --line:#2B3D49;
+    --in-bg:#3A3217; --in-line:#7A6524; --in-text:#A9C4FF;
+    --ok:#6FCB94; --ok-bg:#183A27; --warn:#F08A80; --warn-bg:#3D1F1D; --amber:#F2C66B; --amber-bg:#3A2D12;
+    --gray-row:#1A2630; --gray-text:#6C7C85;
+    --on-ink:#F2F6F8; --on-ink-muted:#8FA9BA; --accent:#F2C440; --primary:#2E6690; --primary-h:#3A7AA8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+    --ink:#16293a; --ink-2:#22405a; --bg:#0F1A22; --surface:#16232D; --surface-2:#1D2D38;
+    --text:#E4EBEF; --muted:#9AAAB3; --line:#2B3D49;
+    --in-bg:#3A3217; --in-line:#7A6524; --in-text:#A9C4FF;
+    --ok:#6FCB94; --ok-bg:#183A27; --warn:#F08A80; --warn-bg:#3D1F1D; --amber:#F2C66B; --amber-bg:#3A2D12;
+    --gray-row:#1A2630; --gray-text:#6C7C85;
+    --on-ink:#F2F6F8; --on-ink-muted:#8FA9BA; --accent:#F2C440; --primary:#2E6690; --primary-h:#3A7AA8;
+    color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+header.top{background:var(--ink);color:var(--on-ink);position:sticky;top:env(safe-area-inset-top,0px);z-index:20}
+.top-inner{max-width:1280px;margin:0 auto;padding:10px 20px 0;display:flex;flex-wrap:wrap;align-items:flex-end;gap:4px 24px}
+.brand{display:flex;align-items:baseline;gap:10px;padding-bottom:10px}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:21px;margin:0;letter-spacing:-.01em}
+.brand span{color:var(--on-ink-muted);font-size:13px}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;margin-left:auto;scrollbar-width:none;max-width:100%}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{background:none;border:0;color:var(--on-ink-muted);padding:9px 13px 11px;cursor:pointer;font-weight:600;font-size:14px;border-radius:8px 8px 0 0;white-space:nowrap;position:relative}
+nav.tabs button:hover{color:var(--on-ink)}
+nav.tabs button[aria-selected="true"]{background:var(--bg);color:var(--text)}
+.badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:#1B2A33;font-size:11px;font-weight:700;margin-left:6px;vertical-align:1px}
+
+main{max-width:1280px;margin:0 auto;padding:22px 20px 60px}
+.view{display:none}.view.active{display:block}
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px 20px;margin-bottom:16px}
+.page-head h2{font-family:var(--f-display);font-size:27px;line-height:1.15;margin:0 0 4px;font-weight:700;letter-spacing:-.015em}
+.page-head p{margin:0;color:var(--muted);max-width:72ch}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--text);padding:8px 14px;border-radius:var(--radius-s);cursor:pointer;font-weight:600;font-size:14px;line-height:1.2;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--ink-2)}
+.btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn.primary:hover{background:var(--primary-h)}
+.btn.danger{color:var(--warn)}
+.btn.primary.danger{background:var(--warn);border-color:var(--warn);color:#fff}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.ghost:hover{background:var(--surface-2)}
+.linkbtn{background:none;border:0;padding:0;color:var(--in-text);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-size:inherit}
+
+/* Devis header */
+.quote-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:16px}
+.quote-bar .id{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;flex:1;min-width:240px}
+.quote-bar strong{font-family:var(--f-display);font-size:24px;letter-spacing:.01em}
+.status{font-style:italic;color:var(--muted);font-size:14px}
+.status.warn{font-style:normal;font-weight:700;color:var(--warn)}
+
+.devis-grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px;align-items:start}
+.summary-col{position:sticky;top:76px}
+@media (max-width:980px){.devis-grid{grid-template-columns:1fr}.summary-col{display:none}}
+
+/* Stepper */
+.stepper{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;counter-reset:st}
+.stepper button{display:flex;gap:10px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:10px 12px;cursor:pointer}
+.stepper .n{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;background:var(--surface-2);color:var(--muted)}
+.stepper .t{display:block;font-weight:700;font-size:14px;line-height:1.2}
+.stepper .s{display:block;font-size:12.5px;color:var(--muted)}
+.stepper button[aria-current="step"]{border-color:var(--primary);box-shadow:inset 0 -3px 0 var(--primary)}
+.stepper button[aria-current="step"] .n{background:var(--primary);color:#fff}
+.stepper button.done .n{background:var(--ok-bg);color:var(--ok)}
+.stepper button.todo .s{color:var(--amber)}
+@media (max-width:560px){.stepper .s{display:none}.stepper button{padding:8px;gap:8px}.stepper .t{font-size:13px}}
+.step{display:none}.step.active{display:block}
+.step-nav{display:flex;justify-content:space-between;gap:10px;margin:4px 0 22px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:18px 18px 10px;margin-bottom:16px}
+.panel h3{font-family:var(--f-display);font-size:18px;margin:0 0 4px;font-weight:700}
+.panel .sub{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 16px;margin-bottom:14px}
+.fld label,.fld .lab{display:flex;gap:6px;align-items:center;font-weight:600;font-size:14px;margin-bottom:5px}
+.fld .hint{color:var(--muted);font-size:12.5px;margin:4px 0 0}
+.tip-btn{flex:none;width:19px;height:19px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);font-size:11px;font-weight:700;cursor:pointer;line-height:1;color:var(--muted);padding:0}
+.tip{background:var(--surface-2);border-left:3px solid var(--ink-2);padding:8px 12px;font-size:13px;border-radius:0 var(--radius-s) var(--radius-s) 0;white-space:pre-line;display:none;margin:4px 0 6px}
+.tip.open{display:block}
+.inp{width:100%;background:var(--in-bg);border:1px solid var(--in-line);color:var(--in-text);font-weight:600;padding:8px 10px;border-radius:var(--radius-s);min-height:40px}
+.inp:focus{outline:2px solid var(--in-text);outline-offset:0}
+.inp.bad{border-color:var(--warn);box-shadow:0 0 0 2px var(--warn-bg)}
+select.inp{cursor:pointer}
+.unit{position:relative}
+.unit .inp{padding-right:42px}
+.unit span{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--in-text);opacity:.7;font-weight:600;font-size:13px;pointer-events:none}
+textarea.inp{min-height:90px;resize:vertical;font-weight:500}
+
+/* segmented + toggles */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:var(--radius-s);background:var(--surface);cursor:pointer;font-weight:600;font-size:13.5px}
+.seg input:checked + span{color:var(--in-text)}
+.seg label:has(input:checked){background:var(--in-bg);border-color:var(--in-line);color:var(--in-text)}
+.seg label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+.yesno{display:grid;gap:8px}
+.yesno label{display:flex;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:var(--radius-s);cursor:pointer;font-weight:500;margin:0}
+.yesno label:has(input:checked){background:var(--in-bg);border-color:var(--in-line);color:var(--in-text);font-weight:600}
+.yesno input{width:18px;height:18px;accent-color:var(--in-text)}
+.catbox{background:var(--surface-2);border-radius:var(--radius-s);padding:12px 14px;margin:6px 0 14px}
+.catbox b{font-family:var(--f-display);font-size:18px}
+.catbox p{margin:2px 0 0;font-size:13.5px;color:var(--muted)}
+.catbox .note{color:var(--amber);font-weight:600}
+
+/* alerts */
+.alerts{display:grid;gap:8px;margin:4px 0 14px}
+.alert{border-radius:var(--radius-s);padding:10px 12px;font-size:14px;background:var(--warn-bg);border-left:4px solid var(--warn)}
+.alert.info{background:var(--amber-bg);border-left-color:var(--amber)}
+.alert.ok{background:var(--ok-bg);border-left-color:var(--ok)}
+.alert .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.paste{border:1px dashed var(--in-line);border-radius:var(--radius-m);padding:12px;margin-bottom:16px;background:var(--surface)}
+.detect{margin-top:10px;display:grid;gap:6px}
+.detect label{display:flex;gap:8px;align-items:flex-start;font-size:14px;font-weight:500}
+.detect small{color:var(--muted);display:block}
+details.adv{border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+details.adv summary{cursor:pointer;font-weight:600;color:var(--muted);padding:4px 0 10px}
+
+/* offer cards */
+.modebar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px}
+.cards{display:grid;gap:10px;margin-bottom:12px}
+.card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-m);background:var(--surface);cursor:pointer;text-align:left;width:100%}
+.card:hover{border-color:var(--ink-2)}
+.card.sel{border-color:var(--primary);box-shadow:inset 4px 0 0 var(--accent),0 0 0 1px var(--primary)}
+.card .who{font-weight:700}
+.card .svc{color:var(--muted);font-size:13px}
+.card .price{font-family:var(--f-display);font-weight:700;font-size:20px;text-align:right;white-space:nowrap}
+.card .date{text-align:right;font-size:13.5px;white-space:nowrap}
+.card .meta{grid-column:1/-1;font-size:12.5px;color:var(--muted)}
+.card .tags{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.tag{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--muted)}
+.tag.cheap,.tag.yes{background:var(--ok-bg);color:var(--ok)}
+.tag.fast{background:var(--in-bg);color:var(--in-text)}
+.tag.warn{background:var(--warn-bg);color:var(--warn)}
+.tag.amber{background:var(--amber-bg);color:var(--amber)}
+details.more{margin:6px 0 14px}
+details.more summary{cursor:pointer;font-weight:600;font-size:14px;padding:6px 0}
+.excl{font-size:13.5px;margin:6px 0 0;padding-left:18px;color:var(--muted)}
+
+/* ticket / summary */
+.ticket{background:var(--ink);color:var(--on-ink);border-radius:var(--radius-m);padding:18px 20px 22px;position:relative;overflow:hidden;margin-bottom:12px}
+.ticket::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:repeating-linear-gradient(90deg,var(--accent) 0 18px,transparent 18px 28px)}
+.ticket .lbl{color:var(--on-ink-muted);font-size:13px;margin:0}
+.ticket .big{font-family:var(--f-display);font-weight:700;font-size:40px;line-height:1.05;margin:2px 0 2px;letter-spacing:-.02em}
+.ticket .big small{font-size:.45em;font-weight:500;margin-left:6px;color:var(--on-ink-muted)}
+.ticket .big.dim{opacity:.55}
+.ticket .mid{font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1.2}
+.ticket .sep{border-top:1px solid rgba(255,255,255,.18);margin:12px 0 10px}
+.ticket .offer{font-size:13px;color:var(--on-ink-muted);margin-top:10px}
+.ticket .alertline{background:rgba(240,138,128,.18);color:#FFD9D4;border-radius:5px;padding:6px 10px;font-size:13px;font-weight:600;margin-top:10px}
+.kv{width:100%;border-collapse:collapse;font-size:14px}
+.kv td{padding:7px 0;border-top:1px solid var(--line);vertical-align:top}
+.kv tr:first-child td{border-top:0}
+.kv td:first-child{color:var(--muted);padding-right:12px}
+.kv td:last-child{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.kv tr.total td{font-weight:700;color:var(--text);font-size:15.5px;border-top:2px solid var(--text)}
+.kv .note{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.verify{background:var(--warn-bg);border-radius:var(--radius-s);padding:10px 12px;font-size:13.5px;margin:8px 0 12px}
+.verify b{color:var(--warn)}
+.loss{color:var(--warn);font-weight:700}
+.assume{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.twocol{grid-template-columns:1fr}}
+
+.bottombar{display:none}
+@media (max-width:980px){
+  .bottombar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--ink);color:var(--on-ink);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));gap:12px;align-items:center;box-shadow:0 -6px 20px rgba(0,0,0,.2)}
+  .bottombar .p{font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1.1}
+  .bottombar .d{font-size:12.5px;color:var(--on-ink-muted)}
+  .bottombar .btn{margin-left:auto}
+  body.on-devis main{padding-bottom:100px}
+}
+
+/* tables */
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m)}
+table.grid{border-collapse:collapse;width:100%;font-size:13.5px}
+table.grid th{background:var(--surface-2);text-align:left;font-weight:600;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:13px}
+table.grid td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.grid td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.grid td.d{white-space:nowrap;font-variant-numeric:tabular-nums}
+table.grid tr.incompat td{background:var(--gray-row);color:var(--gray-text)}
+table.grid td.best{background:var(--ok-bg);color:var(--ok);font-weight:700}
+table.grid td.wrap{min-width:240px;max-width:420px}
+table.grid tr:last-child td{border-bottom:0}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.cell-inp{width:100%;min-width:110px;background:var(--in-bg);border:1px solid var(--in-line);color:var(--in-text);font-weight:600;padding:5px 8px;border-radius:5px}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px}
+.filters .fld{min-width:150px}
+.filters .fld.grow{flex:1;min-width:200px}
+select.st{border:1px solid var(--line);border-radius:20px;padding:3px 8px;font-size:12.5px;font-weight:700;background:var(--surface)}
+select.st[data-v="Envoyé"]{background:var(--in-bg);color:var(--in-text)}
+select.st[data-v="Accepté"],select.st[data-v="Commandé"]{background:var(--ok-bg);color:var(--ok)}
+select.st[data-v="Livré"]{background:var(--surface-2);color:var(--muted)}
+select.st[data-v="Refusé"]{background:var(--warn-bg);color:var(--warn)}
+
+/* tarif fiches */
+.tfiche{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);margin-bottom:16px;overflow:hidden}
+.tfiche-head{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.tfiche-head h3{font-family:var(--f-display);font-size:19px;margin:0;flex:1;min-width:160px}
+.svc-row{display:grid;grid-template-columns:minmax(180px,1.3fr) minmax(110px,.7fr) minmax(140px,1fr) auto;gap:6px 16px;padding:11px 16px;border-top:1px solid var(--line);align-items:start;font-size:13.5px}
+.svc-row:first-of-type{border-top:0}
+.svc-row .nm{font-weight:700}
+.svc-row .cat{color:var(--muted);font-size:12.5px}
+.svc-row .pr{font-weight:700;font-variant-numeric:tabular-nums}
+.svc-row .vf{grid-column:1/-1;color:var(--muted);font-size:12.5px}
+@media (max-width:700px){.svc-row{grid-template-columns:1fr 1fr}.svc-row .acts{grid-column:1/-1}}
+
+.param-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:900px){.param-grid{grid-template-columns:1fr}}
+.pfield{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:4px 14px;padding:10px 0;border-top:1px solid var(--line);align-items:center}
+.pfield:first-child{border-top:0}
+.pfield label{font-weight:600;font-size:14px}
+.pfield .hint{grid-column:1/-1;color:var(--muted);font-size:12.5px;margin:0}
+@media (max-width:560px){.pfield{grid-template-columns:1fr}}
+.catrow{display:flex;gap:8px;margin-bottom:8px}
+
+.guide{max-width:780px}
+.guide ol{padding-left:0;list-style:none;counter-reset:s;margin:0}
+.guide ol li{counter-increment:s;position:relative;padding:14px 0 14px 52px;border-top:1px solid var(--line)}
+.guide ol li::before{content:counter(s);position:absolute;left:0;top:14px;width:34px;height:34px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-family:var(--f-display);font-weight:700}
+.guide h4{margin:0 0 4px;font-size:16px}
+.guide p{margin:0 0 8px;max-width:72ch}
+.rule{background:var(--in-bg);color:var(--in-text);border:1px solid var(--in-line);padding:12px 16px;border-radius:var(--radius-m);font-weight:600;margin-bottom:18px}
+
+.cons-sec{margin-bottom:18px}
+.cons-sec h3{background:var(--primary);color:#fff;margin:0;padding:8px 14px;font-size:14px;border-radius:var(--radius-s) var(--radius-s) 0 0}
+.cons-sec table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-top:0;font-size:14px}
+.cons-sec td{padding:7px 14px;border-top:1px solid var(--line);vertical-align:top}
+.cons-sec td:first-child{width:45%;color:var(--muted)}
+.cons-sec td:last-child{font-weight:600;white-space:pre-line}
+
+/* client document (print) */
+#v-client{background:#fff;color:#111;padding:40px;max-width:800px;margin:0 auto;font-size:14px}
+.cd-head{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #203C50;padding-bottom:16px;margin-bottom:24px}
+.cd-head h1{font-family:var(--f-display);font-size:26px;margin:0;color:#203C50}
+.cd-head .ref{text-align:right}
+.cd-head .ref b{font-family:var(--f-display);font-size:20px;display:block}
+#v-client table{width:100%;border-collapse:collapse;margin:16px 0}
+#v-client th{background:#203C50;color:#fff;text-align:left;padding:8px 10px;font-size:13px}
+#v-client td{padding:10px;border-bottom:1px solid #ccc}
+#v-client td.n,#v-client th.n{text-align:right;font-variant-numeric:tabular-nums}
+#v-client .tot td{font-weight:700;font-size:16px;border-bottom:2px solid #203C50}
+#v-client .eta{background:#FFF3BF;padding:12px 16px;border-radius:6px;font-size:15px;margin:16px 0}
+#v-client .mention{color:#555;font-size:12.5px;margin-top:30px;white-space:pre-line}
+
+dialog{border:0;border-radius:var(--radius-m);padding:0;max-width:min(560px,94vw);width:100%;background:var(--surface);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(15,26,34,.55)}
+.dlg-body{padding:20px 22px;max-height:72vh;overflow:auto}
+.dlg-body h3{margin:0 0 8px;font-family:var(--f-display);font-size:20px}
+.dlg-body p{margin:0 0 10px;white-space:pre-line}
+.dlg-foot{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:14px 22px;background:var(--surface-2)}
+dialog.wide{max-width:min(880px,96vw)}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 16px}
+.form-grid label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+.form-grid .full{grid-column:1/-1}
+.chk{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
+.chk label{font-weight:500;display:flex;gap:6px;align-items:center;margin:0}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--on-ink);padding:10px 18px;border-radius:var(--radius-s);opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:92vw;font-size:14px;border:1px solid var(--on-ink-muted)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (max-width:980px){.toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
+footer.foot{max-width:1280px;margin:0 auto;padding:0 20px 30px;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:560px){main{padding:16px 12px 50px}.page-head h2{font-size:23px}
+  header.top{position:static}.brand span{display:none}.brand{padding-bottom:4px}.brand h1{font-size:18px}.top-inner{padding:8px 12px 0}
+  .quote-bar strong{font-size:20px}.card{grid-template-columns:1fr}.card .price,.card .date{text-align:left}}
+
+@media print{
+  header.top,footer.foot,.actions,.no-print,.tip-btn,.bottombar,.stepper,.step-nav,.filters,.paste,.modebar{display:none!important}
+  body{background:#fff;color:#000}
+  main{padding:0;max-width:none}
+  .view{display:none!important}.view.print-me{display:block!important}
+  .step{display:block!important}
+  .devis-grid{grid-template-columns:1fr 300px}
+  .summary-col{display:block!important;position:static}
+  .panel,.ticket,.card{break-inside:avoid}
+  #v-client{padding:0}
+}
+</style>
+</head>
+<body class="on-devis">
+<header class="top">
+  <div class="top-inner">
+    <div class="brand"><h1>Devis transitaires</h1><span>Chine → Madagascar</span></div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-view="devis" aria-selected="true">Devis</button>
+      <button role="tab" data-view="historique">Historique</button>
+      <button role="tab" data-view="produits">Produits</button>
+      <button role="tab" data-view="tarifs">Tarifs</button>
+      <button role="tab" data-view="calendrier">Calendrier<span id="cal-badge"></span></button>
+      <button role="tab" data-view="parametres">Paramètres</button>
+      <button role="tab" data-view="guide">Mode d’emploi</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- DEVIS -->
+<section class="view active" id="v-devis">
+  <div class="quote-bar">
+    <div class="id"><span>Devis</span><strong id="d-num"></strong><span id="d-status" class="status"></span></div>
+    <div class="actions">
+      <button class="btn" id="b-new">Nouveau devis</button>
+      <button class="btn primary" id="b-save">Enregistrer le devis</button>
+      <button class="btn danger" id="b-del0">Supprimer</button>
+      <button class="btn ghost" id="b-print">Imprimer (interne)</button>
+    </div>
+  </div>
+  <div class="stepper" id="stepper">
+    <button data-step="1"><span class="n">1</span><span><span class="t">Produit</span><span class="s"></span></span></button>
+    <button data-step="2"><span class="n">2</span><span><span class="t">Colis</span><span class="s"></span></span></button>
+    <button data-step="3"><span class="n">3</span><span><span class="t">Offre et prix</span><span class="s"></span></span></button>
+  </div>
+  <div class="devis-grid">
+    <div id="steps">
+
+    <!-- STEP 1 -->
+    <div class="step active" data-step="1">
+      <div class="panel">
+        <h3>Le produit</h3>
+        <p class="sub">Choisissez une fiche produit déjà enregistrée, ou décrivez un nouveau produit.</p>
+        <div class="row">
+          <div class="fld"><label for="in-fiche">Fiche produit</label><select class="inp" id="in-fiche"></select></div>
+          <div class="fld"><label for="in-produit">Nom / référence du produit</label><input class="inp" type="text" id="in-produit" data-k="produit" data-kind="text" placeholder="Ex. Spray anti-pluie 50 ml"></div>
+        </div>
+        <p id="fiche-acts" class="actions" style="margin:-4px 0 14px"></p>
+        <div class="fld" style="margin-bottom:12px"><span class="lab">Qu’est-ce que c’est ?</span>
+          <div class="seg" id="seg-nature" role="radiogroup" aria-label="Nature du produit"></div></div>
+        <div class="fld"><span class="lab">Le produit contient…</span>
+          <div class="yesno" id="yn-flags"></div></div>
+        <div class="catbox" id="catbox"></div>
+      </div>
+      <div class="panel">
+        <h3>La commande</h3>
+        <div class="row">
+          <div class="fld"><label for="in-pieces">Nombre de pièces</label><div class="unit"><input class="inp num" inputmode="numeric" id="in-pieces" data-k="pieces" data-kind="num"><span>pièces</span></div></div>
+          <div class="fld"><label for="in-datePaiement">Date de paiement au vendeur</label><input class="inp" type="date" id="in-datePaiement" data-k="datePaiement" data-kind="date"></div>
+        </div>
+        <div class="fld" style="margin-bottom:8px"><span class="lab">Prix d’achat affiché par le vendeur</span>
+          <div class="seg" id="seg-prix"></div></div>
+        <div class="row">
+          <div class="fld"><label for="in-prixSaisi" id="lab-prix">Prix par pièce</label><div class="unit"><input class="inp num" inputmode="decimal" id="in-prixSaisi" data-k="prixSaisi" data-kind="num"><span>¥</span></div><p class="hint" id="hint-prix"></p></div>
+        </div>
+      </div>
+      <div class="step-nav"><span></span><button class="btn primary" data-goto="2">Suivant : le colis</button></div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step" data-step="2">
+      <div class="paste">
+        <div class="fld"><label for="paste-txt">Collez la réponse du vendeur</label>
+        <textarea class="inp" id="paste-txt" placeholder="Ex. : Carton size 35*28*28cm, G.W. 4.5kg, 2 cartons, 50 pcs/ctn"></textarea>
+        <p class="hint">L’application repère les dimensions, le poids et le nombre de cartons, et convertit les mm en cm et les grammes en kg. Vous validez avant que les valeurs soient remplies.</p></div>
+        <div class="actions"><button class="btn" id="paste-go">Analyser le message</button></div>
+        <div id="detect"></div>
+      </div>
+      <div class="panel">
+        <h3>Le colis</h3>
+        <p class="sub">Dimensions et poids d’UN carton fermé, emballage compris (« carton size », « gross weight »).</p>
+        <div class="row">
+          <div class="fld"><label for="in-cartons">Nombre de cartons</label><input class="inp num" inputmode="numeric" id="in-cartons" data-k="cartons" data-kind="num"><p class="hint" id="hint-cartons"></p></div>
+          <div class="fld"><label for="in-poids">Poids d’un carton</label><div class="unit"><input class="inp num" inputmode="decimal" id="in-poids" data-k="poids" data-kind="num"><span>kg</span></div></div>
+        </div>
+        <div class="row">
+          <div class="fld"><label for="in-longueur">Longueur</label><div class="unit"><input class="inp num" inputmode="decimal" id="in-longueur" data-k="longueur" data-kind="num"><span>cm</span></div></div>
+          <div class="fld"><label for="in-largeur">Largeur</label><div class="unit"><input class="inp num" inputmode="decimal" id="in-largeur" data-k="largeur" data-kind="num"><span>cm</span></div></div>
+          <div class="fld"><label for="in-hauteur">Hauteur</label><div class="unit"><input class="inp num" inputmode="decimal" id="in-hauteur" data-k="hauteur" data-kind="num"><span>cm</span></div></div>
+        </div>
+        <div class="row">
+          <div class="fld"><label for="in-livChineYuan">Livraison du vendeur jusqu’au dépôt en Chine</label><div class="unit"><input class="inp num" inputmode="decimal" id="in-livChineYuan" data-k="livChineYuan" data-kind="num"><span>¥</span></div><p class="hint" id="hint-livchine">0 si gratuit.</p></div>
+        </div>
+        <div class="alerts" id="alerts"></div>
+        <details class="adv"><summary>Options avancées (valeurs prudentes par défaut)</summary>
+          <div class="row">
+            <div class="fld"><label for="in-livChine">Délai paiement → dépôt Chine <button type="button" class="tip-btn" data-tip="t-liv" aria-label="Explication">i</button></label><select class="inp" id="in-livChine" data-k="livChine" data-kind="intsel"><option value="2">2 jours</option><option value="3">3 jours</option></select><div class="tip" id="t-liv">Nombre de jours pour que le colis arrive au dépôt du transitaire en Chine après le paiement. En cas de doute, prenez 3.</div></div>
+            <div class="fld"><label for="in-heure">Heure d’arrivée au dépôt <button type="button" class="tip-btn" data-tip="t-h" aria-label="Explication">i</button></label><div class="unit"><input class="inp num" inputmode="numeric" id="in-heure" data-k="heure" data-kind="num"><span>h</span></div><div class="tip" id="t-h">Heure de Chine. Si le colis arrive après l’heure de clôture, il rate le départ et part au suivant. Si vous ne savez pas, laissez 16 h (prudent).</div></div>
+            <div class="fld"><label for="in-base">Base de facturation avion <button type="button" class="tip-btn" data-tip="t-b" aria-label="Explication">i</button></label><select class="inp" id="in-base" data-k="base" data-kind="text"><option>Le plus élevé</option><option>Poids réel</option><option>Poids volumétrique</option></select><div class="tip" id="t-b">Poids réel = ce que pèse le carton sur la balance. Poids volumétrique = poids « fictif » calculé avec la taille du carton (L × l × H ÷ diviseur). Le plus élevé = on prend le plus grand des deux : c’est le plus courant et le plus prudent. Si un transitaire impose sa base (onglet Tarifs), c’est elle qui s’applique.</div></div>
+          </div>
+        </details>
+      </div>
+      <div class="step-nav"><button class="btn" data-goto="1">Retour</button><button class="btn primary" data-goto="3">Suivant : l’offre et le prix</button></div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step" data-step="3">
+      <div class="panel">
+        <h3>Choisir l’offre</h3>
+        <div id="cal-warn"></div>
+        <div class="modebar"><span class="lab" style="font-weight:600">Choix automatique :</span>
+          <div class="seg" id="seg-mode"></div><span id="mode-note" class="assume" style="margin:0"></span></div>
+        <div class="cards" id="cards"></div>
+        <div id="excluded"></div>
+        <details class="more"><summary>Comparer toutes les offres en détail</summary><div class="tablewrap" style="margin-top:8px"><table class="grid" id="cmp-table"></table></div></details>
+      </div>
+      <div class="panel">
+        <h3>Frais en plus</h3>
+        <div class="row">
+          <div class="fld"><label for="in-fraisExclus">Frais non inclus dans le tarif <button type="button" class="tip-btn" data-tip="t-fe" aria-label="Explication">i</button></label><div class="unit"><input class="inp num" inputmode="decimal" id="in-fraisExclus" data-k="fraisExclus" data-kind="num"><span>Ar</span></div><div class="tip" id="t-fe">Douane, retrait, emballage… Demandez-les au transitaire. 0 si aucun.</div></div>
+          <div class="fld"><label for="in-livFinale">Livraison finale à Madagascar <button type="button" class="tip-btn" data-tip="t-lf" aria-label="Explication">i</button></label><div class="unit"><input class="inp num" inputmode="decimal" id="in-livFinale" data-k="livFinale" data-kind="num"><span>Ar</span></div><div class="tip" id="t-lf">Coursier ou taxi-moto entre le dépôt à Tana et votre client. 0 si le client vient chercher.</div></div>
+        </div>
+      </div>
+      <div class="twocol">
+        <div class="panel"><h3>Prix de revient</h3><div id="breakdown"></div></div>
+        <div class="panel"><h3>Dates</h3><div id="dates"></div></div>
+      </div>
+      <div class="panel">
+        <h3>Prix de vente et marge</h3>
+        <div class="row">
+          <div class="fld"><label for="in-tauxMarge">Taux de marge souhaité <button type="button" class="tip-btn" data-tip="t-tm" aria-label="Explication">i</button></label><div class="unit"><input class="inp num" inputmode="decimal" id="in-tauxMarge" data-k="tauxMarge" data-kind="pct"><span>%</span></div><div class="tip" id="t-tm">En % de ce que vous coûte le produit. Exemple : coût 10 000 Ar et 30 % → prix conseillé 13 000 Ar (arrondi aux 100 Ar supérieurs).</div></div>
+          <div class="fld"><label for="in-pvRetenu">Prix de vente retenu par pièce</label><div class="unit"><input class="inp num" inputmode="decimal" id="in-pvRetenu" data-k="pvRetenu" data-kind="num" placeholder="Vide = prix conseillé"><span>Ar</span></div></div>
+        </div>
+        <div id="sale"></div>
+      </div>
+      <div class="panel">
+        <h3>Envoyer au client</h3>
+        <div class="row">
+          <div class="fld"><label for="in-clientNom">Nom du client (facultatif)</label><input class="inp" type="text" id="in-clientNom" data-k="clientNom" data-kind="text"></div>
+        </div>
+        <div class="fld"><label for="msg">Message prêt à envoyer</label><textarea class="inp" id="msg" rows="8"></textarea>
+          <p class="hint" id="msg-hint">Le message se met à jour avec le devis. Vous pouvez le modifier avant de l’envoyer.</p></div>
+        <div class="actions" style="margin:10px 0 8px">
+          <button class="btn primary" id="msg-copy">Copier le message</button>
+          <a class="btn" id="msg-wa" target="_blank" rel="noopener">Ouvrir dans WhatsApp</a>
+          <a class="btn" id="msg-sms">Envoyer par SMS</a>
+          <button class="btn" id="b-pdf">Devis PDF client</button>
+          <button class="btn ghost" id="msg-reset" hidden>Remettre le message automatique</button>
+        </div>
+        <p class="assume">Le devis PDF client ne montre ni vos coûts ni votre marge. Dans la fenêtre d’impression, choisissez « Enregistrer au format PDF ».</p>
+      </div>
+      <div class="step-nav"><button class="btn" data-goto="2">Retour</button><button class="btn primary" id="b-save2">Enregistrer le devis</button></div>
+    </div>
+    </div>
+    <aside class="summary-col" id="summary"></aside>
+  </div>
+  <div class="bottombar" id="bottombar"></div>
+</section>
+
+<!-- HISTORIQUE -->
+<section class="view" id="v-historique">
+  <div class="page-head"><div><h2>Historique des devis</h2>
+    <p>Du plus récent au plus ancien. Chaque devis garde les tarifs, taux et résultats du jour de son enregistrement. Changez le statut directement dans la liste.</p></div>
+    <div class="actions"><button class="btn" id="b-hist-csv">Exporter en CSV</button></div></div>
+  <div class="filters">
+    <div class="fld grow"><label for="h-search">Produit ou client</label><input id="h-search" class="inp" type="search" placeholder="Rechercher…"></div>
+    <div class="fld"><label for="h-st">Statut</label><select id="h-st" class="inp"></select></div>
+    <div class="fld"><label for="h-tr">Transitaire</label><select id="h-tr" class="inp"></select></div>
+    <div class="fld"><label for="h-from">Créé du</label><input id="h-from" class="inp" type="date"></div>
+    <div class="fld"><label for="h-to">au</label><input id="h-to" class="inp" type="date"></div>
+    <button class="btn" id="h-all">Effacer les filtres</button>
+  </div>
+  <div class="tablewrap"><table class="grid" id="hist-table"></table></div>
+</section>
+
+<!-- CONSULTATION -->
+<section class="view" id="v-consultation">
+  <div class="page-head"><div><h2 id="c-title">Consultation d’un devis enregistré</h2><p id="c-sub"></p></div><div class="actions" id="c-actions"></div></div>
+  <div id="c-body"></div>
+</section>
+
+<!-- PRODUITS -->
+<section class="view" id="v-produits">
+  <div class="page-head"><div><h2>Fiches produits</h2>
+    <p>Un produit déjà acheté garde sa catégorie, son carton, son poids et son prix. Dans le Devis, choisissez la fiche puis tapez seulement la quantité : le nombre de cartons se calcule avec les pièces par carton.</p></div>
+    <div class="actions"><button class="btn primary" id="p-add">Ajouter un produit</button></div></div>
+  <div class="filters"><div class="fld grow"><label for="pr-search">Rechercher</label><input id="pr-search" class="inp" type="search" placeholder="Nom du produit"></div></div>
+  <div class="tablewrap"><table class="grid" id="prod-table"></table></div>
+</section>
+
+<!-- TARIFS -->
+<section class="view" id="v-tarifs">
+  <div class="page-head"><div><h2>Tarifs des transitaires</h2>
+    <p>Une fiche par transitaire. Quand il envoie une nouvelle affiche de prix, modifiez ses services ou cliquez sur « Tarifs vérifiés aujourd’hui ». Un tarif non vérifié depuis plus de 30 jours est signalé.</p></div>
+    <div class="actions"><button class="btn primary" id="t-add">Ajouter un transitaire ou un service</button></div></div>
+  <div id="tar-list"></div>
+</section>
+
+<!-- CALENDRIER -->
+<section class="view" id="v-calendrier">
+  <div class="page-head"><div><h2>Calendrier des départs à dates précises</h2>
+    <p>Pour les offres sans jour fixe (ex. FAST d’Importation de l’Asie). Si une offre a des dates ici, elles remplacent ses jours de départ.</p></div>
+    <div class="actions"><button class="btn" id="cal-sort">Trier par date</button><button class="btn" id="cal-add">Ajouter une date</button><button class="btn primary" id="cal-gen">Générer des dates répétitives</button></div></div>
+  <div id="cal-alerts" class="alerts"></div>
+  <div class="tablewrap"><table class="grid" id="cal-table"></table></div>
+  <datalist id="dl-trans"></datalist><datalist id="dl-serv"></datalist>
+</section>
+
+<!-- PARAMETRES -->
+<section class="view" id="v-parametres">
+  <div class="page-head"><div><h2>Paramètres</h2><p>Les devis déjà enregistrés gardent les paramètres du jour où ils ont été enregistrés.</p></div></div>
+  <div class="param-grid">
+    <div>
+      <div class="panel"><h3>Taux, arrondis et marges de délai</h3><div id="p-fields"></div></div>
+      <div class="panel"><h3>Votre entreprise (devis client)</h3><div id="p-company"></div></div>
+    </div>
+    <div>
+      <div class="panel"><h3>Catégories de produit</h3><p class="sub">Les questions du Devis choisissent parmi : Général, Électronique, Téléphone, Ordinateur/tablette, Aimant, Batterie, Batterie brute, Poudre/liquide, Danger. Renommer une catégorie la met aussi à jour dans les tarifs, les fiches produits et le devis en cours.</p><div id="p-cats"></div><p><button class="btn small" id="p-cat-add">Ajouter une catégorie</button></p></div>
+      <div class="panel"><h3>Sauvegarde des données</h3><p class="sub" id="p-storage"></p>
+        <div class="actions" style="margin-bottom:12px"><button class="btn" id="x-export">Exporter une sauvegarde</button><button class="btn" id="x-import">Importer une sauvegarde</button><button class="btn danger" id="x-reset">Revenir aux données d’origine</button></div>
+        <input type="file" id="x-file" accept="application/json,.json" hidden></div>
+    </div>
+  </div>
+</section>
+
+<!-- GUIDE -->
+<section class="view" id="v-guide">
+  <div class="guide">
+    <div class="page-head"><div><h2>Mode d’emploi : un devis en 3 étapes</h2></div></div>
+    <div class="rule">Règle simple : vous ne tapez que dans les cases jaunes à texte bleu. Tout le reste se calcule tout seul.</div>
+    <ol>
+      <li><h4>Produit</h4><p>Choisissez une fiche produit si le produit a déjà été acheté. Sinon, répondez aux questions (qu’est-ce que c’est, contient-il une batterie, un aimant, du liquide, un gaz ?) : l’application en déduit la catégorie. Tapez le nombre de pièces et le prix en yuan, par pièce ou pour toute la commande.</p></li>
+      <li><h4>Colis</h4><p>Collez la réponse du vendeur dans la zone prévue, vérifiez les valeurs trouvées puis appliquez-les. Lisez les alertes : un carton de 1 400 cm ou de 20 kg dans une boîte à chaussures est presque toujours une erreur d’unité. Le bouton de correction règle le problème en un clic.</p></li>
+      <li><h4>Offre et prix</h4><p>L’application choisit d’office l’offre la moins chère ou la plus rapide. Cliquez sur une autre carte pour changer. Les offres qui refusent votre produit ou dont la limite de poids par colis est dépassée sont écartées, avec la raison. Lisez toujours « Points à vérifier » et confirmez avec le transitaire avant de payer.</p></li>
+      <li><h4>Envoyer et enregistrer</h4><p>Ajustez la marge si besoin, copiez le message pour WhatsApp ou SMS, ou créez le devis PDF client (sans vos coûts). Enregistrez le devis : il garde les tarifs et taux du jour. Dans l’Historique, suivez son statut : envoyé, accepté, commandé, livré ou refusé.</p></li>
+    </ol>
+    <div class="panel" style="margin-top:18px"><h3>Mettre à jour les tarifs</h3><p>Onglet Tarifs : modifiez le service concerné. Après la modification, l’application liste les devis envoyés ou acceptés dont le prix change, et de combien. Si les prix n’ont pas changé, cliquez sur « Tarifs vérifiés aujourd’hui ».</p></div>
+    <div class="panel"><h3>Calendrier</h3><p>Quand il reste 3 dates de départ à venir ou moins pour une offre, l’onglet Calendrier affiche un badge. Ajoutez les nouvelles dates une par une, ou générez-les : par exemple tous les lundis, mercredis et vendredis du mois.</p></div>
+    <div class="panel"><h3>Où sont gardées les données ?</h3><p>Tout est enregistré automatiquement dans ce navigateur, sur cet ordinateur. Pour garder une copie de sécurité ou changer d’ordinateur, utilisez « Exporter une sauvegarde » dans l’onglet Paramètres, puis « Importer une sauvegarde » sur l’autre appareil.</p></div>
+  </div>
+</section>
+
+<section class="view" id="v-client" aria-hidden="true"></section>
+</main>
+<footer class="foot"><span id="foot-store"></span></footer>
+
+<dialog id="dlg"><form method="dialog"><div class="dlg-body" id="dlg-body"></div><div class="dlg-foot" id="dlg-foot"></div></form></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+"use strict";
+const SEED = {"tarifs": [{"transitaire": "Arizato", "mode": "Avion", "service": "Standard", "categories": "Général", "tarif": 67000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Dimanche", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "Danger. Poids réel / volumétrique à préciser. Clôture non communiquée (1 j avant supposé).", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Arizato", "mode": "Avion", "service": "Standard", "categories": "Téléphone", "tarif": 50000, "unite": "pièce", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Dimanche", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "Unité à préciser. Clôture supposée.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Arizato", "mode": "Avion", "service": "Express", "categories": "Général", "tarif": 80000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 3, "delaiMax": 5, "dep1": "Samedi", "clo1": 1, "dep2": "Lundi", "clo2": 1, "heureClo": 12, "verifier": "Aucun minimum facturable. Clôture supposée.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Arizato", "mode": "Avion", "service": "Standard", "categories": "Aimant", "tarif": 69000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Dimanche", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "Faire accepter l’aimant et la référence exacte. Clôture supposée.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Arizato", "mode": "Avion", "service": "Express", "categories": "Aimant", "tarif": 82000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 3, "delaiMax": 5, "dep1": "Samedi", "clo1": 1, "dep2": "Lundi", "clo2": 1, "heureClo": 12, "verifier": "Sensible ≠ tout produit dangereux. Clôture supposée.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Arizato", "mode": "Avion", "service": "Standard", "categories": "Ordinateur/tablette", "tarif": 130000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": "", "delaiMax": "", "dep1": "", "clo1": "", "dep2": "", "clo2": "", "heureClo": "", "verifier": "Admission avec batterie à confirmer. Délai et départ à obtenir.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "E-SOA", "mode": "Avion", "service": "Normal", "categories": "Général", "tarif": 65800, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 7, "delaiMax": 10, "dep1": "Lundi", "clo1": 2, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "Prix TTC (affiche E-SOA). Fin de réception des colis : samedi avant 12 h, heure de Chine.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "E-SOA", "mode": "Avion", "service": "Express", "categories": "Général", "tarif": 78800, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 3, "delaiMax": 5, "dep1": "Lundi", "clo1": 2, "dep2": "Jeudi", "clo2": 1, "heureClo": 12, "verifier": "Prix TTC (affiche E-SOA). Fin de réception : samedi 12 h (départ lundi) et mercredi 12 h (départ jeudi), heure de Chine.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "E-SOA", "mode": "Avion", "service": "Standard", "categories": "Batterie", "tarif": 128000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Jeudi", "clo1": 0, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "Prix TTC (affiche E-SOA). Fin de réception : jeudi avant 12 h, heure de Chine. Faire confirmer qu’un colis reçu le jeudi matin part bien le jour même.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "E-SOA", "mode": "Avion", "service": "Standard", "categories": "Poudre/liquide; Aimant", "tarif": 88000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Jeudi", "clo1": 0, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "Prix TTC (affiche E-SOA). Fin de réception : jeudi avant 12 h, heure de Chine (à confirmer : départ le jour même). Composition et quantité à déclarer.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "E-SOA", "mode": "Maritime", "service": "Standard", "categories": "Général", "tarif": 360, "unite": "m³", "devise": "USD", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 45, "delaiMax": 60, "dep1": "", "clo1": "", "dep2": "", "clo2": "", "heureClo": "", "verifier": "Prix TTC (affiche E-SOA). Délai jusqu’à l’arrivée à Tana. Aucun minimum facturable. Jour de départ non indiqué.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "E-SOA", "mode": "Maritime", "service": "Standard", "categories": "Batterie", "tarif": 425, "unite": "m³", "devise": "USD", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 45, "delaiMax": 60, "dep1": "", "clo1": "", "dep2": "", "clo2": "", "heureClo": "", "verifier": "Prix TTC (affiche E-SOA). Délai jusqu’à l’arrivée à Tana. Valider la référence ; ne couvre pas le gaz. Jour de départ non indiqué.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Importation Express", "mode": "Avion", "service": "Express", "categories": "Général", "tarif": 77500, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": 0.2, "delaiMin": 3, "delaiMax": 5, "dep1": "Lundi", "clo1": 2, "dep2": "Jeudi", "clo2": 1, "heureClo": 12, "verifier": "Prix TTC (message du 14/10/2026). Minimum 200 g. Fin de réception : samedi 12 h (départ lundi) et mercredi 12 h (départ jeudi), heure de Chine.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Importation Express", "mode": "Avion", "service": "Normal", "categories": "Général", "tarif": 67000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 5, "delaiMax": 10, "dep1": "Vendredi", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "Message du 12/10/2026. Facturé au poids volumétrique. Fin de réception : jeudi 12 h, heure de Chine. Aucun minimum facturable.", "baseImposee": "Poids volumétrique", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Importation Express", "mode": "Maritime", "service": "Standard", "categories": "Général", "tarif": 410, "unite": "m³", "devise": "USD", "palier": 0.25, "tarifAudela": 360, "minimum": "", "delaiMin": 45, "delaiMax": 60, "dep1": "Vendredi", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "Message du 12/10/2026 : volume inférieur à 0,25 m³ → 410 USD/m³ ; volume supérieur à 0,25 m³ → 360 USD/m³. Aucun minimum facturable. Arrivée 45 à 60 jours. Jour de départ (vendredi) et clôture repris de l’ancienne info : à confirmer.", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Importation Express", "mode": "Maritime", "service": "Standard", "categories": "Danger", "tarif": "", "unite": "m³", "devise": "USD", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": "", "delaiMax": "", "dep1": "", "clo1": "", "dep2": "", "clo2": "", "heureClo": "", "verifier": "Tarif, délai et admission du produit exact à obtenir (mention « 410 » à clarifier).", "baseImposee": "", "maxColis": "", "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Fast", "categories": "Général", "tarif": 82500, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": 0.1, "delaiMin": 2, "delaiMax": 2, "dep1": "", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Habillement, bijoux, alimentaire. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.", "baseImposee": "", "maxColis": 32, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Fast", "categories": "Électronique", "tarif": 90000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": 0.1, "delaiMin": 2, "delaiMax": 2, "dep1": "", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Électronique, pièces, matériel médical. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.", "baseImposee": "", "maxColis": 32, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Fast", "categories": "Poudre/liquide; Aimant", "tarif": 100000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": 0.1, "delaiMin": 2, "delaiMax": 2, "dep1": "", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Cosmétique, poudre, liquide, aimant, piles. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.", "baseImposee": "", "maxColis": 32, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Fast", "categories": "Téléphone", "tarif": 90000, "unite": "pièce", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": 0.1, "delaiMin": 2, "delaiMax": 2, "dep1": "", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Smartphone, powerbank : prix par pièce. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.", "baseImposee": "", "maxColis": 32, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Fast", "categories": "Ordinateur/tablette; Batterie", "tarif": 120000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": 0.1, "delaiMin": 2, "delaiMax": 2, "dep1": "", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Ordinateur portable, appareil avec batterie. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.", "baseImposee": "", "maxColis": 32, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Fast", "categories": "Batterie brute", "tarif": 200000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": 0.1, "delaiMin": 2, "delaiMax": 2, "dep1": "", "clo1": 1, "dep2": "", "clo2": "", "heureClo": 12, "verifier": "FAST 48 h, environ 3 départs par semaine aux dates publiées (onglet Calendrier). Poids minimum 100 g. Batteries seules. Maximum 32 kg par colis. Fin de réception non communiquée : veille 12 h supposée.", "baseImposee": "", "maxColis": 32, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Normal", "categories": "Général", "tarif": 67500, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 5, "delaiMax": 7, "dep1": "Lundi", "clo1": 2, "dep2": "", "clo2": "", "heureClo": 10, "verifier": "Départ chaque lundi, durée annoncée 7 jours, colis à déposer avant samedi 10 h (heure de Chine). Habillement, bijoux, alimentaire. Cosmétiques, liquides, batteries et smartphones NON autorisés en Normal. Maximum 500 kg par colis. Aucun minimum facturable.", "baseImposee": "", "maxColis": 500, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Normal", "categories": "Électronique", "tarif": 67500, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 5, "delaiMax": 7, "dep1": "Lundi", "clo1": 2, "dep2": "", "clo2": "", "heureClo": 10, "verifier": "Départ chaque lundi, durée annoncée 7 jours, colis à déposer avant samedi 10 h (heure de Chine). Électronique, pièces, matériel médical (sans batterie). Maximum 500 kg par colis. Aucun minimum facturable.", "baseImposee": "", "maxColis": 500, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Plus", "categories": "Général", "tarif": 73000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Lundi", "clo1": 2, "dep2": "", "clo2": "", "heureClo": 10, "verifier": "Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Habillement, bijoux, alimentaire. Maximum 500 kg par colis. Aucun minimum facturable.", "baseImposee": "", "maxColis": 500, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Plus", "categories": "Électronique", "tarif": 78000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Lundi", "clo1": 2, "dep2": "", "clo2": "", "heureClo": 10, "verifier": "Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Électronique, pièces, matériel médical. Maximum 500 kg par colis. Aucun minimum facturable.", "baseImposee": "", "maxColis": 500, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Plus", "categories": "Poudre/liquide; Aimant", "tarif": 80000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Lundi", "clo1": 2, "dep2": "", "clo2": "", "heureClo": 10, "verifier": "Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Cosmétique, poudre, liquide, aimant, piles. Maximum 500 kg par colis. Aucun minimum facturable.", "baseImposee": "", "maxColis": 500, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Plus", "categories": "Téléphone", "tarif": 75000, "unite": "pièce", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Lundi", "clo1": 2, "dep2": "", "clo2": "", "heureClo": 10, "verifier": "Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Smartphone, powerbank : prix par pièce. Maximum 500 kg par colis. Aucun minimum facturable.", "baseImposee": "", "maxColis": 500, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Plus", "categories": "Ordinateur/tablette; Batterie", "tarif": 90000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Lundi", "clo1": 2, "dep2": "", "clo2": "", "heureClo": 10, "verifier": "Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Ordinateur portable, appareil avec batterie. Maximum 500 kg par colis. Aucun minimum facturable.", "baseImposee": "", "maxColis": 500, "updatedAt": "2026-10-14"}, {"transitaire": "Importation de l’Asie", "mode": "Avion", "service": "Plus", "categories": "Batterie brute", "tarif": 150000, "unite": "kg", "devise": "Ar", "palier": "", "tarifAudela": "", "minimum": "", "delaiMin": 10, "delaiMax": 15, "dep1": "Lundi", "clo1": 2, "dep2": "", "clo2": "", "heureClo": 10, "verifier": "Départ chaque lundi, durée annoncée 15 jours, colis à déposer avant samedi 10 h (heure de Chine). Batteries seules. Maximum 500 kg par colis. Aucun minimum facturable.", "baseImposee": "", "maxColis": 500, "updatedAt": "2026-10-14"}], "calendrier": [{"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-02", "remarque": "Dates publiées pour octobre 2026. Ajoutez les dates de novembre dès qu’elles sont publiées."}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-04", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-05", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-06", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-08", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-10", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-12", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-14", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-15", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-16", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-18", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-20", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-21", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-22", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-24", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-26", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-28", "remarque": ""}, {"transitaire": "Importation de l’Asie", "service": "Fast", "date": "2026-10-30", "remarque": ""}], "categories": ["Général", "Électronique", "Téléphone", "Ordinateur/tablette", "Aimant", "Batterie", "Batterie brute", "Poudre/liquide", "Danger"], "paramNotes": {"usd": "Hypothèse du guide de formation (exemple p. 8). À mettre à jour.", "cny": "Hypothèse du guide de formation (exemple p. 8).", "divVol": "L × l × H (cm) ÷ 6 000 = kg volumétrique. À confirmer avec chaque transitaire.", "arrPoids": "Le poids facturé est arrondi au palier supérieur. Exemple : 4,573 kg → 4,6 kg.", "arrVol": "0,0000000001 = volume exact, sans arrondi. Exemple : 0,02744 m³ reste 0,02744 m³.", "dispo": "Douane, déchargement, traitement, si EXCLU du délai annoncé (hypothèse du guide).", "margeAvion": "Guide : prévoir 3 à 5 jours de réserve en avion.", "margeMar": "Guide : prévoir 7 à 14 jours en maritime.", "dimanche": "Si « Non », une disponibilité tombant un dimanche passe au lundi."}};
+
+/* ================= Helpers ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const isNum = v => typeof v === "number" && isFinite(v);
+const N = v => (isNum(v) ? v : (v === "" || v == null ? 0 : (isFinite(+v) ? +v : 0)));
+const blank = v => v === "" || v == null;
+const clone = o => JSON.parse(JSON.stringify(o));
+const DAYS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+const DAYS_S = ["lun.","mar.","mer.","jeu.","ven.","sam.","dim."];
+const r6 = x => Math.round(x * 1e6) / 1e6;
+const ceilX = x => Math.ceil(Math.round(x * 1e9) / 1e9);
+const roundUpStep = (v, step) => { const q = Math.round((v / step) * 1e6) / 1e6; return Math.ceil(q - 1e-12) * step; };
+const isoToDay = iso => { if (!iso) return null; const [y,m,d] = iso.split("-").map(Number); return Math.round(Date.UTC(y, m-1, d) / 864e5); };
+const dayToIso = n => new Date(n * 864e5).toISOString().slice(0,10);
+const wd = n => ((new Date(Math.floor(n) * 864e5).getUTCDay() + 6) % 7) + 1;
+const todayIso = () => { const t = new Date(); return new Date(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate())).toISOString().slice(0,10); };
+const todayDay = () => isoToDay(todayIso());
+const nb = s => s.replace(/[\u202f\u00a0]/g, "\u00a0");
+const fmtInt = v => isNum(v) ? nb(Math.round(v).toLocaleString("fr-FR")) : esc(v ?? "");
+const fmtAr = v => isNum(v) ? fmtInt(v) + "\u00a0Ar" : esc(v ?? "");
+const fmtDec = v => isNum(v) ? nb((+(+v).toPrecision(12)).toLocaleString("fr-FR", {maximumFractionDigits: 10})) : esc(v ?? "");
+const fmtDec3 = v => isNum(v) ? nb(v.toLocaleString("fr-FR", {maximumFractionDigits: 3})) : esc(v ?? "");
+const fmtDec2 = v => isNum(v) ? nb(v.toLocaleString("fr-FR", {maximumFractionDigits: 2})) : esc(v ?? "");
+const fmtPct = v => isNum(v) ? (v * 100).toLocaleString("fr-FR", {maximumFractionDigits: 1}) + "\u00a0%" : esc(v ?? "");
+const fmtDay = n => { if (!isNum(n)) return esc(n ?? ""); const d = new Date(Math.floor(n) * 864e5); return DAYS_S[wd(n)-1] + " " + String(d.getUTCDate()).padStart(2,"0") + "/" + String(d.getUTCMonth()+1).padStart(2,"0") + "/" + d.getUTCFullYear(); };
+const fmtDayLong = n => isNum(n) ? new Date(Math.floor(n) * 864e5).toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long", year:"numeric", timeZone:"UTC"}) : String(n ?? "");
+const fmtDayTime = n => { if (!isNum(n)) return esc(n ?? ""); const h = Math.round((n - Math.floor(n)) * 24 * 60); return fmtDay(n) + " " + String(Math.floor(h/60)).padStart(2,"0") + ":" + String(h%60).padStart(2,"0"); };
+const fmtStamp = ms => { if (!ms) return ""; const d = new Date(ms); return d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"}); };
+const numTxt = id => "DEV-" + String(id).padStart(4, "0");
+const parseNum = v => { const d = String(v ?? "").replace(/\D/g, ""); return d.length === 0 || d.length > 9 ? 0 : parseInt(d, 10); };
+const parseFr = s => { const t = String(s ?? "").replace(/[\s\u00a0\u202f]/g, "").replace(",", "."); if (t === "") return ""; const v = Number(t); return isFinite(v) ? v : NaN; };
+const fmtIn = v => isNum(v) ? (+v.toPrecision(12)).toLocaleString("fr-FR", {maximumFractionDigits: 6}).replace(/[\u202f\u00a0]/g, " ") : "";
+const offerLabel = t => blank(t.transitaire) ? "" : `${t.transitaire} | ${t.mode} ${String(t.service ?? "").toLowerCase()} | ${t.categories}`;
+const plural = (n, s, p) => (n > 1 ? p || s + "s" : s);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const STATUTS = ["Envoyé","Accepté","Commandé","Livré","Refusé"];
+const EN_COURS = ["Envoyé","Accepté"];
+
+/* ================= Category deduction ================= */
+const NATURES = [
+  ["simple","Produit simple","vêtement, bijou, déco, accessoire…"],
+  ["electronique","Appareil électronique","sans batterie, pièces, matériel médical…"],
+  ["telephone","Téléphone ou powerbank",""],
+  ["ordinateur","Ordinateur ou tablette",""],
+  ["batterie_seule","Batterie seule","piles, batteries de rechange"]
+];
+const FLAGS = [
+  ["batterie","Une batterie intégrée (rechargeable)"],
+  ["aimant","Un aimant (haut-parleur, fermoir aimanté, jouet magnétique…)"],
+  ["liquide","Du liquide, de la poudre ou un cosmétique"],
+  ["danger","Un gaz, un aérosol ou un produit inflammable"]
+];
+function deduceCategory(p){
+  const notes = [];
+  let cat, why;
+  if (p.danger) { cat = "Danger"; why = "le produit contient un gaz, un aérosol ou un produit inflammable"; }
+  else if (p.nature === "batterie_seule") { cat = "Batterie brute"; why = "c’est une batterie seule"; }
+  else if (p.nature === "telephone") { cat = "Téléphone"; why = "c’est un téléphone ou un powerbank"; }
+  else if (p.nature === "ordinateur") { cat = "Ordinateur/tablette"; why = "c’est un ordinateur ou une tablette"; }
+  else if (p.batterie) { cat = "Batterie"; why = "le produit contient une batterie"; }
+  else if (p.liquide) { cat = "Poudre/liquide"; why = "le produit contient du liquide, de la poudre ou un cosmétique"; }
+  else if (p.aimant) { cat = "Aimant"; why = "le produit contient un aimant"; }
+  else if (p.nature === "electronique") { cat = "Électronique"; why = "c’est un appareil électronique sans batterie"; }
+  else { cat = "Général"; why = "produit simple, sans batterie, aimant, liquide ni produit dangereux"; }
+  if (p.aimant && cat !== "Aimant") notes.push("contient aussi un aimant");
+  if (p.liquide && !["Poudre/liquide","Danger"].includes(cat)) notes.push("contient aussi du liquide ou de la poudre");
+  if (p.batterie && !["Batterie","Téléphone","Ordinateur/tablette","Batterie brute","Danger"].includes(cat)) notes.push("contient aussi une batterie");
+  return {cat, why, notes};
+}
+
+/* ================= State ================= */
+const DEFAULTS = () => ({
+  datePaiement: todayIso(), livChine:3, heure:16, base:"Le plus élevé",
+  nature:"simple", batterie:false, aimant:false, liquide:false, danger:false, categorieManuelle:"",
+  offre:"", offreMode:"cheap",
+  cartons:1, longueur:"", largeur:"", hauteur:"", poids:"", pieces:1,
+  prixMode:"piece", prixSaisi:"", livChineYuan:0, fraisExclus:0, livFinale:0,
+  produit:"", produitId:"", ppc:"", cartonsAuto:false, tauxMarge:0.3, pvRetenu:"", clientNom:"", ignored:{}
+});
+const EXAMPLE = () => ({...DEFAULTS(), datePaiement:"2026-10-14", categorieManuelle:"Ordinateur/tablette", offreMode:"cheap",
+  longueur:14, largeur:6, hauteur:6, poids:0.1, prixSaisi:4.04, produit:"Spray anti-pluie 50 ml", tauxMarge:1.5});
+const PARAM_DEFS = [
+  {id:"usd", label:"Taux de change USD → Ar"},
+  {id:"cny", label:"Taux de change yuan → Ar"},
+  {id:"divVol", label:"Diviseur poids volumétrique (avion)"},
+  {id:"arrPoids", label:"Arrondi du poids facturé (kg)"},
+  {id:"arrVol", label:"Arrondi du volume facturé (m³)"},
+  {id:"dispo", label:"Mise à disposition après trajet (j)"},
+  {id:"margeAvion", label:"Marge client avion (j)"},
+  {id:"margeMar", label:"Marge client maritime (j)"},
+  {id:"dimanche", label:"Retrait possible le dimanche ?", select:["Non","Oui"]},
+];
+const TAR_COLS = [
+  ["transitaire","Transitaire"],["mode","Mode"],["service","Service"],["categories","Catégories acceptées"],["label","Libellé de l’offre"],["tarif","Tarif"],["unite","Unité"],["devise","Devise"],["palier","Palier m³"],["tarifAudela","Tarif au-delà du palier"],["minimum","Minimum facturable (unité)"],["maxColis","Poids max par colis (kg)"],["delaiMin","Délai min (j)"],["delaiMax","Délai max (j)"],["dep1","Départ 1"],["clo1","Clôture 1 (jours avant)"],["dep2","Départ 2"],["clo2","Clôture 2 (jours avant)"],["heureClo","Heure de clôture (Chine)"],["verifier","À vérifier"],["baseImposee","Base de facturation imposée"],["updatedAt","Tarif vérifié le"]
+];
+function seedState(){
+  return {
+    version:2,
+    params:{usd:4850, cny:675, divVol:6000, arrPoids:0.1, arrVol:1e-10, dispo:3, margeAvion:4, margeMar:10, dimanche:"Non"},
+    paramNotes: SEED.paramNotes,
+    company:{nom:"", tel:"", adresse:"", mention:"Prix et date de livraison estimés, sous réserve de confirmation par le transitaire."},
+    categories: SEED.categories.slice(),
+    tarifs: clone(SEED.tarifs),
+    calendrier: clone(SEED.calendrier),
+    produits: [],
+    devis:{num:"DEV-0001", status:{text:"Nouveau devis (pas encore enregistré)", warn:false}, inputs: EXAMPLE(), msg:{edited:false, text:""}, step:1},
+    archive:[], counter:0
+  };
+}
+// Migration of inputs from version 1 (Excel-like fields)
+function migrateInputs(o, cny){
+  if (!o) return DEFAULTS();
+  if ("prixSaisi" in o) return {...DEFAULTS(), ...o, ignored: o.ignored || {}};
+  return {...DEFAULTS(), datePaiement:o.datePaiement, livChine:o.livChine, heure:o.heure, base:o.base, categorieManuelle:o.categorie || "",
+    offre:o.offre || "", offreMode: o.offre ? "manual" : "cheap", cartons:o.cartons, longueur:o.longueur, largeur:o.largeur, hauteur:o.hauteur,
+    poids:o.poids, pieces:o.pieces, prixMode:"piece", prixSaisi:o.prixYuan, livChineYuan: N(o.livChineAr) ? +(N(o.livChineAr) / (cny || 675)).toFixed(2) : 0,
+    fraisExclus:o.fraisExclus, livFinale:o.livFinale, produit:o.produit, tauxMarge:o.tauxMarge, pvRetenu:o.pvRetenu};
+}
+const KEY = "devis-transitaires-mg-v2", KEY_V1 = "devis-transitaires-mg-v1";
+let storageOK = true, state;
+function loadState(){
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return JSON.parse(raw);
+    const v1 = localStorage.getItem(KEY_V1);
+    if (v1) {
+      const o = JSON.parse(v1), s = seedState();
+      s.params = {...s.params, ...o.params}; s.categories = o.categories || s.categories;
+      s.tarifs = (o.tarifs || s.tarifs).map(t => ({maxColis:"", updatedAt:"2026-10-14", ...t}));
+      s.calendrier = o.calendrier || s.calendrier; s.counter = o.counter || 0;
+      s.archive = (o.archive || []).map(a => ({...a, statut: a.statut || "Envoyé", inputs: migrateInputs(a.inputs, s.params.cny)}));
+      if (o.devis) s.devis = {...s.devis, num:o.devis.num, status:o.devis.status, inputs: migrateInputs(o.devis.inputs, s.params.cny)};
+      return s;
+    }
+  } catch(e){ storageOK = false; }
+  return seedState();
+}
+state = loadState();
+if (!state || !state.tarifs) state = seedState();
+state.devis.inputs = migrateInputs(state.devis.inputs, state.params.cny);
+state.devis.msg = state.devis.msg || {edited:false, text:""};
+state.produits = state.produits || [];
+state.company = state.company || seedState().company;
+let saveTimer = null;
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(state)); storageOK = true; } catch(e){ storageOK = false; } renderStorage(); }, 200);
+}
+function renderStorage(){
+  const t = storageOK ? "Données enregistrées automatiquement dans ce navigateur." : "Ce navigateur ne permet pas l’enregistrement automatique : exportez une sauvegarde avant de fermer la page.";
+  $("#foot-store").textContent = `${t} ${state.archive.length} ${plural(state.archive.length, "devis", "devis")} dans l’historique, ${state.produits.length} ${plural(state.produits.length, "fiche produit", "fiches produits")}.`;
+  const p = $("#p-storage"); if (p) p.textContent = t + " Exportez une sauvegarde pour la garder ailleurs ou la transférer sur un autre ordinateur.";
+}
+const getCounter = () => { let n = N(state.counter); for (const a of state.archive) if (a.id > n) n = a.id; return n; };
+
+/* ================= Calculation engine (Excel formulas) ================= */
+function derive(inp){
+  const ded = deduceCategory(inp);
+  const categorie = inp.categorieManuelle || ded.cat;
+  const pieces = N(inp.pieces);
+  const prixYuan = inp.prixMode === "total" ? (pieces > 0 ? N(inp.prixSaisi) / pieces : 0) : N(inp.prixSaisi);
+  return {...inp, categorie, ded, prixYuan, livChineAr: N(inp.livChineYuan) * N(state.params.cny)};
+}
+function compute(inp, st = state){
+  const P = st.params;
+  const I = k => N(inp[k]);
+  const reel = I("cartons") * I("poids");
+  const volw = I("cartons") * I("longueur") * I("largeur") * I("hauteur") / (N(P.divVol) || 6000);
+  const vol  = I("cartons") * I("longueur") * I("largeur") * I("hauteur") / 1e6;
+  const d0 = isoToDay(inp.datePaiement);
+  const arrivee = d0 == null ? null : d0 + I("livChine") + I("heure") / 24;
+  const achat = I("prixYuan") * I("pieces") * N(P.cny);
+  const cat = String(inp.categorie ?? "").trim().toLowerCase();
+  const calMap = {};
+  for (const c of st.calendrier) {
+    if (blank(c.transitaire) || !c.date) continue;
+    const key = (c.transitaire + "|" + c.service).toLowerCase();
+    (calMap[key] = calMap[key] || []).push(isoToDay(c.date));
+  }
+  const rows = st.tarifs.filter(t => !blank(t.transitaire)).map((t, idx) => {
+    const label = offerLabel(t);
+    const tokens = String(t.categories ?? "").split(";").map(s => s.trim().toLowerCase());
+    const catOk = cat !== "" && tokens.includes(cat);
+    const tooHeavy = !blank(t.maxColis) && I("poids") > N(t.maxColis);
+    const compat = catOk && !tooHeavy;
+    const reason = !catOk ? `n’accepte pas la catégorie « ${inp.categorie || "—"} »` : tooHeavy ? `carton de ${fmtDec(I("poids"))} kg : maximum ${fmtDec(N(t.maxColis))} kg par colis` : "";
+    let q;
+    if (t.unite === "m³") q = roundUpStep(vol, N(P.arrVol) || 1e-10);
+    else if (t.unite === "pièce") q = I("pieces");
+    else {
+      const b = blank(t.baseImposee) ? inp.base : t.baseImposee;
+      const step = N(P.arrPoids) || 0.1;
+      q = b === "Poids réel" ? roundUpStep(reel, step) : b === "Poids volumétrique" ? roundUpStep(volw, step) : roundUpStep(Math.max(reel, volw), step);
+    }
+    if (!blank(t.minimum)) q = Math.max(q, N(t.minimum));
+    q = +q.toPrecision(12);
+    let rate = null;
+    if (!blank(t.tarif)) rate = (t.unite === "m³" && !blank(t.palier) && q > N(t.palier)) ? N(t.tarifAudela) : N(t.tarif);
+    const transport = rate == null ? null : q * rate * (t.devise === "USD" ? N(P.usd) : 1);
+    let dep = null, calKey = null, calEmpty = false;
+    const calDates = calMap[(t.transitaire + "|" + t.service).toLowerCase()];
+    if (calDates && calDates.length) calKey = t.transitaire + "|" + t.service;
+    if (arrivee != null) {
+      if (calDates && calDates.length) {
+        const thr = ceilX(arrivee + N(t.clo1) - N(t.heureClo) / 24);
+        const ok = calDates.filter(d => d >= thr);
+        dep = ok.length ? Math.min(...ok) : null;
+        calEmpty = !ok.length;
+      } else if (!blank(t.dep1) && DAYS.includes(t.dep1)) {
+        const nextFor = (day, clo) => { const base = ceilX(arrivee + N(clo) - N(t.heureClo) / 24); return base + (((DAYS.indexOf(day) + 1 - wd(base)) % 7) + 7) % 7; };
+        dep = nextFor(t.dep1, t.clo1);
+        if (!blank(t.dep2) && DAYS.includes(t.dep2)) dep = Math.min(dep, nextFor(t.dep2, t.clo2));
+      }
+    }
+    const arrMax = (dep == null || blank(t.delaiMax)) ? null : dep + N(t.delaiMax);
+    let dispo = null;
+    if (arrMax != null) dispo = arrMax + N(P.dispo) + ((P.dimanche === "Non" && wd(arrMax + N(P.dispo)) === 7) ? 1 : 0);
+    const client = dispo == null ? null : dispo + (t.mode === "Maritime" ? N(P.margeMar) : N(P.margeAvion));
+    const prixFinal = transport == null ? null : achat + I("livChineAr") + transport + I("fraisExclus") + I("livFinale");
+    return {t, idx, label, compat, catOk, tooHeavy, reason, q, rate, transport, dep, arrMax, dispo, client, prixFinal, calKey, calEmpty};
+  });
+  const compRows = rows.filter(r => r.compat);
+  rows.forEach(r => {
+    r.rankPrix = (r.compat && r.prixFinal != null) ? compRows.filter(o => o.prixFinal != null && o.prixFinal < r.prixFinal).length + 1 : null;
+    r.rankDelai = (r.compat && r.client != null) ? compRows.filter(o => o.client != null && o.client < r.client).length + 1 : null;
+  });
+  const sel = inp.offre ? rows.find(r => r.label === inp.offre) : null;
+  const res = {reel, volw, vol, arrivee, achat, rows, compRows, sel};
+  res.qtyTxt = sel ? fmtDec(sel.q) + " " + sel.t.unite : "";
+  res.tarifTxt = sel ? (sel.rate == null ? "Tarif à obtenir" : fmtInt(sel.rate) + " " + sel.t.devise + " / " + sel.t.unite) : "";
+  res.transport = sel ? (sel.transport == null ? "Tarif à obtenir" : sel.transport) : "";
+  res.total = isNum(res.transport) ? achat + I("livChineAr") + res.transport + I("fraisExclus") + I("livFinale") : "À calculer : tarif transport à obtenir";
+  res.parPiece = (isNum(res.total) && I("pieces") > 0) ? res.total / I("pieces") : "";
+  res.depart = sel ? (sel.dep == null ? "Départ à obtenir" : sel.dep) : "";
+  res.arrMin = sel ? ((sel.dep == null || blank(sel.t.delaiMin)) ? "À obtenir" : sel.dep + N(sel.t.delaiMin)) : "";
+  res.arrMaxV = sel ? (sel.arrMax == null ? "À obtenir" : sel.arrMax) : "";
+  res.dispoV = sel ? (sel.dispo == null ? "À obtenir" : sel.dispo) : "";
+  res.clientV = sel ? (sel.client == null ? "À obtenir" : sel.client) : "";
+  res.verifier = sel ? (sel.t.verifier || "") : "";
+  const cheap = rows.find(r => r.rankPrix === 1), fast = rows.find(r => r.rankDelai === 1);
+  res.cheap = cheap ? {label: cheap.label, v: cheap.prixFinal} : {label:"Aucune offre chiffrée", v:""};
+  res.fast = fast ? {label: fast.label, v: fast.client} : {label:"Aucune offre chiffrée", v:""};
+  res.pvConseille = isNum(res.parPiece) ? Math.ceil(r6(res.parPiece * (1 + I("tauxMarge")) / 100) - 1e-9) * 100 : "";
+  res.pvUtilise = isNum(inp.pvRetenu) ? inp.pvRetenu : res.pvConseille;
+  res.margePiece = (isNum(res.pvUtilise) && isNum(res.parPiece)) ? res.pvUtilise - res.parPiece : "";
+  res.margeTotale = isNum(res.margePiece) ? res.margePiece * I("pieces") : "";
+  res.tauxMargeR = (isNum(res.margePiece) && isNum(res.parPiece) && res.parPiece !== 0) ? res.margePiece / res.parPiece : "";
+  res.tauxMarque = (isNum(res.margePiece) && isNum(res.pvUtilise) && res.pvUtilise !== 0) ? res.margePiece / res.pvUtilise : "";
+  res.ca = isNum(res.pvUtilise) ? res.pvUtilise * I("pieces") : "";
+  return res;
+}
+function sortForMode(rows, mode){
+  const big = Number.MAX_SAFE_INTEGER;
+  const P = r => r.prixFinal == null ? big : r.prixFinal, D = r => r.client == null ? big : r.client;
+  return rows.slice().sort((a, b) => mode === "fast" ? (D(a) - D(b) || P(a) - P(b)) : (P(a) - P(b) || D(a) - D(b)));
+}
+function autoPick(res, mode){
+  const c = sortForMode(res.rows.filter(r => r.compat && r.prixFinal != null), mode);
+  return c.length ? c[0].label : "";
+}
+// Full evaluation of an input set (auto-choice of offer included)
+function evaluate(inp, st = state){
+  let d = derive(inp), res = compute(d, st);
+  if (inp.offreMode !== "manual") {
+    const l = autoPick(res, inp.offreMode);
+    if (l !== inp.offre) { inp.offre = l; d = derive(inp); res = compute(d, st); }
+  }
+  return {d, res};
+}
+
+/* ================= Coherence checks ================= */
+function checkAlerts(inp, d, res){
+  const out = [], ign = inp.ignored || {};
+  const add = (key, sig, level, msg, fixes = []) => { if (ign[key] !== sig) out.push({key, sig, level, msg, fixes}); };
+  const dims = [["longueur","Longueur"],["largeur","Largeur"],["hauteur","Hauteur"]].map(([k, l]) => [k, l, N(inp[k])]);
+  const big = dims.filter(x => x[2] > 150), small = dims.filter(x => x[2] > 0 && x[2] < 1);
+  const sigDims = dims.map(x => x[2]).join("x");
+  if (big.length) add("dimbig", sigDims, "err", `${big.map(x => `${x[1]} ${fmtDec(x[2])} cm`).join(", ")} : plus de 150 cm. Les dimensions sont peut-être en millimètres.`, [{id:"big10", label: big.length === 3 ? "C’étaient des mm : diviser par 10" : `Diviser par 10 : ${big.map(x => x[1].toLowerCase()).join(", ")}`}]);
+  if (small.length) add("dimsmall", sigDims, "err", `${small.map(x => `${x[1]} ${fmtDec(x[2])} cm`).join(", ")} : moins de 1 cm. Les dimensions sont peut-être en mètres.`, [{id:"dims100", label:"C’étaient des mètres : multiplier par 100"}]);
+  const v1 = N(inp.longueur) * N(inp.largeur) * N(inp.hauteur) / 1e6, p = N(inp.poids);
+  if (v1 > 0 && p > 0) {
+    const dens = p / v1;
+    const sig = sigDims + "|" + p;
+    if (dens > 1500) add("densHigh", sig, "err", `Carton très lourd pour sa taille : ${fmtDec(p)} kg dans ${fmtDec(N(inp.longueur))} × ${fmtDec(N(inp.largeur))} × ${fmtDec(N(inp.hauteur))} cm, soit ${fmtInt(dens)} kg par m³. Le poids est peut-être en grammes, ou les dimensions trop petites.`, [{id:"poids1000", label:"Le poids était en grammes : diviser par 1 000"}]);
+    else if (dens < 10) add("densLow", sig, "err", `Carton très léger pour sa taille : ${fmtDec(p)} kg pour ${fmtDec(v1)} m³, soit ${fmtDec2(dens)} kg par m³. Les dimensions sont peut-être en millimètres.`, [{id:"dims10", label:"C’étaient des mm : diviser par 10"}]);
+  }
+  if (d.prixYuan >= 10000) add("prixAr", String(inp.prixSaisi) + inp.prixMode, "err", `Prix de ${fmtDec2(d.prixYuan)} ¥ par pièce : c’est très élevé et ressemble à un montant en ariary.`, [{id:"prixAr", label:`C’étaient des ariary : convertir en yuan (÷ ${fmtDec(state.params.cny)})`}]);
+  if (N(inp.livChineYuan) > 2000) add("livAr", String(inp.livChineYuan), "err", `Livraison en Chine de ${fmtDec2(N(inp.livChineYuan))} ¥ : c’est très élevé et ressemble à un montant en ariary.`, [{id:"livAr", label:`C’étaient des ariary : convertir en yuan (÷ ${fmtDec(state.params.cny)})`}]);
+  if (N(inp.cartons) > 0 && N(inp.pieces) > 0 && N(inp.cartons) > N(inp.pieces)) add("cartPieces", inp.cartons + "|" + inp.pieces, "err", `Plus de cartons (${fmtInt(N(inp.cartons))}) que de pièces (${fmtInt(N(inp.pieces))}) : vérifiez les deux nombres.`);
+  const heavy = res.rows.filter(r => r.catOk && r.tooHeavy);
+  if (heavy.length) out.push({key:"heavy", level:"info", msg:`Carton de ${fmtDec(p)} kg : ${heavy.length} ${plural(heavy.length, "offre écartée", "offres écartées")} car au-dessus de leur limite par colis (${[...new Set(heavy.map(r => r.t.transitaire + " " + r.t.service.toLowerCase() + " : " + fmtDec(N(r.t.maxColis)) + " kg"))].join(", ")}). Répartir en plusieurs cartons permet de les retrouver.`, fixes:[]});
+  return out;
+}
+function applyFix(id){
+  const inp = state.devis.inputs, cny = N(state.params.cny) || 1;
+  const div = (k, f) => { if (isNum(inp[k])) inp[k] = +(inp[k] / f).toPrecision(10); };
+  if (id === "dims10") ["longueur","largeur","hauteur"].forEach(k => div(k, 10));
+  if (id === "big10") ["longueur","largeur","hauteur"].forEach(k => { if (N(inp[k]) > 150) div(k, 10); });
+  if (id === "dims100") ["longueur","largeur","hauteur"].forEach(k => { if (isNum(inp[k])) inp[k] = +(inp[k] * 100).toPrecision(10); });
+  if (id === "poids1000") div("poids", 1000);
+  if (id === "prixAr") inp.prixSaisi = +(N(inp.prixSaisi) / cny).toFixed(2);
+  if (id === "livAr") inp.livChineYuan = +(N(inp.livChineYuan) / cny).toFixed(2);
+}
+
+/* ================= Seller message parser ================= */
+function parseSeller(text){
+  const out = {};
+  const T = " " + String(text || "").replace(/，/g, ",").replace(/：/g, ":").replace(/＊|×/g, "*") + " ";
+  const NUM = "(\\d+(?:[.,]\\d+)?)";
+  const toN = s => parseFloat(String(s).replace(",", "."));
+  const U = "(mm|cm|m|毫米|厘米|米)?";
+  // Dimensions: 35*28*28 cm, 350 x 280 x 280mm, 35cm*28cm*28cm
+  let m = new RegExp(NUM + "\\s*" + U + "\\s*[*xX]\\s*" + NUM + "\\s*" + U + "\\s*[*xX]\\s*" + NUM + "\\s*" + U, "i").exec(T);
+  let dims = null, unit = null, src = "";
+  if (m) { dims = [toN(m[1]), toN(m[3]), toN(m[5])]; unit = (m[6] || m[2] || m[4] || "").toLowerCase(); src = m[0].trim(); }
+  else {
+    m = new RegExp("\\bL(?:ength)?\\s*[:=]?\\s*" + NUM + "\\s*" + U + "[^\\d]{0,20}?\\bW(?:idth)?\\s*[:=]?\\s*" + NUM + "\\s*" + U + "[^\\d]{0,20}?\\bH(?:eight)?\\s*[:=]?\\s*" + NUM + "\\s*" + U, "i").exec(T);
+    if (m) { dims = [toN(m[1]), toN(m[3]), toN(m[5])]; unit = (m[6] || m[2] || m[4] || "").toLowerCase(); src = m[0].trim(); }
+  }
+  if (dims) {
+    let note = "";
+    if (!unit) { const near = /\b(mm|cm)\b/i.exec(T); if (near) unit = near[1].toLowerCase(); }
+    if (!unit) { if (Math.min(...dims) > 150) { unit = "mm"; note = "unité non indiquée : valeurs très grandes, comprises comme des mm"; } else { unit = "cm"; note = "unité non indiquée : comprise comme des cm"; } }
+    const f = (unit === "mm" || unit === "毫米") ? 0.1 : (unit === "m" || unit === "米") ? 100 : 1;
+    out.dims = {v: dims.map(x => +(x * f).toPrecision(10)), src, note: [f !== 1 ? `converti de ${unit} en cm` : "", note].filter(Boolean).join(", ")};
+  }
+  // Weight: prefer gross weight
+  const wRe = new RegExp(NUM + "\\s*(kgs?|kilos?|kilogrammes?|公斤|千克|grammes?|grams?|gr|g|克|lbs?)(?![a-zà-ü])", "gi");
+  const ws = [];
+  let w;
+  while ((w = wRe.exec(T))) {
+    const before = T.slice(Math.max(0, w.index - 40), w.index).toLowerCase();
+    const after = T.slice(w.index + w[0].length, w.index + w[0].length + 12).toLowerCase();
+    if (/^\s*(\/|par|per)\s*(kg|g)/.test(after) || /(ar|usd|\$|¥|rmb|yuan)\s*\/?\s*$/.test(before)) continue;
+    const u = w[2].toLowerCase();
+    const f = /^(g|gr|grams?|grammes?|克)$/.test(u) ? 0.001 : /^lbs?$/.test(u) ? 0.4536 : 1;
+    let score = 0;
+    if (/gross|g\.?\s?w|毛重|brut/.test(before)) score += 3;
+    if (/net|n\.?\s?w|净重/.test(before)) score -= 3;
+    if (/weight|poids|重/.test(before)) score += 1;
+    ws.push({kg: +(toN(w[1]) * f).toPrecision(10), src: w[0].trim(), unit: u, f, total: /total|totale|总/.test(before), score, ctx: before.slice(-20) + w[0]});
+  }
+  if (ws.length) { ws.sort((a, b) => b.score - a.score); const b = ws[0]; out.poids = {v: b.kg, src: b.ctx.trim(), total: b.total, note: b.f !== 1 ? `converti de ${b.unit} en kg` : ""}; }
+  // Cartons
+  m = /(\d+)\s*(?:cartons?|ctns?|boxes|colis|箱)(?![a-z\/])/i.exec(T) || /(?:number of cartons|nb(?:re)? de cartons|cartons?|ctns?|箱数)\s*[:=]\s*(\d+)/i.exec(T);
+  if (m) out.cartons = {v: parseInt(m[1], 10), src: m[0].trim()};
+  // Pieces per carton
+  m = /(\d+)\s*(?:pcs|pieces|pièces|pc|件|个)\s*(?:\/|per|par|each|一)\s*(?:ctn|carton|box|箱)/i.exec(T) || /(?:pcs\/ctn|qty\/ctn|pcs per carton|pièces par carton|装箱数)\s*[:=]?\s*(\d+)/i.exec(T);
+  if (m) out.ppc = {v: parseInt(m[1], 10), src: m[0].trim()};
+  // Total quantity
+  m = /(?:quantity|qty|quantité|数量)\s*[:=]?\s*(\d+)\s*(?:pcs|pieces|pièces|件|个)?(?!\s*\/)/i.exec(T);
+  if (m) out.pieces = {v: parseInt(m[1], 10), src: m[0].trim()};
+  return out;
+}
+
+/* ================= Dialog & toast ================= */
+function dialog({title, html = "", input = null, buttons = [{label:"OK", value:"ok", kind:"primary"}], wide = false, onOpen}){
+  return new Promise(resolve => {
+    const d = $("#dlg"); d.classList.toggle("wide", wide);
+    $("#dlg-body").innerHTML = `<h3>${esc(title)}</h3>${html}${input ? `<input class="inp" id="dlg-in" value="${esc(input.value ?? "")}" placeholder="${esc(input.placeholder ?? "")}" aria-label="${esc(title)}">` : ""}`;
+    $("#dlg-foot").innerHTML = buttons.map(b => `<button class="btn ${b.kind || ""}" value="${esc(b.value)}">${esc(b.label)}</button>`).join("");
+    const done = () => { d.removeEventListener("close", done); const inEl = $("#dlg-in"); resolve({value: d.returnValue || "cancel", text: inEl ? inEl.value : null, root: $("#dlg-body")}); };
+    d.addEventListener("close", done);
+    d.returnValue = "";
+    d.showModal();
+    if (onOpen) onOpen($("#dlg-body"));
+    const inEl = $("#dlg-in"); if (inEl) { inEl.focus(); inEl.select(); inEl.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); d.close(buttons[buttons.length-1].value); } }); }
+  });
+}
+const confirmDlg = async (title, msg, okLabel = "Oui", danger = false) => (await dialog({title, html:`<p>${esc(msg)}</p>`, buttons:[{label:"Annuler", value:"cancel"}, {label:okLabel, value:"ok", kind: danger ? "primary danger" : "primary"}]})).value === "ok";
+let toastT;
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 3400); }
+
+/* ================= Navigation ================= */
+function go(view){
+  $$(".view").forEach(v => v.classList.toggle("active", v.id === "v-" + view));
+  $$("#tabs button").forEach(b => b.setAttribute("aria-selected", (b.dataset.view === view || (view === "consultation" && b.dataset.view === "historique")) ? "true" : "false"));
+  document.body.classList.toggle("on-devis", view === "devis");
+  if (view === "devis") renderDevis();
+  if (view === "historique") renderHistorique();
+  if (view === "produits") renderProduits();
+  if (view === "tarifs") renderTarifs();
+  if (view === "calendrier") renderCalendrier();
+  if (view === "parametres") renderParams();
+  window.scrollTo({top:0});
+}
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("button[data-view]"); if (b) go(b.dataset.view); });
+document.addEventListener("click", e => { const g = e.target.closest("[data-go]"); if (g) { e.preventDefault(); go(g.dataset.go); } });
+document.addEventListener("click", e => {
+  const b = e.target.closest(".tip-btn"); if (!b) return;
+  e.preventDefault(); const t = document.getElementById(b.dataset.tip); if (!t) return; const open = t.classList.toggle("open"); b.setAttribute("aria-expanded", open);
+});
+
+/* ================= Devis: build static controls ================= */
+function buildDevisControls(){
+  $("#seg-nature").innerHTML = NATURES.map(([v, l, h]) => `<label title="${esc(h)}"><input type="radio" name="nature" value="${v}" data-k="nature" data-kind="radio"><span>${esc(l)}</span></label>`).join("");
+  $("#yn-flags").innerHTML = FLAGS.map(([k, l]) => `<label><input type="checkbox" data-k="${k}" data-kind="bool"> ${esc(l)}</label>`).join("");
+  $("#seg-prix").innerHTML = [["piece","Par pièce"],["total","Total de la commande"]].map(([v, l]) => `<label><input type="radio" name="prixMode" value="${v}" data-k="prixMode" data-kind="radio"><span>${l}</span></label>`).join("");
+  $("#seg-mode").innerHTML = [["cheap","Le moins cher"],["fast","Le plus rapide"]].map(([v, l]) => `<label><input type="radio" name="offreMode" value="${v}" data-k="offreMode" data-kind="radio"><span>${l}</span></label>`).join("");
+}
+function fillFicheSelect(){
+  const inp = state.devis.inputs;
+  const list = state.produits.slice().sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+  $("#in-fiche").innerHTML = `<option value="">— Nouveau produit (sans fiche) —</option>` + list.map(p => `<option value="${p.id}" ${p.id === inp.produitId ? "selected" : ""}>${esc(p.nom)}</option>`).join("");
+  const f = state.produits.find(p => p.id === inp.produitId);
+  $("#fiche-acts").innerHTML = f
+    ? `<button class="btn small" id="fiche-update">Mettre à jour la fiche avec ces valeurs</button><span class="assume" style="margin:0">Fiche : ${f.ppc ? fmtInt(f.ppc) + " pièces par carton" : "pièces par carton non renseignées"}</span>`
+    : `<button class="btn small" id="fiche-save">Enregistrer comme fiche produit</button>`;
+}
+// copy state → visible inputs (skips the field being typed in)
+function syncInputs(){
+  const inp = state.devis.inputs;
+  $$("#v-devis [data-k]").forEach(el => {
+    const k = el.dataset.k, kind = el.dataset.kind, v = inp[k];
+    if (kind === "radio") { el.checked = String(v) === el.value; return; }
+    if (kind === "bool") { el.checked = !!v; return; }
+    if (el === document.activeElement) return;
+    if (kind === "num") { el.value = fmtIn(v); el.classList.remove("bad"); }
+    else if (kind === "pct") el.value = isNum(v) ? fmtIn(+(v * 100).toPrecision(12)) : "";
+    else el.value = v ?? "";
+  });
+}
+function applyFiche(f, inp){
+  Object.assign(inp, {produit:f.nom, produitId:f.id, nature:f.nature || "simple", batterie:!!f.batterie, aimant:!!f.aimant, liquide:!!f.liquide, danger:!!f.danger,
+    categorieManuelle:f.categorieManuelle || "", longueur:f.longueur, largeur:f.largeur, hauteur:f.hauteur, poids:f.poids, prixMode:"piece", prixSaisi:f.prixYuan, ppc:f.ppc || "", ignored:{}});
+  inp.cartonsAuto = N(f.ppc) > 0;
+  if (inp.cartonsAuto) inp.cartons = Math.max(1, Math.ceil(N(inp.pieces) / N(f.ppc)));
+}
+
+/* ================= Devis: events ================= */
+function onDevisInput(e){
+  const el = e.target.closest("[data-k]"); if (!el || !el.closest("#v-devis")) return;
+  const inp = state.devis.inputs, k = el.dataset.k, kind = el.dataset.kind;
+  let v;
+  if (kind === "num") { v = parseFr(el.value); const bad = Number.isNaN(v); el.classList.toggle("bad", bad); if (bad) return; }
+  else if (kind === "pct") { v = parseFr(el.value); if (Number.isNaN(v)) { el.classList.add("bad"); return; } el.classList.remove("bad"); v = v === "" ? "" : v / 100; }
+  else if (kind === "bool") v = el.checked;
+  else if (kind === "radio") { if (!el.checked) return; v = el.value; }
+  else if (kind === "intsel") v = +el.value;
+  else v = el.value;
+  inp[k] = v;
+  if (k === "cartons") inp.cartonsAuto = false;
+  if (k === "pieces" && inp.cartonsAuto && N(inp.ppc) > 0) { inp.cartons = Math.max(1, Math.ceil(N(inp.pieces) / N(inp.ppc))); }
+  if (["nature","batterie","aimant","liquide","danger"].includes(k)) inp.categorieManuelle = "";
+  if (k === "prixMode") { $("#lab-prix").textContent = v === "total" ? "Prix total de la commande" : "Prix par pièce"; }
+  renderDevis(k); persist();
+}
+$("#v-devis").addEventListener("input", onDevisInput);
+$("#v-devis").addEventListener("change", e => { if (["radio","bool","intsel","text","date"].includes(e.target.dataset?.kind) || e.target.tagName === "SELECT") onDevisInput(e); });
+$("#v-devis").addEventListener("focusout", e => { const el = e.target.closest('[data-kind="num"],[data-kind="pct"]'); if (el) setTimeout(syncInputs, 0); });
+$("#in-fiche").addEventListener("change", async e => {
+  const id = e.target.value, inp = state.devis.inputs;
+  if (!id) { inp.produitId = ""; inp.ppc = ""; inp.cartonsAuto = false; fillFicheSelect(); persist(); return; }
+  const f = state.produits.find(p => p.id === id); if (!f) return;
+  applyFiche(f, inp); fillFicheSelect(); syncInputs(); renderDevis(); persist();
+  toast(`Fiche « ${f.nom} » chargée : tapez le nombre de pièces.`); $("#in-pieces").focus(); $("#in-pieces").select();
+});
+document.addEventListener("click", async e => {
+  const t = e.target;
+  if (t.id === "fiche-save" || t.id === "fiche-update") { e.preventDefault(); saveFicheFromDevis(t.id === "fiche-update"); }
+  if (t.closest("[data-goto]")) { setStep(+t.closest("[data-goto]").dataset.goto); }
+  if (t.closest("#stepper button")) setStep(+t.closest("#stepper button").dataset.step);
+  const fx = t.closest("[data-fix]"); if (fx) { applyFix(fx.dataset.fix); syncInputs(); renderDevis(); persist(); toast("Valeurs corrigées."); }
+  const ig = t.closest("[data-ignore]"); if (ig) { const a = lastEval.alerts.find(x => x.key === ig.dataset.ignore); if (a) { state.devis.inputs.ignored = {...state.devis.inputs.ignored, [a.key]: a.sig}; renderDevis(); persist(); } }
+  const pick = t.closest("[data-pick]"); if (pick) { const inp = state.devis.inputs; inp.offre = pick.dataset.pick; inp.offreMode = "manual"; renderDevis(); persist(); }
+  if (t.id === "mode-auto") { state.devis.inputs.offreMode = "cheap"; renderDevis(); persist(); }
+  if (t.id === "cat-manual") { e.preventDefault(); $("#cat-select-wrap").hidden = false; }
+  if (t.id === "cartons-recalc") { const inp = state.devis.inputs; inp.cartonsAuto = true; inp.cartons = Math.max(1, Math.ceil(N(inp.pieces) / N(inp.ppc))); syncInputs(); renderDevis(); persist(); }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "cat-select") { state.devis.inputs.categorieManuelle = e.target.value; renderDevis(); persist(); }
+});
+function setStep(n){
+  state.devis.step = n; persist();
+  $$(".step").forEach(s => s.classList.toggle("active", +s.dataset.step === n));
+  renderStepper();
+  const top = $("#stepper").getBoundingClientRect().top + window.scrollY - 80;
+  if (window.scrollY > top) window.scrollTo({top});
+}
+
+/* ================= Devis: render ================= */
+let lastEval = {alerts:[]};
+const dateOr = v => isNum(v) ? fmtDay(v) : esc(v);
+function stepState(inp){
+  const s1 = N(inp.pieces) > 0 && N(inp.prixSaisi) > 0 && !!inp.datePaiement && !!inp.produit;
+  const s2 = N(inp.cartons) > 0 && N(inp.longueur) > 0 && N(inp.largeur) > 0 && N(inp.hauteur) > 0 && N(inp.poids) > 0;
+  const miss1 = [!inp.produit && "nom", !(N(inp.pieces) > 0) && "pièces", !(N(inp.prixSaisi) > 0) && "prix"].filter(Boolean);
+  const miss2 = [!(N(inp.cartons) > 0) && "cartons", !(N(inp.longueur) > 0 && N(inp.largeur) > 0 && N(inp.hauteur) > 0) && "dimensions", !(N(inp.poids) > 0) && "poids"].filter(Boolean);
+  return {s1, s2, miss1, miss2};
+}
+function renderStepper(){
+  const inp = state.devis.inputs, ss = stepState(inp), step = state.devis.step || 1;
+  const errs = lastEval.alerts.filter(a => a.level === "err").length;
+  const info = {1: ss.s1 ? ["done","Complet"] : ["todo","À compléter : " + ss.miss1.join(", ")],
+                2: ss.s2 ? (errs ? ["todo", `${errs} ${plural(errs, "alerte")} à vérifier`] : ["done","Complet"]) : ["todo","À compléter : " + ss.miss2.join(", ")],
+                3: [inp.offre ? "done" : "todo", inp.offre ? (inp.offreMode === "manual" ? "Offre choisie à la main" : "Offre choisie d’office") : "Aucune offre"]};
+  $$("#stepper button").forEach(b => {
+    const n = +b.dataset.step; b.className = info[n][0]; b.querySelector(".s").textContent = info[n][1];
+    if (n === step) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+  });
+}
+function renderDevis(changedKey){
+  const inp = state.devis.inputs;
+  const {d, res} = evaluate(inp);
+  const alerts = checkAlerts(inp, d, res);
+  lastEval = {d, res, alerts};
+  $("#d-num").textContent = state.devis.num;
+  const s = $("#d-status"); s.textContent = state.devis.status.text; s.className = "status" + (state.devis.status.warn ? " warn" : "");
+  $$(".step").forEach(x => x.classList.toggle("active", +x.dataset.step === (state.devis.step || 1)));
+  $("#lab-prix").textContent = inp.prixMode === "total" ? "Prix total de la commande" : "Prix par pièce";
+  syncInputs();
+  renderCategory(d);
+  // price hint
+  const cny = N(state.params.cny);
+  $("#hint-prix").innerHTML = N(inp.prixSaisi) > 0
+    ? (inp.prixMode === "total" ? `soit ${fmtDec2(d.prixYuan)} ¥ par pièce · ` : `soit ${fmtDec2(d.prixYuan * N(inp.pieces))} ¥ pour ${fmtInt(N(inp.pieces))} ${plural(N(inp.pieces), "pièce")} · `) + `${fmtAr(res.achat)} au taux de ${fmtDec(cny)} Ar/¥`
+    : "Le prix affiché sur Alibaba, 1688 ou Taobao, en yuan.";
+  $("#hint-livchine").textContent = N(inp.livChineYuan) > 0 ? `soit ${fmtInt(N(inp.livChineYuan) * cny)} Ar. 0 si gratuit.` : "0 si gratuit.";
+  $("#hint-cartons").innerHTML = inp.cartonsAuto && N(inp.ppc) > 0
+    ? `Calculé : ${fmtInt(N(inp.pieces))} pièces ÷ ${fmtInt(N(inp.ppc))} par carton (fiche produit).`
+    : (N(inp.ppc) > 0 ? `<button class="linkbtn" id="cartons-recalc">Recalculer avec la fiche (${fmtInt(N(inp.ppc))} pièces par carton)</button>` : "");
+  renderAlerts(alerts);
+  renderOffers(inp, res);
+  renderBreakdown(inp, res);
+  renderSale(res);
+  renderMessage(inp, res);
+  renderSummary(inp, res, alerts);
+  renderStepper();
+  renderCalBadge();
+}
+function renderCategory(d){
+  const inp = state.devis.inputs, ded = d.ded, manual = !!inp.categorieManuelle;
+  const missing = !state.categories.includes(d.categorie);
+  $("#catbox").innerHTML = `<span>Catégorie retenue</span><br><b>${esc(d.categorie)}</b>
+    <p>${manual ? "Choisie à la main" + (inp.categorieManuelle !== ded.cat ? ` (les réponses donneraient « ${esc(ded.cat)} »)` : "") + "." : "Car " + esc(ded.why) + "."}</p>
+    ${ded.notes.length ? `<p class="note">Le produit ${esc(ded.notes.join(" et "))} : signalez-le au transitaire.</p>` : ""}
+    ${missing ? `<p class="note">« ${esc(d.categorie)} » n’existe pas dans la liste des catégories (onglet Paramètres).</p>` : ""}
+    <p><button class="linkbtn" id="cat-manual">Choisir la catégorie moi-même</button></p>
+    <div id="cat-select-wrap" ${manual ? "" : "hidden"}><select class="inp" id="cat-select" style="max-width:320px;margin-top:6px"><option value="">Automatique (selon les réponses)</option>${state.categories.map(c => `<option ${c === inp.categorieManuelle ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>`;
+}
+function renderAlerts(alerts){
+  $("#alerts").innerHTML = alerts.map(a => `<div class="alert ${a.level === "info" ? "info" : ""}" role="${a.level === "err" ? "alert" : "status"}">${a.msg}
+    ${a.level === "err" ? `<div class="acts">${a.fixes.map(f => `<button class="btn small primary" data-fix="${f.id}">${esc(f.label)}</button>`).join("")}<button class="btn small" data-ignore="${a.key}">C’est correct</button></div>` : ""}</div>`).join("");
+}
+function offerParts(t){ return {who: t.transitaire, svc: `${t.mode} ${String(t.service).toLowerCase()}`}; }
+function renderOffers(inp, res){
+  $$("#seg-mode input").forEach(i => i.checked = i.value === inp.offreMode);
+  $("#mode-note").innerHTML = inp.offreMode === "manual" ? `Vous avez choisi l’offre à la main. <button class="linkbtn" id="mode-auto">Revenir au choix automatique</button>` : "Cliquez sur une autre offre pour la choisir.";
+  const comp = sortForMode(res.compRows, inp.offreMode === "fast" ? "fast" : "cheap");
+  const selIncompat = inp.offre && !res.compRows.some(r => r.label === inp.offre);
+  let html = "";
+  if (selIncompat) html += `<div class="alert">⚠ L’offre choisie « ${esc(inp.offre)} » n’est plus compatible avec ce produit. Choisissez-en une autre ci-dessous.</div>`;
+  if (!comp.length) html += `<div class="alert">Aucune offre n’accepte ce produit (catégorie « ${esc(lastEval.d.categorie)} »${N(inp.poids) ? `, carton de ${fmtDec(N(inp.poids))} kg` : ""}). Vérifiez la catégorie ou ajoutez une offre dans l’onglet Tarifs.</div>`;
+  html += comp.map(r => {
+    const p = offerParts(r.t), sel = r.label === inp.offre;
+    const tags = [];
+    if (r.rankPrix === 1) tags.push(`<span class="tag cheap">Le moins cher</span>`);
+    if (r.rankDelai === 1) tags.push(`<span class="tag fast">Le plus rapide</span>`);
+    if (r.rate == null) tags.push(`<span class="tag warn">Tarif à obtenir</span>`);
+    if (r.calEmpty) tags.push(`<span class="tag warn">Plus de date de départ dans le calendrier</span>`);
+    else if (r.dep == null) tags.push(`<span class="tag amber">Départ à obtenir</span>`);
+    if (sel) tags.push(`<span class="tag yes">Offre choisie</span>`);
+    return `<button class="card ${sel ? "sel" : ""}" data-pick="${esc(r.label)}" aria-pressed="${sel}">
+      <span><span class="who">${esc(p.who)}</span><br><span class="svc">${esc(p.svc)} · ${esc(r.t.categories)}</span></span>
+      <span><span class="price num">${r.prixFinal == null ? "—" : fmtAr(r.prixFinal)}</span><br><span class="date num">${r.client == null ? "date à obtenir" : "client : " + fmtDay(r.client)}</span></span>
+      <span class="meta">Facturé ${fmtDec(r.q)} ${esc(r.t.unite)}${r.rate != null ? " × " + fmtInt(r.rate) + " " + esc(r.t.devise) : ""}${r.dep != null ? " · départ " + fmtDay(r.dep) : ""}${N(inp.pieces) > 0 && r.prixFinal != null ? " · " + fmtAr(r.prixFinal / N(inp.pieces)) + " par pièce" : ""}</span>
+      ${tags.length ? `<span class="tags">${tags.join("")}</span>` : ""}</button>`;
+  }).join("");
+  $("#cards").innerHTML = html;
+  const excl = res.rows.filter(r => !r.compat);
+  $("#excluded").innerHTML = excl.length ? `<details class="more"><summary>${excl.length} ${plural(excl.length, "offre écartée", "offres écartées")}</summary><ul class="excl">${excl.map(r => `<li><b>${esc(r.t.transitaire)} ${esc(r.t.mode.toLowerCase())} ${esc(String(r.t.service).toLowerCase())}</b> (${esc(r.t.categories)}) : ${esc(r.reason)}</li>`).join("")}</ul></details>` : "";
+  // calendar warning for relevant offers
+  const lows = calAlerts();
+  const relevant = lows.filter(a => res.compRows.some(r => r.calKey && r.calKey.toLowerCase() === a.key.toLowerCase()));
+  $("#cal-warn").innerHTML = relevant.map(a => `<div class="alert info">${esc(a.msg)} <button class="linkbtn" data-go="calendrier">Ouvrir le calendrier</button></div>`).join("");
+  renderCmpTable(inp, res);
+}
+function renderCmpTable(inp, res){
+  const head = ["Offre","Compatible","Quantité facturée","Tarif appliqué","Transport (Ar)","Départ réservable","Arrivée (délai max)","Disponibilité Tana","Date client","Prix final (Ar)","Rang prix","Rang délai","À vérifier"];
+  $("#cmp-table").innerHTML = `<thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>` + res.rows.map(x => `<tr class="${x.compat ? "" : "incompat"}">
+    <td style="min-width:220px"><b>${esc(x.label)}</b>${x.compat ? "" : `<br><small>${esc(x.reason)}</small>`}</td>
+    <td><span class="tag ${x.compat ? "yes" : ""}">${x.compat ? "Oui" : "Non"}</span></td>
+    <td class="n">${fmtDec(x.q)} ${esc(x.t.unite)}</td><td class="n">${x.rate == null ? "" : fmtInt(x.rate) + " " + esc(x.t.devise)}</td>
+    <td class="n">${x.transport == null ? "" : fmtInt(x.transport)}</td><td class="d">${x.dep == null ? "" : fmtDay(x.dep)}</td>
+    <td class="d">${x.arrMax == null ? "" : fmtDay(x.arrMax)}</td><td class="d">${x.dispo == null ? "" : fmtDay(x.dispo)}</td>
+    <td class="d ${x.rankDelai === 1 ? "best" : ""}">${x.client == null ? "" : fmtDay(x.client)}</td>
+    <td class="n ${x.rankPrix === 1 ? "best" : ""}">${x.prixFinal == null ? "" : fmtInt(x.prixFinal)}</td>
+    <td class="n">${x.rankPrix ?? ""}</td><td class="n">${x.rankDelai ?? ""}</td><td class="wrap">${esc(x.t.verifier)}</td></tr>`).join("") + "</tbody>";
+}
+function renderBreakdown(inp, res){
+  const d = lastEval.d;
+  $("#breakdown").innerHTML = `<table class="kv">
+    <tr><td>Poids réel total</td><td>${fmtDec3(res.reel)} kg</td></tr>
+    <tr><td>Poids volumétrique total<span class="note">L × l × H ÷ ${fmtInt(state.params.divVol)}</span></td><td>${fmtDec3(res.volw)} kg</td></tr>
+    <tr><td>Volume total</td><td>${fmtDec(+res.vol.toPrecision(4))} m³</td></tr>
+    <tr><td>Quantité facturée</td><td>${esc(res.qtyTxt)}</td></tr>
+    <tr><td>Tarif appliqué</td><td>${res.tarifTxt}</td></tr>
+    <tr><td>① Prix d’achat<span class="note">${fmtDec2(d.prixYuan)} ¥ × ${fmtInt(N(inp.pieces))} × ${fmtDec(state.params.cny)}</span></td><td>${fmtAr(res.achat)}</td></tr>
+    <tr><td>② Livraison en Chine<span class="note">${fmtDec2(N(inp.livChineYuan))} ¥</span></td><td>${fmtAr(d.livChineAr)}</td></tr>
+    <tr><td>③ Transport Chine → Madagascar</td><td>${isNum(res.transport) ? fmtAr(res.transport) : esc(res.transport)}</td></tr>
+    <tr><td>④ Frais exclus</td><td>${fmtAr(N(inp.fraisExclus))}</td></tr>
+    <tr><td>⑤ Livraison finale</td><td>${fmtAr(N(inp.livFinale))}</td></tr>
+    <tr class="total"><td>Total prix de revient </td><td>${isNum(res.total) ? fmtAr(res.total) : esc(res.total)}</td></tr>
+    <tr><td>Total prix de revient par pièce</td><td>${isNum(res.parPiece) ? fmtAr(res.parPiece) : ""}</td></tr></table>`;
+  $("#dates").innerHTML = `<table class="kv">
+    <tr><td>Arrivée prévue au dépôt (Chine)</td><td>${res.arrivee == null ? "" : fmtDayTime(res.arrivee)}</td></tr>
+    <tr><td>Départ réservable</td><td>${dateOr(res.depart)}</td></tr>
+    <tr><td>Arrivée au plus tôt</td><td>${dateOr(res.arrMin)}</td></tr>
+    <tr><td>Arrivée au plus tard</td><td>${dateOr(res.arrMaxV)}</td></tr>
+    <tr><td>Disponibilité à Tana</td><td>${dateOr(res.dispoV)}</td></tr>
+    <tr class="total"><td>Date à annoncer au client</td><td>${dateOr(res.clientV)}</td></tr></table>
+    ${res.verifier ? `<div class="verify"><b>Points à vérifier</b> ${esc(res.verifier)}</div>` : ""}
+    <p class="assume">Date client = départ + délai max + mise à disposition + marge (onglet Paramètres). Toujours confirmer avec le transitaire.</p>`;
+}
+function renderSale(res){
+  $("#sale").innerHTML = `<table class="kv">
+    <tr><td>Prix de vente conseillé par pièce<span class="note">Total prix de revient par pièce × (1 + taux), arrondi aux 100 Ar</span></td><td>${isNum(res.pvConseille) ? fmtAr(res.pvConseille) : ""}</td></tr>
+    <tr><td>Prix de vente utilisé par pièce</td><td>${isNum(res.pvUtilise) ? fmtAr(res.pvUtilise) : ""}</td></tr>
+    <tr><td>Marge par pièce</td><td>${isNum(res.margePiece) ? fmtAr(res.margePiece) : ""}${isNum(res.margePiece) && res.margePiece < 0 ? `<span class="note loss">⚠ Vous vendez à perte</span>` : ""}</td></tr>
+    <tr><td>Marge totale</td><td>${isNum(res.margeTotale) ? fmtAr(res.margeTotale) : ""}</td></tr>
+    <tr><td>Taux de marge (% du coût)</td><td>${fmtPct(res.tauxMargeR)}</td></tr>
+    <tr><td>Taux de marque (% du prix de vente)</td><td>${fmtPct(res.tauxMarque)}</td></tr>
+    <tr class="total"><td>Chiffre d’affaires total</td><td>${isNum(res.ca) ? fmtAr(res.ca) : ""}</td></tr></table>`;
+}
+function renderSummary(inp, res, alerts){
+  const errs = alerts.filter(a => a.level === "err").length;
+  const p = offerParts(res.sel ? res.sel.t : {transitaire:"", mode:"", service:""});
+  $("#summary").innerHTML = `<div class="ticket">
+    <p class="lbl">Prix final, livré au client</p>
+    <div class="big num ${errs ? "dim" : ""}">${isNum(res.total) ? fmtInt(res.total) + "<small>Ar</small>" : `<span style="font-size:20px">${esc(res.total)}</span>`}</div>
+    <p class="lbl num">${isNum(res.parPiece) ? "soit " + fmtAr(res.parPiece) + " par pièce" : "&nbsp;"}</p>
+    <div class="sep"></div>
+    <p class="lbl">Date à annoncer au client</p><div class="mid num">${isNum(res.clientV) ? fmtDay(res.clientV) : esc(res.clientV || "—")}</div>
+    <div class="sep"></div>
+    <p class="lbl">Prix de vente par pièce</p><div class="mid num">${isNum(res.pvUtilise) ? fmtAr(res.pvUtilise) : "—"}</div>
+    ${isNum(res.margePiece) ? `<p class="lbl">marge ${fmtAr(res.margePiece)} par pièce (${fmtPct(res.tauxMargeR)})</p>` : ""}
+    <div class="offer">${res.sel ? esc(p.who + " · " + p.svc) : "Aucune offre choisie"}</div>
+    ${errs ? `<div class="alertline">⚠ ${errs} ${plural(errs, "alerte")} sur le colis : prix à vérifier</div>` : ""}
+  </div>`;
+  $("#bottombar").innerHTML = `<div><div class="p num">${isNum(res.total) ? fmtAr(res.total) : "—"}${errs ? " ⚠" : ""}</div><div class="d">${isNum(res.clientV) ? "Client : " + fmtDay(res.clientV) : "Date à obtenir"}${isNum(res.pvUtilise) ? " · vente " + fmtAr(res.pvUtilise) + "/pièce" : ""}</div></div><button class="btn small" data-goto="3">Voir le détail</button>`;
+}
+
+/* ================= Client message & PDF ================= */
+function clientData(inp, res){
+  const pv = res.pvUtilise, ca = res.ca;
+  return {produit: inp.produit || "votre commande", pieces: N(inp.pieces), pv, ca, date: res.clientV, num: state.devis.num, client: inp.clientNom};
+}
+function buildMessage(inp, res){
+  const c = clientData(inp, res), co = state.company;
+  const lines = [`Bonjour${c.client ? " " + c.client : ""},`, "", `Voici le devis ${c.num} pour ${c.produit} (${fmtInt(c.pieces)} ${plural(c.pieces, "pièce")}).`];
+  if (isNum(c.pv)) lines.push(`Prix : ${fmtAr(c.pv)} la pièce, soit ${fmtAr(c.ca)} pour la commande.`);
+  else lines.push("Prix : à confirmer.");
+  lines.push(isNum(c.date) ? `Livraison estimée : ${fmtDayLong(c.date)}.` : "Date de livraison : à confirmer.");
+  if (co.mention) lines.push("", co.mention);
+  const sig = [co.nom, co.tel].filter(Boolean).join(" · ");
+  if (sig) lines.push("", sig);
+  return lines.join("\n").replace(/\u00a0/g, " ");
+}
+function renderMessage(inp, res){
+  const m = state.devis.msg;
+  if (!m.edited) m.text = buildMessage(inp, res);
+  const ta = $("#msg"); if (ta !== document.activeElement) ta.value = m.text;
+  $("#msg-reset").hidden = !m.edited;
+  $("#msg-hint").textContent = m.edited ? "Message modifié à la main : il ne se met plus à jour tout seul." : "Le message se met à jour avec le devis. Vous pouvez le modifier avant de l’envoyer.";
+  $("#msg-wa").href = "https://wa.me/?text=" + encodeURIComponent(m.text);
+  $("#msg-sms").href = "sms:?&body=" + encodeURIComponent(m.text);
+}
+$("#msg").addEventListener("input", e => { state.devis.msg = {edited:true, text:e.target.value}; $("#msg-wa").href = "https://wa.me/?text=" + encodeURIComponent(e.target.value); $("#msg-sms").href = "sms:?&body=" + encodeURIComponent(e.target.value); $("#msg-reset").hidden = false; persist(); });
+$("#msg-reset").onclick = () => { state.devis.msg = {edited:false, text:""}; renderDevis(); persist(); };
+$("#msg-copy").onclick = async () => {
+  const t = $("#msg").value;
+  try { await navigator.clipboard.writeText(t); }
+  catch(e){ const ta = $("#msg"); ta.focus(); ta.select(); document.execCommand("copy"); }
+  toast("Message copié : collez-le dans WhatsApp, Messenger ou un SMS.");
+};
+function printView(id){ $$(".view").forEach(v => v.classList.remove("print-me")); $("#" + id).classList.add("print-me"); window.print(); }
+$("#b-pdf").onclick = () => {
+  const inp = state.devis.inputs, res = lastEval.res, c = clientData(inp, res), co = state.company;
+  $("#v-client").innerHTML = `<div class="cd-head"><div><h1>${esc(co.nom || "Devis")}</h1>${co.adresse ? `<div>${esc(co.adresse)}</div>` : ""}${co.tel ? `<div>${esc(co.tel)}</div>` : ""}</div>
+    <div class="ref"><b>Devis ${esc(c.num)}</b>Date : ${new Date().toLocaleDateString("fr-FR")}${c.client ? `<br>Client : ${esc(c.client)}` : ""}</div></div>
+    <table><thead><tr><th>Désignation</th><th class="n">Quantité</th><th class="n">Prix unitaire</th><th class="n">Total</th></tr></thead>
+    <tbody><tr><td>${esc(c.produit)}</td><td class="n">${fmtInt(c.pieces)}</td><td class="n">${isNum(c.pv) ? fmtAr(c.pv) : "à confirmer"}</td><td class="n">${isNum(c.ca) ? fmtAr(c.ca) : "à confirmer"}</td></tr>
+    <tr class="tot"><td colspan="3">Total</td><td class="n">${isNum(c.ca) ? fmtAr(c.ca) : "à confirmer"}</td></tr></tbody></table>
+    <div class="eta">Livraison estimée : <b>${isNum(c.date) ? esc(fmtDayLong(c.date)) : "à confirmer"}</b></div>
+    <div class="mention">${esc(co.mention)}</div>`;
+  const old = document.title; document.title = `Devis ${c.num} - ${c.produit}`;
+  printView("v-client"); document.title = old;
+};
+$("#b-print").onclick = () => printView("v-devis");
+
+/* ================= Paste analysis ================= */
+$("#paste-go").onclick = () => {
+  const r = parseSeller($("#paste-txt").value), inp = state.devis.inputs;
+  const items = [];
+  const cartonsN = r.cartons ? r.cartons.v : N(inp.cartons) || 1;
+  if (r.dims) items.push({k:"dims", label:`Dimensions d’un carton : ${r.dims.v.map(fmtDec).join(" × ")} cm`, src:r.dims.src, note:r.dims.note});
+  if (r.poids) {
+    const per = r.poids.total && cartonsN > 1 ? r.poids.v / cartonsN : r.poids.v;
+    items.push({k:"poids", v:+per.toPrecision(10), label:`Poids d’un carton : ${fmtDec(+per.toPrecision(10))} kg`, src:r.poids.src, note:[r.poids.note, r.poids.total && cartonsN > 1 ? `poids total ÷ ${cartonsN} cartons` : ""].filter(Boolean).join(", ")});
+  }
+  if (r.cartons) items.push({k:"cartons", label:`Nombre de cartons : ${r.cartons.v}`, src:r.cartons.src});
+  if (r.pieces) items.push({k:"pieces", label:`Nombre de pièces : ${r.pieces.v}`, src:r.pieces.src});
+  if (!r.pieces && r.ppc && r.cartons) { r.pieces = {v: r.ppc.v * r.cartons.v, src: r.ppc.src + " × " + r.cartons.src}; items.push({k:"pieces", label:`Nombre de pièces : ${r.pieces.v}`, src:r.pieces.src, note:"pièces par carton × nombre de cartons"}); }
+  if (r.ppc) items.push({k:"ppc", label:`Pièces par carton : ${r.ppc.v}`, src:r.ppc.src, note: r.cartons ? "" : "sert à calculer le nombre de cartons"});
+  window._detect = {r, items};
+  $("#detect").innerHTML = items.length
+    ? `<div class="detect">${items.map(i => `<label><input type="checkbox" checked data-det="${i.k}"> <span><b>${esc(i.label)}</b><small>trouvé dans « ${esc(i.src)} »${i.note ? " · " + esc(i.note) : ""}</small></span></label>`).join("")}</div>
+       <div class="actions" style="margin-top:10px"><button class="btn primary" id="paste-apply">Appliquer les valeurs cochées</button></div>`
+    : `<div class="alert info" style="margin-top:10px">Aucune dimension, aucun poids ni nombre de cartons trouvés. Vérifiez le message ou remplissez les cases à la main.</div>`;
+};
+document.addEventListener("click", e => {
+  if (e.target.id !== "paste-apply") return;
+  const {r, items} = window._detect || {}; if (!r) return;
+  const inp = state.devis.inputs, on = k => $(`[data-det="${k}"]`)?.checked;
+  const done = [];
+  if (r.dims && on("dims")) { [inp.longueur, inp.largeur, inp.hauteur] = r.dims.v; done.push("dimensions"); }
+  if (r.cartons && on("cartons")) { inp.cartons = r.cartons.v; inp.cartonsAuto = false; done.push("cartons"); }
+  if (r.pieces && on("pieces")) { inp.pieces = r.pieces.v; done.push("pièces"); }
+  if (r.ppc && on("ppc")) { inp.ppc = r.ppc.v; if (!(r.cartons && on("cartons"))) { inp.cartonsAuto = true; inp.cartons = Math.max(1, Math.ceil(N(inp.pieces) / r.ppc.v)); } done.push("pièces par carton"); }
+  const pw = items.find(i => i.k === "poids"); if (pw && on("poids")) { inp.poids = pw.v; done.push("poids"); }
+  inp.ignored = {};
+  $("#detect").innerHTML = ""; syncInputs(); renderDevis(); persist();
+  toast(done.length ? "Valeurs appliquées : " + done.join(", ") + ". Vérifiez les alertes." : "Aucune valeur cochée.");
+});
+
+/* ================= Product sheets ================= */
+const ficheFromInputs = (inp, base = {}) => ({...base, nom: inp.produit, nature: inp.nature, batterie: inp.batterie, aimant: inp.aimant, liquide: inp.liquide, danger: inp.danger,
+  categorieManuelle: inp.categorieManuelle, longueur: inp.longueur, largeur: inp.largeur, hauteur: inp.hauteur, poids: inp.poids, prixYuan: +derive(inp).prixYuan.toFixed(4), updated: Date.now()});
+async function saveFicheFromDevis(update){
+  const inp = state.devis.inputs;
+  const guess = N(inp.ppc) || (N(inp.cartons) > 0 && N(inp.pieces) % N(inp.cartons) === 0 ? N(inp.pieces) / N(inp.cartons) : "");
+  const r = await dialog({title: update ? "Mettre à jour la fiche produit" : "Enregistrer comme fiche produit",
+    html:`<div class="form-grid"><div class="full"><label for="fp-nom">Nom du produit</label><input class="inp" id="fp-nom" value="${esc(inp.produit)}"></div>
+      <div><label for="fp-ppc">Pièces par carton</label><input class="inp" id="fp-ppc" inputmode="numeric" value="${esc(guess)}"></div></div>
+      <p class="assume" style="margin-top:10px">La fiche garde la catégorie, le carton (${fmtDec(N(inp.longueur))} × ${fmtDec(N(inp.largeur))} × ${fmtDec(N(inp.hauteur))} cm, ${fmtDec(N(inp.poids))} kg) et le prix par pièce (${fmtDec2(derive(inp).prixYuan)} ¥).</p>`,
+    buttons:[{label:"Annuler", value:"cancel"}, {label: update ? "Mettre à jour" : "Enregistrer la fiche", value:"ok", kind:"primary"}]});
+  if (r.value !== "ok") return;
+  const nom = r.root.querySelector("#fp-nom").value.trim(); if (!nom) { toast("Fiche non enregistrée : le nom est obligatoire."); return; }
+  const ppc = parseFr(r.root.querySelector("#fp-ppc").value);
+  inp.produit = nom;
+  if (update) {
+    const i = state.produits.findIndex(p => p.id === inp.produitId);
+    state.produits[i] = {...ficheFromInputs(inp, state.produits[i]), ppc: isNum(ppc) ? ppc : ""};
+  } else {
+    const f = {...ficheFromInputs(inp, {id: uid()}), ppc: isNum(ppc) ? ppc : ""};
+    state.produits.push(f); inp.produitId = f.id;
+  }
+  inp.ppc = isNum(ppc) ? ppc : "";
+  fillFicheSelect(); syncInputs(); persist(); toast(update ? "Fiche produit mise à jour." : `Fiche « ${nom} » enregistrée.`);
+}
+function renderProduits(){
+  const f = $("#pr-search").value.trim().toLowerCase();
+  const list = state.produits.filter(p => !f || p.nom.toLowerCase().includes(f)).sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+  const rows = list.map(p => `<tr><td><b>${esc(p.nom)}</b></td><td>${esc(p.categorieManuelle || deduceCategory(p).cat)}</td>
+    <td class="n">${fmtDec(N(p.longueur))} × ${fmtDec(N(p.largeur))} × ${fmtDec(N(p.hauteur))} cm</td><td class="n">${fmtDec(N(p.poids))} kg</td>
+    <td class="n">${p.ppc ? fmtInt(p.ppc) : "—"}</td><td class="n">${fmtDec2(N(p.prixYuan))} ¥</td><td class="d">${fmtStamp(p.updated)}</td>
+    <td style="white-space:nowrap"><button class="btn small primary" data-pf="use" data-id="${p.id}">Nouveau devis</button> <button class="btn small" data-pf="edit" data-id="${p.id}">Modifier</button> <button class="btn small danger" data-pf="del" data-id="${p.id}">Supprimer</button></td></tr>`).join("");
+  $("#prod-table").innerHTML = `<thead><tr><th>Produit</th><th>Catégorie</th><th>Carton</th><th>Poids carton</th><th>Pièces / carton</th><th>Prix / pièce</th><th>Mise à jour</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="8" class="empty">${f ? "Aucun produit trouvé." : "Aucune fiche pour le moment. Dans le Devis, cliquez sur « Enregistrer comme fiche produit », ou ajoutez un produit ici."}</td></tr>`}</tbody>`;
+}
+$("#pr-search").addEventListener("input", renderProduits);
+async function editFiche(id){
+  const isNew = !id, p = isNew ? {id: uid(), nom:"", nature:"simple", batterie:false, aimant:false, liquide:false, danger:false, categorieManuelle:"", longueur:"", largeur:"", hauteur:"", poids:"", ppc:"", prixYuan:""} : clone(state.produits.find(x => x.id === id));
+  const num = (k, l, u) => `<div><label>${l}${u ? " (" + u + ")" : ""}</label><input class="inp" inputmode="decimal" name="${k}" value="${esc(fmtIn(p[k]))}"></div>`;
+  const html = `<div class="form-grid">
+    <div class="full"><label>Nom du produit</label><input class="inp" name="nom" value="${esc(p.nom)}"></div>
+    <div class="full"><label>Qu’est-ce que c’est ?</label><select class="inp" name="nature">${NATURES.map(([v, l]) => `<option value="${v}" ${p.nature === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+    <div class="full"><label>Le produit contient…</label><div class="chk">${FLAGS.map(([k, l]) => `<label><input type="checkbox" name="${k}" ${p[k] ? "checked" : ""}> ${esc(l)}</label>`).join("")}</div></div>
+    <div><label>Catégorie imposée</label><select class="inp" name="categorieManuelle"><option value="">Automatique</option>${state.categories.map(c => `<option ${c === p.categorieManuelle ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>
+    ${num("longueur","Longueur carton","cm")}${num("largeur","Largeur carton","cm")}${num("hauteur","Hauteur carton","cm")}
+    ${num("poids","Poids d’un carton","kg")}${num("ppc","Pièces par carton","")}${num("prixYuan","Prix par pièce","¥")}</div>`;
+  const r = await dialog({title: isNew ? "Ajouter un produit" : "Modifier le produit", html, wide:true, buttons:[{label:"Annuler", value:"cancel"}, {label:"Enregistrer", value:"ok", kind:"primary"}]});
+  if (r.value !== "ok") return;
+  const g = n => r.root.querySelector(`[name="${n}"]`);
+  const o = {...p, nom: g("nom").value.trim(), nature: g("nature").value, categorieManuelle: g("categorieManuelle").value, updated: Date.now()};
+  FLAGS.forEach(([k]) => o[k] = g(k).checked);
+  ["longueur","largeur","hauteur","poids","ppc","prixYuan"].forEach(k => { const v = parseFr(g(k).value); o[k] = isNum(v) ? v : ""; });
+  if (!o.nom) { toast("Produit non enregistré : le nom est obligatoire."); return; }
+  if (isNew) state.produits.push(o); else state.produits[state.produits.findIndex(x => x.id === id)] = o;
+  persist(); renderProduits(); fillFicheSelect();
+}
+$("#p-add").onclick = () => editFiche(null);
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-pf]"); if (!b) return;
+  const p = state.produits.find(x => x.id === b.dataset.id); if (!p) return;
+  if (b.dataset.pf === "edit") editFiche(p.id);
+  if (b.dataset.pf === "del") { if (await confirmDlg("Supprimer le produit", `Supprimer la fiche « ${p.nom} » ? Les devis enregistrés ne sont pas modifiés.`, "Supprimer", true)) { state.produits = state.produits.filter(x => x.id !== p.id); if (state.devis.inputs.produitId === p.id) state.devis.inputs.produitId = ""; persist(); renderProduits(); fillFicheSelect(); } }
+  if (b.dataset.pf === "use") {
+    if (!await confirmDlg("Nouveau devis", `Vider le formulaire et commencer un devis pour « ${p.nom} » ?\n(le devis affiché n’est pas supprimé s’il a été enregistré)`)) return;
+    startNew(); applyFiche(p, state.devis.inputs); state.devis.step = 1; go("devis"); fillFicheSelect(); renderDevis(); persist();
+    $("#in-pieces").focus(); $("#in-pieces").select();
+  }
+});
+
+/* ================= Devis actions (former macros) ================= */
+function startNew(){
+  state.devis.inputs = DEFAULTS();
+  state.devis.num = numTxt(getCounter() + 1);
+  state.devis.status = {text:"Nouveau devis (pas encore enregistré)", warn:false};
+  state.devis.msg = {edited:false, text:""};
+  state.devis.step = 1;
+}
+$("#b-new").onclick = async () => {
+  if (!await confirmDlg("Nouveau devis", "Vider le formulaire pour un nouveau devis ?\n(le devis affiché n’est pas supprimé s’il a été enregistré)")) return;
+  startNew(); fillFicheSelect(); renderDevis(); persist(); $("#in-produit").focus();
+};
+const INPUT_VIEW = [
+  ["Nom / référence du produit", i => i.produit], ["Client", i => i.clientNom],
+  ["Nature du produit", i => (NATURES.find(n => n[0] === i.nature) || [,""])[1]],
+  ["Contient", i => FLAGS.filter(([k]) => i[k]).map(([, l]) => l.split(" (")[0].toLowerCase()).join(", ") || "rien de particulier"],
+  ["Catégorie du produit", i => derive(i).categorie + (i.categorieManuelle ? " (choisie à la main)" : "")],
+  ["Date de paiement confirmé", i => i.datePaiement ? fmtDay(isoToDay(i.datePaiement)) : ""],
+  ["Livraison jusqu’au dépôt en Chine (j)", i => i.livChine], ["Heure d’arrivée prévue au dépôt (h, Chine)", i => i.heure],
+  ["Offre choisie", i => i.offre + (i.offreMode === "manual" ? " (choisie à la main)" : i.offreMode === "fast" ? " (la plus rapide)" : " (la moins chère)")],
+  ["Base de facturation avion", i => i.base], ["Nombre de cartons", i => fmtDec(N(i.cartons))],
+  ["Carton (L × l × H)", i => `${fmtDec(N(i.longueur))} × ${fmtDec(N(i.largeur))} × ${fmtDec(N(i.hauteur))} cm`],
+  ["Poids réel d’un carton (kg)", i => fmtDec(N(i.poids))], ["Nombre de pièces", i => fmtDec(N(i.pieces))],
+  ["Prix d’achat saisi", i => `${fmtDec(N(i.prixSaisi))} ¥ ${i.prixMode === "total" ? "pour la commande" : "par pièce"}`],
+  ["Livraison en Chine (¥)", i => fmtDec(N(i.livChineYuan))], ["Frais exclus estimés (Ar)", i => fmtDec(N(i.fraisExclus))],
+  ["Livraison finale à Madagascar (Ar)", i => fmtDec(N(i.livFinale))], ["Taux de marge souhaité", i => fmtPct(i.tauxMarge)],
+  ["Prix de vente retenu par pièce (Ar)", i => isNum(i.pvRetenu) ? fmtDec(i.pvRetenu) : "vide (prix conseillé)"]
+];
+const RESULT_DEFS = [
+  ["reel","Poids réel total (kg)","dec"],["volw","Poids volumétrique total (kg)","dec"],["vol","Volume total (m³)","dec"],["arrivee","Arrivée prévue au dépôt (Chine)","datetime"],
+  ["qtyTxt","Quantité facturée par le transitaire","text"],["tarifTxt","Tarif appliqué","text"],["achat","① Prix d’achat du produit","ar"],["livChineAr","② Livraison en Chine","ar"],["transport","③ Transport Chine → Madagascar","ar"],["fraisExclus","④ Frais exclus (douane, retrait…)","ar"],["livFinale","⑤ Livraison finale","ar"],["total","Total prix de revient  (① à ⑤)","ar"],["parPiece","Total prix de revient par pièce","ar"],
+  ["depart","Départ réservable","date"],["arrMin","Arrivée au plus tôt (délai min)","date"],["arrMaxV","Arrivée au plus tard (délai max)","date"],["dispoV","Disponibilité estimée à Tana","date"],["clientV","Date à annoncer au client (avec marge)","date"],["verifier","Points à vérifier","text"],
+  ["pvConseille","Prix de vente conseillé par pièce","ar"],["pvUtilise","Prix de vente utilisé par pièce","ar"],["margePiece","Marge commerciale par pièce","ar"],["margeTotale","Marge commerciale totale","ar"],["tauxMargeR","Taux de marge (% du coût)","pct"],["tauxMarque","Taux de marque (% du prix de vente)","pct"],["ca","Chiffre d’affaires total","ar"]
+];
+function fmtBy(v, f){
+  if (v === "" || v == null) return "";
+  if (!isNum(v)) return esc(v);
+  return f === "ar" ? fmtAr(v) : f === "pct" ? fmtPct(v) : f === "date" ? fmtDay(v) : f === "datetime" ? fmtDayTime(v) : f === "dec" ? fmtDec(v) : esc(v);
+}
+async function saveDevis(){
+  const inp = state.devis.inputs;
+  renderDevis();
+  const tRow = state.tarifs.find(t => offerLabel(t) === inp.offre);
+  if (!inp.offre || !tRow) { await dialog({title:"Enregistrer le devis", html:"<p>Aucune offre n’est choisie. Complétez le produit et le colis, puis choisissez une offre à l’étape 3.</p>"}); setStep(3); return; }
+  const errs = lastEval.alerts.filter(a => a.level === "err");
+  if (errs.length) {
+    const c = await dialog({title:"Alertes non vérifiées", html:`<p>Il reste ${errs.length} ${plural(errs.length, "alerte")} sur le colis :</p><ul>${errs.map(a => `<li>${a.msg}</li>`).join("")}</ul><p>Le prix risque d’être faux.</p>`, buttons:[{label:"Enregistrer quand même", value:"go"}, {label:"Vérifier le colis", value:"fix", kind:"primary"}]});
+    if (c.value !== "go") { setStep(2); return; }
+  }
+  const a = await dialog({title:"Enregistrer le devis", html:"<p>Nom du produit pour ce devis :</p>", input:{value: inp.produit || ""}, buttons:[{label:"Annuler", value:"cancel"}, {label:"Enregistrer", value:"ok", kind:"primary"}]});
+  if (a.value !== "ok" || !a.text.trim()) return;
+  inp.produit = a.text.trim();
+  let id = parseNum(state.devis.num), existing = state.archive.find(x => x.id === id), isUpdate = false, created = Date.now(), statut = "Envoyé";
+  if (existing) {
+    const c = await dialog({title:"Enregistrer", html:`<p>Le devis ${numTxt(id)} existe déjà.</p><p>Remplacer = mettre cette version à la place (tarifs et taux actuels figés).\nNouveau devis = l’enregistrer sous un nouveau numéro.</p>`, buttons:[{label:"Annuler", value:"cancel"}, {label:"Nouveau devis", value:"new"}, {label:"Remplacer", value:"replace", kind:"primary"}]});
+    if (c.value === "cancel") return;
+    if (c.value === "replace") { isUpdate = true; created = existing.created; statut = existing.statut || "Envoyé"; }
+  }
+  if (!isUpdate) id = getCounter() + 1;
+  const {d, res} = evaluate(inp);
+  const vals = {...res, livChineAr: d.livChineAr, fraisExclus: N(inp.fraisExclus), livFinale: N(inp.livFinale)};
+  const rec = {
+    id, created, modified: isUpdate ? Date.now() : null, statut,
+    inputs: clone(inp),
+    inputsView: INPUT_VIEW.map(([l, f]) => [l, String(f(inp) ?? "")]),
+    results: RESULT_DEFS.map(([k, l, f]) => [l, vals[k] ?? "", f]),
+    params: PARAM_DEFS.map(p => [p.label, state.params[p.id]]),
+    tarif: TAR_COLS.map(([k, l]) => [l, k === "label" ? offerLabel(tRow) : (tRow[k] ?? "")]),
+    summary: {produit: inp.produit, pieces: inp.pieces, transitaire: tRow.transitaire, offre: inp.offre, total: res.total, parPiece: res.parPiece, pv: res.pvUtilise, clientDate: res.clientV}
+  };
+  if (isUpdate) state.archive[state.archive.findIndex(x => x.id === id)] = rec;
+  else { state.archive.push(rec); state.counter = Math.max(getCounter(), id); }
+  state.devis.num = numTxt(id);
+  state.devis.status = {text: (isUpdate ? "Enregistré (modifié le " : "Enregistré le ") + fmtStamp(Date.now()) + (isUpdate ? ")" : ""), warn:false};
+  renderDevis(); persist();
+  toast(`Devis ${numTxt(id)} ${isUpdate ? "remplacé" : "enregistré"} : ${inp.produit}. Ses tarifs, taux et résultats sont figés.`);
+}
+$("#b-save").onclick = saveDevis;
+$("#b-save2").onclick = saveDevis;
+async function pickId(action, preferred){
+  let n = preferred || 0;
+  if (!n || !state.archive.some(a => a.id === n)) {
+    const a = await dialog({title: action[0].toUpperCase() + action.slice(1), html:`<p>Ce devis n’est pas enregistré. N° du devis à ${action} (ex. DEV-0003 ou 3) :</p>`, input:{value:""}, buttons:[{label:"Annuler", value:"cancel"}, {label:"OK", value:"ok", kind:"primary"}]});
+    if (a.value !== "ok" || !a.text) return 0;
+    n = parseNum(a.text);
+  }
+  if (!state.archive.some(a => a.id === n)) { await dialog({title:"Devis introuvable", html:`<p>Le devis ${numTxt(n)} n’existe pas dans l’historique.</p>`}); return 0; }
+  return n;
+}
+$("#b-del0").onclick = async () => { const id = await pickId("supprimer", parseNum(state.devis.num)); if (id) deleteDevis(id); };
+async function deleteDevis(id){
+  const rec = state.archive.find(a => a.id === id);
+  if (!await confirmDlg("Supprimer", `Supprimer définitivement le devis ${numTxt(id)} (${rec.inputs.produit}) ?`, "Supprimer", true)) return;
+  state.counter = Math.max(getCounter(), id);
+  state.archive = state.archive.filter(a => a.id !== id);
+  if (parseNum(state.devis.num) === id) { state.devis.num = numTxt(getCounter() + 1); state.devis.status = {text:`Le devis ${numTxt(id)} a été supprimé. Ce formulaire sera enregistré comme nouveau devis.`, warn:true}; }
+  if (consultId === id) consultId = null;
+  persist(); go("historique"); toast(`Devis ${numTxt(id)} supprimé.`);
+}
+const offerExists = o => state.tarifs.some(t => offerLabel(t) === o);
+function loadRecord(rec){
+  state.devis.inputs = {...DEFAULTS(), ...migrateInputs(clone(rec.inputs), state.params.cny), ignored:{}};
+  if (state.devis.inputs.offreMode !== "manual" && rec.inputs.offre) state.devis.inputs.offreMode = "manual";
+  state.devis.msg = {edited:false, text:""};
+  state.devis.step = 3;
+}
+function modifyDevis(id){
+  const rec = state.archive.find(a => a.id === id); loadRecord(rec);
+  state.devis.num = numTxt(id);
+  let msg = `Modification de ${numTxt(id)} : recalculé avec les tarifs et taux ACTUELS. Cliquez sur Enregistrer pour remplacer l’ancienne version.`;
+  if (!offerExists(rec.inputs.offre)) { msg += " ATTENTION : l’offre d’origine n’existe plus, choisissez-en une autre."; state.devis.inputs.offreMode = "cheap"; }
+  state.devis.status = {text:msg, warn:true};
+  persist(); go("devis"); fillFicheSelect();
+}
+async function duplicateDevis(id){
+  const rec = state.archive.find(a => a.id === id); loadRecord(rec);
+  const newId = getCounter() + 1; state.devis.num = numTxt(newId);
+  state.devis.inputs.datePaiement = todayIso();
+  let msg = `Copie de ${numTxt(id)} (${rec.inputs.produit}) : nouveau devis ${numTxt(newId)}, recalculé avec les tarifs, taux et règles ACTUELS. Pas encore enregistré.`;
+  if (!offerExists(rec.inputs.offre)) { msg += " ATTENTION : l’offre d’origine n’existe plus, choisissez-en une autre."; state.devis.inputs.offreMode = "cheap"; }
+  state.devis.status = {text:msg, warn:true};
+  persist(); go("devis"); fillFicheSelect();
+  await dialog({title:"Dupliquer", html:`<p>${esc(msg)}</p><p>La date de paiement a été mise à aujourd’hui : changez-la si besoin.</p>`});
+}
+
+/* ================= Historique ================= */
+function fillHistFilters(){
+  const st = $("#h-st").value, tr = $("#h-tr").value;
+  $("#h-st").innerHTML = `<option value="">Tous</option><option value="__encours">En cours (envoyé, accepté)</option>` + STATUTS.map(s => `<option ${s === st ? "selected" : ""}>${s}</option>`).join("");
+  if (st === "__encours") $("#h-st").value = st;
+  const trs = [...new Set(state.archive.map(a => a.summary.transitaire).filter(Boolean))].sort();
+  $("#h-tr").innerHTML = `<option value="">Tous</option>` + trs.map(t => `<option ${t === tr ? "selected" : ""}>${esc(t)}</option>`).join("");
+}
+function histFiltered(){
+  const f = $("#h-search").value.trim().toLowerCase(), st = $("#h-st").value, tr = $("#h-tr").value;
+  const from = $("#h-from").value ? new Date($("#h-from").value + "T00:00").getTime() : null, to = $("#h-to").value ? new Date($("#h-to").value + "T23:59:59").getTime() : null;
+  return state.archive.slice().reverse().filter(a => (!f || (String(a.inputs.produit || "") + " " + String(a.inputs.clientNom || "")).toLowerCase().includes(f))
+    && (!st || (st === "__encours" ? EN_COURS.includes(a.statut || "Envoyé") : (a.statut || "Envoyé") === st))
+    && (!tr || a.summary.transitaire === tr) && (!from || a.created >= from) && (!to || a.created <= to));
+}
+function renderHistorique(){
+  fillHistFilters();
+  const list = histFiltered();
+  const head = ["N°","Statut","Créé le","Modifié le","Produit","Client","Pièces","Transitaire","Offre choisie","Coût de revient total","Coût / pièce","Vente / pièce","Date client",""];
+  const rows = list.map(a => { const s = a.summary, stv = a.statut || "Envoyé"; return `<tr>
+    <td><b>${numTxt(a.id)}</b></td>
+    <td><select class="st" data-st="${a.id}" data-v="${stv}" aria-label="Statut du devis ${numTxt(a.id)}">${STATUTS.map(x => `<option ${x === stv ? "selected" : ""}>${x}</option>`).join("")}</select></td>
+    <td class="d">${fmtStamp(a.created)}</td><td class="d">${fmtStamp(a.modified)}</td><td>${esc(s.produit)}</td><td>${esc(a.inputs.clientNom || "")}</td><td class="n">${fmtInt(N(s.pieces))}</td><td>${esc(s.transitaire)}</td><td style="min-width:200px">${esc(s.offre)}</td>
+    <td class="n">${fmtInt(s.total)}</td><td class="n">${fmtInt(s.parPiece)}</td><td class="n">${fmtInt(s.pv)}</td><td class="d">${dateOr(s.clientDate ?? s.client)}</td>
+    <td style="white-space:nowrap"><button class="btn small" data-h="voir" data-id="${a.id}">Voir</button> <button class="btn small" data-h="modifier" data-id="${a.id}">Modifier</button> <button class="btn small" data-h="dupliquer" data-id="${a.id}">Dupliquer</button> <button class="btn small danger" data-h="supprimer" data-id="${a.id}">Supprimer</button></td></tr>`; }).join("");
+  const filtered = $("#h-search").value || $("#h-st").value || $("#h-tr").value || $("#h-from").value || $("#h-to").value;
+  $("#hist-table").innerHTML = `<thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows || `<tr><td colspan="14" class="empty">${filtered ? "Aucun devis ne correspond aux filtres." : "Aucun devis enregistré pour le moment. Faites un devis puis cliquez sur « Enregistrer le devis »."}</td></tr>`}</tbody>`;
+}
+["#h-search","#h-st","#h-tr","#h-from","#h-to"].forEach(s => $(s).addEventListener("input", renderHistorique));
+$("#h-all").onclick = () => { ["#h-search","#h-st","#h-tr","#h-from","#h-to"].forEach(s => $(s).value = ""); renderHistorique(); };
+document.addEventListener("change", e => {
+  const s = e.target.closest("[data-st]"); if (!s) return;
+  const a = state.archive.find(x => x.id === +s.dataset.st); if (!a) return;
+  a.statut = s.value; s.dataset.v = s.value; persist(); toast(`${numTxt(a.id)} : ${s.value.toLowerCase()}.`);
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-h]"); if (!b) return;
+  const id = +b.dataset.id, act = b.dataset.h;
+  if (act === "voir") viewDevis(id); else if (act === "modifier") modifyDevis(id); else if (act === "dupliquer") duplicateDevis(id); else if (act === "supprimer") deleteDevis(id);
+});
+function download(name, content, type){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([content], {type})); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+$("#b-hist-csv").onclick = () => {
+  const head = ["N° de devis","Statut","Créé le","Modifié le","Produit","Client","Quantité (pièces)","Transitaire","Offre choisie","Coût de revient total (Ar)","Coût de revient / pièce (Ar)","Prix de vente / pièce (Ar)","Date client prévisionnelle"];
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`, R = v => isNum(v) ? Math.round(v) : v;
+  const lines = [head.map(q).join(";")].concat(histFiltered().map(a => { const s = a.summary, cd = s.clientDate ?? s.client; return [numTxt(a.id), a.statut || "Envoyé", fmtStamp(a.created), fmtStamp(a.modified), s.produit, a.inputs.clientNom || "", s.pieces, s.transitaire, s.offre, R(s.total), R(s.parPiece), R(s.pv), isNum(cd) ? dayToIso(cd) : cd].map(q).join(";"); }));
+  download("historique_devis.csv", "\ufeff" + lines.join("\r\n"), "text/csv;charset=utf-8");
+};
+
+/* ================= Consultation ================= */
+let consultId = null;
+function viewDevis(id){
+  const a = state.archive.find(x => x.id === id); if (!a) return;
+  consultId = id;
+  $("#c-title").textContent = `Devis ${numTxt(id)} – ${a.inputs.produit}`;
+  $("#c-sub").textContent = `Statut : ${a.statut || "Envoyé"}. Créé le ${fmtStamp(a.created)}${a.modified ? ", modifié le " + fmtStamp(a.modified) : ""}. Valeurs figées : elles ne sont pas recalculées si les tarifs ou les taux changent.`;
+  const sec = (title, rows) => `<div class="cons-sec"><h3>${title}</h3><table>${rows.map(([l, v]) => `<tr><td>${esc(l)}</td><td>${v}</td></tr>`).join("")}</table></div>`;
+  $("#c-body").innerHTML =
+    sec("Entrées du devis", (a.inputsView || []).map(([l, v]) => [l, esc(v)])) +
+    sec("Résultats", a.results.map(([l, v, f]) => [l, fmtBy(v, f)])) +
+    sec("Paramètres utilisés (taux, arrondis, marges)", a.params.map(([l, v]) => [l, isNum(v) ? fmtDec(v) : esc(v)])) +
+    sec("Tarif et règles de l’offre utilisée", a.tarif.map(([l, v]) => [l, isNum(v) ? fmtDec(v) : esc(v)]));
+  $("#c-actions").innerHTML = `<button class="btn" data-go="historique">Retour à l’historique</button><button class="btn" data-h="modifier" data-id="${id}">Modifier</button><button class="btn" data-h="dupliquer" data-id="${id}">Dupliquer</button><button class="btn danger" data-h="supprimer" data-id="${id}">Supprimer</button><button class="btn ghost" id="c-print">Imprimer</button>`;
+  $("#c-print").onclick = () => printView("v-consultation");
+  go("consultation");
+}
+
+/* ================= Tarifs (fiches per forwarder) + impact ================= */
+const daysSince = iso => iso ? todayDay() - isoToDay(iso) : null;
+function departTxt(t){
+  if (state.calendrier.some(c => (c.transitaire + "|" + c.service).toLowerCase() === (t.transitaire + "|" + t.service).toLowerCase())) return "dates du calendrier";
+  if (blank(t.dep1)) return "départ à obtenir";
+  const one = (d, c) => `${d.toLowerCase()}${blank(c) ? "" : ` (clôture ${fmtDec(N(c))} j avant${blank(t.heureClo) ? "" : ", " + fmtDec(N(t.heureClo)) + " h"})`}`;
+  return one(t.dep1, t.clo1) + (blank(t.dep2) ? "" : " et " + one(t.dep2, t.clo2));
+}
+function renderTarifs(){
+  const groups = {};
+  state.tarifs.forEach((t, i) => { (groups[t.transitaire || "(sans nom)"] = groups[t.transitaire || "(sans nom)"] || []).push([t, i]); });
+  $("#tar-list").innerHTML = Object.entries(groups).map(([name, list]) => {
+    const ages = list.map(([t]) => daysSince(t.updatedAt)).filter(x => x != null);
+    const oldest = ages.length ? Math.max(...ages) : null;
+    const tag = oldest == null ? `<span class="tag warn">Date de vérification inconnue</span>` : oldest > 30 ? `<span class="tag warn">Vérifié il y a ${oldest} jours : à vérifier</span>` : `<span class="tag yes">Vérifié ${oldest === 0 ? "aujourd’hui" : `il y a ${oldest} ${plural(oldest, "jour")}`}</span>`;
+    return `<div class="tfiche"><div class="tfiche-head"><h3>${esc(name)}</h3>${tag}
+      <button class="btn small" data-tv="${esc(name)}">Tarifs vérifiés aujourd’hui</button><button class="btn small" data-tadd="${esc(name)}">Ajouter un service</button></div>
+      ${list.map(([t, i]) => `<div class="svc-row">
+        <div><div class="nm">${esc(t.mode)} ${esc(String(t.service).toLowerCase())}</div><div class="cat">${esc(t.categories)}</div></div>
+        <div><div class="pr">${blank(t.tarif) ? "Tarif à obtenir" : fmtInt(N(t.tarif)) + " " + esc(t.devise) + " / " + esc(t.unite)}</div>${!blank(t.palier) ? `<div class="cat">au-delà de ${fmtDec(N(t.palier))} m³ : ${fmtInt(N(t.tarifAudela))} ${esc(t.devise)}</div>` : ""}${!blank(t.minimum) ? `<div class="cat">minimum ${fmtDec(N(t.minimum))} ${esc(t.unite)}</div>` : ""}</div>
+        <div><div>${blank(t.delaiMax) ? "délai à obtenir" : `${blank(t.delaiMin) ? "" : fmtDec(N(t.delaiMin)) + " à "}${fmtDec(N(t.delaiMax))} jours`}</div><div class="cat">${esc(departTxt(t))}${!blank(t.maxColis) ? ` · max ${fmtDec(N(t.maxColis))} kg par colis` : ""}${!blank(t.baseImposee) ? " · " + esc(t.baseImposee.toLowerCase()) : ""}</div></div>
+        <div class="acts" style="white-space:nowrap"><button class="btn small" data-t="edit" data-i="${i}">Modifier</button> <button class="btn small" data-t="dup" data-i="${i}">Dupliquer</button> <button class="btn small danger" data-t="del" data-i="${i}">Supprimer</button></div>
+        ${t.verifier ? `<div class="vf">${esc(t.verifier)}</div>` : ""}</div>`).join("")}</div>`;
+  }).join("") || `<div class="empty">Aucun tarif. Cliquez sur « Ajouter un transitaire ou un service ».</div>`;
+}
+function impactOf(oldLabel, newTarif){
+  const out = [];
+  for (const a of state.archive) {
+    if (!EN_COURS.includes(a.statut || "Envoyé") || a.inputs.offre !== oldLabel) continue;
+    if (!newTarif) { out.push({a, old: a.summary.total, neu: null}); continue; }
+    const inp = {...migrateInputs(clone(a.inputs), state.params.cny), offre: offerLabel(newTarif), offreMode:"manual"};
+    const {res} = evaluate(inp);
+    const old = a.summary.total, neu = res.total;
+    if (!(isNum(old) && isNum(neu) && Math.round(old) === Math.round(neu))) out.push({a, old, neu});
+  }
+  return out;
+}
+async function showImpact(list, removed){
+  if (!list.length) { toast(removed ? "Aucun devis en cours n’utilisait cette offre." : "Aucun devis en cours ne change de prix."); return; }
+  const rows = list.map(({a, old, neu}) => { const diff = isNum(old) && isNum(neu) ? neu - old : null; return `<tr><td><b>${numTxt(a.id)}</b></td><td>${esc(a.inputs.produit)}</td><td>${esc(a.statut || "Envoyé")}</td><td class="n">${fmtInt(old)}</td><td class="n">${neu == null ? "offre supprimée" : fmtInt(neu)}</td><td class="n ${diff > 0 ? "loss" : ""}">${diff == null ? "" : (diff > 0 ? "+" : "") + fmtInt(diff)}</td><td><button class="btn small" data-h="modifier" data-id="${a.id}">Ouvrir</button></td></tr>`; }).join("");
+  await dialog({title: removed ? "Devis en cours qui utilisaient cette offre" : "Impact du nouveau tarif", wide:true,
+    html:`<p>${list.length} ${plural(list.length, "devis envoyé ou accepté", "devis envoyés ou acceptés")} ${removed ? (list.length > 1 ? "utilisaient" : "utilisait") + " cette offre." : (list.length > 1 ? "changent" : "change") + " de prix final (recalculé avec le nouveau tarif et les taux actuels)."} Les devis enregistrés ne sont pas modifiés : ouvrez-les pour les mettre à jour.</p>
+      <div class="tablewrap"><table class="grid"><thead><tr><th>N°</th><th>Produit</th><th>Statut</th><th>Ancien prix final (Ar)</th><th>Nouveau (Ar)</th><th>Écart (Ar)</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`});
+}
+async function editTarif(i, presetName){
+  const isNew = i == null;
+  const t = isNew ? {transitaire: presetName || "", mode:"Avion", service:"", categories:"", tarif:"", unite:"kg", devise:"Ar", palier:"", tarifAudela:"", minimum:"", maxColis:"", delaiMin:"", delaiMax:"", dep1:"", clo1:"", dep2:"", clo2:"", heureClo:"", verifier:"", baseImposee:""} : clone(state.tarifs[i]);
+  const tokens = String(t.categories || "").split(";").map(s => s.trim()).filter(Boolean);
+  const cats = [...new Set([...state.categories, ...tokens])];
+  const sel = (k, opts) => `<select class="inp" name="${k}">${opts.map(o => `<option value="${esc(o)}" ${String(t[k] ?? "") === o ? "selected" : ""}>${o === "" ? "—" : esc(o)}</option>`).join("")}</select>`;
+  const num = k => `<input class="inp num" inputmode="decimal" data-n="1" name="${k}" value="${esc(fmtIn(t[k]))}">`;
+  const txt = k => `<input class="inp" type="text" name="${k}" value="${esc(t[k])}">`;
+  const html = `<div class="form-grid">
+    <div><label>Transitaire</label>${txt("transitaire")}</div><div><label>Mode</label>${sel("mode", ["Avion","Maritime"])}</div><div><label>Service</label>${txt("service")}</div>
+    <div class="full"><label>Catégories acceptées</label><div class="chk">${cats.map(c => `<label><input type="checkbox" name="cat" value="${esc(c)}" ${tokens.includes(c) ? "checked" : ""}> ${esc(c)}</label>`).join("")}</div></div>
+    <div><label>Tarif (vide = à obtenir)</label>${num("tarif")}</div><div><label>Unité</label>${sel("unite", ["kg","m³","pièce"])}</div><div><label>Devise</label>${sel("devise", ["Ar","USD"])}</div>
+    <div><label>Palier m³</label>${num("palier")}</div><div><label>Tarif au-delà du palier</label>${num("tarifAudela")}</div><div><label>Minimum facturable (unité)</label>${num("minimum")}</div>
+    <div><label>Poids max par colis (kg)</label>${num("maxColis")}</div><div><label>Délai min (j)</label>${num("delaiMin")}</div><div><label>Délai max (j)</label>${num("delaiMax")}</div>
+    <div><label>Départ 1</label>${sel("dep1", ["", ...DAYS])}</div><div><label>Clôture 1 (jours avant)</label>${num("clo1")}</div><div><label>Heure de clôture (Chine)</label>${num("heureClo")}</div>
+    <div><label>Départ 2</label>${sel("dep2", ["", ...DAYS])}</div><div><label>Clôture 2 (jours avant)</label>${num("clo2")}</div>
+    <div><label>Base de facturation imposée</label>${sel("baseImposee", ["", "Poids réel", "Poids volumétrique", "Le plus élevé"])}</div>
+    <div class="full"><label>À vérifier</label><textarea class="inp" name="verifier" rows="3">${esc(t.verifier)}</textarea></div></div>
+    <p class="assume" style="margin-top:12px">Poids max par colis : un carton plus lourd écarte l’offre automatiquement. Si l’offre a des dates dans le Calendrier, elles remplacent les jours de départ (la clôture 1 s’applique aussi).</p>`;
+  const r = await dialog({title: isNew ? "Ajouter un service" : "Modifier le service", html, wide:true, buttons:[{label:"Annuler", value:"cancel"}, {label:"Enregistrer", value:"ok", kind:"primary"}]});
+  if (r.value !== "ok") return;
+  const o = {};
+  r.root.querySelectorAll("[name]").forEach(el => { if (el.name === "cat") return; const v = el.value.trim(); o[el.name] = el.dataset.n ? (v === "" ? "" : (isNum(parseFr(v)) ? parseFr(v) : "")) : v; });
+  o.categories = [...r.root.querySelectorAll('input[name="cat"]:checked')].map(c => c.value).join("; ");
+  o.updatedAt = todayIso();
+  if (!o.transitaire || !o.service) { toast("Service non enregistré : le transitaire et le service sont obligatoires."); return; }
+  const oldLabel = isNew ? null : offerLabel(state.tarifs[i]);
+  if (isNew) state.tarifs.push(o); else state.tarifs[i] = o;
+  if (oldLabel && state.devis.inputs.offre === oldLabel) state.devis.inputs.offre = offerLabel(o);
+  persist(); renderTarifs();
+  if (!isNew) await showImpact(impactOf(oldLabel, o), false); else toast("Service ajouté.");
+}
+$("#t-add").onclick = () => editTarif(null);
+document.addEventListener("click", async e => {
+  const v = e.target.closest("[data-tv]"); if (v) { state.tarifs.forEach(t => { if (t.transitaire === v.dataset.tv) t.updatedAt = todayIso(); }); persist(); renderTarifs(); toast(`Tarifs ${v.dataset.tv} marqués vérifiés aujourd’hui.`); return; }
+  const ad = e.target.closest("[data-tadd]"); if (ad) { editTarif(null, ad.dataset.tadd); return; }
+  const b = e.target.closest("[data-t]"); if (!b) return;
+  const i = +b.dataset.i;
+  if (b.dataset.t === "edit") editTarif(i);
+  else if (b.dataset.t === "dup") { state.tarifs.splice(i + 1, 0, {...clone(state.tarifs[i]), service: state.tarifs[i].service + " (copie)"}); persist(); renderTarifs(); toast("Service dupliqué : modifiez la copie."); }
+  else if (b.dataset.t === "del") {
+    const label = offerLabel(state.tarifs[i]);
+    if (!await confirmDlg("Supprimer le service", `Supprimer « ${label} » ? Les devis déjà enregistrés gardent leur tarif.`, "Supprimer", true)) return;
+    const impact = impactOf(label, null);
+    state.tarifs.splice(i, 1); persist(); renderTarifs();
+    if (impact.length) await showImpact(impact, true);
+  }
+});
+
+/* ================= Calendrier ================= */
+function calAlerts(){
+  const today = todayDay(), keys = {};
+  for (const c of state.calendrier) { if (!c.transitaire || !c.date) continue; const k = c.transitaire + "|" + c.service; (keys[k] = keys[k] || []).push(isoToDay(c.date)); }
+  return Object.entries(keys).filter(([k]) => state.tarifs.some(t => (t.transitaire + "|" + t.service).toLowerCase() === k.toLowerCase())).map(([k, ds]) => {
+    const fut = ds.filter(d => d >= today), last = Math.max(...ds), [tr, sv] = k.split("|");
+    return {key:k, n: fut.length, last, msg: fut.length > 3 ? `${tr} ${sv} : la dernière date de départ est le ${fmtDay(last)}, dans moins de 10 jours. Ajoutez les dates suivantes dès qu’elles sont publiées.` : fut.length ? `${tr} ${sv} : plus que ${fut.length} ${plural(fut.length, "date de départ")} à venir (dernière : ${fmtDay(last)}). Ajoutez les dates suivantes dès qu’elles sont publiées.` : `${tr} ${sv} : plus aucune date de départ à venir (dernière : ${fmtDay(last)}). Cette offre ne peut plus donner de date client : ajoutez les nouvelles dates.`};
+  }).filter(a => a.n <= 3 || a.last < today + 10);
+}
+function renderCalBadge(){ const n = calAlerts().length; $("#cal-badge").innerHTML = n ? `<span class="badge" aria-label="${n} alerte">${n}</span>` : ""; }
+function renderCalendrier(){
+  const trans = [...new Set(state.tarifs.map(t => t.transitaire).filter(Boolean))], serv = [...new Set(state.tarifs.map(t => t.service).filter(Boolean))];
+  $("#dl-trans").innerHTML = trans.map(t => `<option value="${esc(t)}">`).join("");
+  $("#dl-serv").innerHTML = serv.map(t => `<option value="${esc(t)}">`).join("");
+  $("#cal-alerts").innerHTML = calAlerts().map(a => `<div class="alert ${a.n ? "info" : ""}">${esc(a.msg)} <button class="btn small" data-calgen="${esc(a.key)}">Générer les dates suivantes</button></div>`).join("");
+  const today = todayDay();
+  const rows = state.calendrier.map((c, i) => { const past = c.date && isoToDay(c.date) < today; return `<tr style="${past ? "opacity:.55" : ""}">
+    <td><input class="cell-inp" list="dl-trans" data-c="transitaire" data-i="${i}" value="${esc(c.transitaire)}" aria-label="Transitaire"></td>
+    <td><input class="cell-inp" list="dl-serv" data-c="service" data-i="${i}" value="${esc(c.service)}" aria-label="Service"></td>
+    <td><input class="cell-inp" type="date" data-c="date" data-i="${i}" value="${esc(c.date)}" aria-label="Date de départ"></td>
+    <td class="d" style="color:var(--muted)">${c.date ? fmtDay(isoToDay(c.date)) + (past ? " (passée)" : "") : ""}</td>
+    <td><input class="cell-inp" style="min-width:220px" data-c="remarque" data-i="${i}" value="${esc(c.remarque)}" aria-label="Remarque"></td>
+    <td><button class="btn small danger" data-cdel="${i}">Supprimer</button></td></tr>`; }).join("");
+  $("#cal-table").innerHTML = `<thead><tr><th>Transitaire</th><th>Service</th><th>Date de départ</th><th>Jour</th><th>Remarque</th><th></th></tr></thead><tbody>${rows || `<tr><td colspan="6" class="empty">Aucune date. Cliquez sur « Ajouter une date » ou « Générer des dates répétitives ».</td></tr>`}</tbody>`;
+  renderCalBadge();
+}
+$("#cal-table").addEventListener("change", e => { const el = e.target.closest("[data-c]"); if (!el) return; state.calendrier[+el.dataset.i][el.dataset.c] = el.value.trim(); persist(); renderCalendrier(); });
+$("#cal-table").addEventListener("click", e => { const b = e.target.closest("[data-cdel]"); if (!b) return; state.calendrier.splice(+b.dataset.cdel, 1); persist(); renderCalendrier(); });
+$("#cal-add").onclick = () => {
+  const last = state.calendrier[state.calendrier.length - 1];
+  state.calendrier.push({transitaire: last ? last.transitaire : "", service: last ? last.service : "", date:"", remarque:""});
+  persist(); renderCalendrier(); const d = $$('#cal-table input[type="date"]'); d[d.length - 1]?.focus();
+};
+$("#cal-sort").onclick = () => { state.calendrier.sort((a, b) => (a.transitaire + a.service).localeCompare(b.transitaire + b.service) || String(a.date).localeCompare(String(b.date))); persist(); renderCalendrier(); };
+async function genDates(presetKey){
+  const keys = [...new Set(state.tarifs.filter(t => t.transitaire && t.service).map(t => t.transitaire + "|" + t.service))];
+  const key = presetKey || keys.find(k => state.calendrier.some(c => c.transitaire + "|" + c.service === k)) || keys[0];
+  const existing = state.calendrier.filter(c => c.transitaire + "|" + c.service === key && c.date).map(c => isoToDay(c.date));
+  const start = Math.max(todayDay(), existing.length ? Math.max(...existing) + 1 : 0);
+  let usedWd = [...new Set(existing.map(wd))]; if (usedWd.length >= 6) usedWd = [];
+  const r = await dialog({title:"Générer des dates répétitives", wide:true, html:`<div class="form-grid">
+    <div class="full"><label>Offre</label><select class="inp" name="key">${keys.map(k => `<option ${k === key ? "selected" : ""}>${esc(k.replace("|", " | "))}</option>`).join("")}</select></div>
+    <div class="full"><label>Jours de départ</label><div class="chk">${DAYS.map((d, i) => `<label><input type="checkbox" name="wd" value="${i + 1}" ${usedWd.includes(i + 1) ? "checked" : ""}> ${d}</label>`).join("")}</div></div>
+    <div><label>Du</label><input class="inp" type="date" name="from" value="${dayToIso(start)}"></div>
+    <div><label>Au</label><input class="inp" type="date" name="to" value="${dayToIso(start + 30)}"></div>
+    <div class="full"><label>Remarque (facultatif)</label><input class="inp" name="rem" placeholder="Ex. dates publiées pour novembre 2026"></div></div>
+    <p class="assume" style="margin-top:10px">${usedWd.length ? "Jours pré-cochés d’après les dates existantes. " : "Les dates existantes ne suivent pas de jours fixes : cochez les jours publiés par le transitaire. "}Les dates déjà présentes pour cette offre ne sont pas ajoutées deux fois. Vérifiez ensuite avec les dates publiées par le transitaire : un jour férié peut supprimer un départ.</p>`,
+    buttons:[{label:"Annuler", value:"cancel"}, {label:"Ajouter les dates", value:"ok", kind:"primary"}]});
+  if (r.value !== "ok") return;
+  const g = n => r.root.querySelector(`[name="${n}"]`);
+  const [tr, sv] = g("key").value.split(" | ");
+  const wds = [...r.root.querySelectorAll('[name="wd"]:checked')].map(x => +x.value);
+  const from = isoToDay(g("from").value), to = isoToDay(g("to").value);
+  if (!wds.length || from == null || to == null || to < from) { toast("Choisissez au moins un jour et une période valide."); return; }
+  const have = new Set(state.calendrier.filter(c => c.transitaire === tr && c.service === sv).map(c => c.date));
+  let n = 0;
+  for (let d = from; d <= to && n < 400; d++) if (wds.includes(wd(d)) && !have.has(dayToIso(d))) { state.calendrier.push({transitaire:tr, service:sv, date:dayToIso(d), remarque: n === 0 ? g("rem").value.trim() : ""}); n++; }
+  state.calendrier.sort((a, b) => (a.transitaire + a.service).localeCompare(b.transitaire + b.service) || String(a.date).localeCompare(String(b.date)));
+  persist(); renderCalendrier(); toast(`${n} ${plural(n, "date ajoutée", "dates ajoutées")}.`);
+}
+$("#cal-gen").onclick = () => genDates();
+document.addEventListener("click", e => { const b = e.target.closest("[data-calgen]"); if (b) genDates(b.dataset.calgen); });
+
+/* ================= Paramètres ================= */
+function renderParams(){
+  $("#p-fields").innerHTML = PARAM_DEFS.map(p => {
+    const v = state.params[p.id];
+    const ctl = p.select ? `<select class="inp" data-p="${p.id}" id="p-${p.id}">${p.select.map(o => `<option ${o === v ? "selected" : ""}>${o}</option>`).join("")}</select>`
+      : `<input class="inp num" inputmode="decimal" data-p="${p.id}" id="p-${p.id}" value="${esc(fmtIn(v))}">`;
+    return `<div class="pfield"><label for="p-${p.id}">${esc(p.label)}</label>${ctl}<p class="hint">${esc(state.paramNotes?.[p.id] || "")}</p></div>`;
+  }).join("");
+  const co = state.company;
+  $("#p-company").innerHTML = [["nom","Nom de l’entreprise"],["tel","Téléphone"],["adresse","Adresse"]].map(([k, l]) => `<div class="pfield"><label for="co-${k}">${l}</label><input class="inp" id="co-${k}" data-co="${k}" value="${esc(co[k])}"></div>`).join("")
+    + `<div class="pfield" style="grid-template-columns:1fr"><label for="co-mention">Mention en bas du devis et du message client</label><textarea class="inp" id="co-mention" data-co="mention" rows="3">${esc(co.mention)}</textarea></div>`;
+  $("#p-cats").innerHTML = state.categories.map((c, i) => `<div class="catrow"><input class="inp" data-cat="${i}" value="${esc(c)}" aria-label="Catégorie ${i+1}"><button class="btn small danger" data-catdel="${i}">Supprimer</button></div>`).join("");
+  renderStorage();
+}
+$("#p-fields").addEventListener("change", e => {
+  const el = e.target.closest("[data-p]"); if (!el) return;
+  const p = PARAM_DEFS.find(x => x.id === el.dataset.p);
+  if (p.select) state.params[p.id] = el.value;
+  else { const v = parseFr(el.value); if (!isNum(v)) { el.classList.add("bad"); toast("Valeur non valide : tapez un nombre."); return; } el.classList.remove("bad"); state.params[p.id] = v; el.value = fmtIn(v); }
+  persist(); toast("Paramètre enregistré.");
+});
+$("#p-company").addEventListener("input", e => { const el = e.target.closest("[data-co]"); if (!el) return; state.company[el.dataset.co] = el.value; persist(); });
+$("#p-cats").addEventListener("change", e => {
+  const el = e.target.closest("[data-cat]"); if (!el) return;
+  const i = +el.dataset.cat, old = state.categories[i], nv = el.value.trim();
+  if (!nv || nv === old) { el.value = old; return; }
+  state.categories[i] = nv;
+  state.tarifs.forEach(t => { const tk = String(t.categories || "").split(";").map(s => s.trim()); if (tk.includes(old)) { const ol = offerLabel(t); t.categories = tk.map(s => s === old ? nv : s).filter(Boolean).join("; "); if (state.devis.inputs.offre === ol) state.devis.inputs.offre = offerLabel(t); } });
+  state.produits.forEach(p => { if (p.categorieManuelle === old) p.categorieManuelle = nv; });
+  if (state.devis.inputs.categorieManuelle === old) state.devis.inputs.categorieManuelle = nv;
+  persist(); toast(`Catégorie renommée : ${old} → ${nv}`);
+});
+$("#p-cats").addEventListener("click", async e => {
+  const b = e.target.closest("[data-catdel]"); if (!b) return;
+  const c = state.categories[+b.dataset.catdel];
+  if (!await confirmDlg("Supprimer la catégorie", `Retirer « ${c} » de la liste ? Les tarifs qui la mentionnent ne sont pas modifiés.`, "Supprimer", true)) return;
+  state.categories.splice(+b.dataset.catdel, 1); persist(); renderParams();
+});
+$("#p-cat-add").onclick = async () => {
+  const r = await dialog({title:"Ajouter une catégorie", input:{value:"", placeholder:"Ex. Textile"}, buttons:[{label:"Annuler", value:"cancel"}, {label:"Ajouter", value:"ok", kind:"primary"}]});
+  const v = (r.text || "").trim(); if (r.value !== "ok" || !v) return;
+  if (state.categories.includes(v)) { toast("Cette catégorie existe déjà."); return; }
+  state.categories.push(v); persist(); renderParams();
+};
+
+/* ================= Backup ================= */
+$("#x-export").onclick = () => download(`sauvegarde_devis_${todayIso()}.json`, JSON.stringify(state, null, 1), "application/json");
+$("#x-import").onclick = () => $("#x-file").click();
+$("#x-file").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!d.tarifs || !d.params || !d.devis) throw new Error("format");
+    if (!await confirmDlg("Importer une sauvegarde", `Remplacer toutes les données actuelles par cette sauvegarde (${(d.archive || []).length} devis, ${d.tarifs.length} offres, ${(d.produits || []).length} fiches produits) ?`, "Importer", true)) return;
+    const s = seedState();
+    state = {...s, ...d, company: d.company || s.company, produits: d.produits || []};
+    state.tarifs = state.tarifs.map(t => ({maxColis:"", updatedAt:"", ...t}));
+    state.archive = state.archive.map(a => ({...a, statut: a.statut || "Envoyé", inputs: migrateInputs(a.inputs, state.params.cny)}));
+    state.devis.inputs = migrateInputs(state.devis.inputs, state.params.cny); state.devis.msg = state.devis.msg || {edited:false, text:""};
+    persist(); fillFicheSelect(); renderParams(); toast("Sauvegarde importée.");
+  } catch(err) { await dialog({title:"Import impossible", html:"<p>Ce fichier n’est pas une sauvegarde de cette application. Choisissez un fichier .json créé avec « Exporter une sauvegarde ».</p>"}); }
+  e.target.value = "";
+};
+$("#x-reset").onclick = async () => {
+  if (!await confirmDlg("Revenir aux données d’origine", "Les tarifs, le calendrier, les paramètres, les fiches produits, le devis en cours et tout l’historique seront remplacés par les données du classeur d’origine. Exportez une sauvegarde avant si besoin.", "Tout remplacer", true)) return;
+  state = seedState(); persist(); fillFicheSelect(); renderParams(); toast("Données d’origine rechargées.");
+};
+
+/* ================= Start ================= */
+buildDevisControls(); fillFicheSelect(); renderDevis(); renderStorage();
+</script>
+</body>
+</html>

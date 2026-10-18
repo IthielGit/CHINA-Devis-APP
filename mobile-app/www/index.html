@@ -1868,7 +1868,7 @@ function viewDash(v){
     const recent=[...S.quotes].sort((a,b)=>b.modified.localeCompare(a.modified)).slice(0,5);
     const todayLabel=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',timeZone:'Indian/Antananarivo'});
     const hourNow=Number(new Intl.DateTimeFormat('fr-FR',{hour:'numeric',hour12:false,timeZone:'Indian/Antananarivo'}).format(new Date()));
-    const greet=hourNow<12?'Bonjour':hourNow<18?'Bon après-midi':'Bonsoir';
+    const greet=hourNow<12?'Bonjour':hourNow<18?'Bon après-midi':'Bonsoir!';
     const mood=!S.quotes.length?'Prêt à calculer votre premier import ?':late.length?`${late.length} dossier${late.length>1?'s':''} en retard : relancez-les en priorité.`:toDo?`${toDo} action${toDo>1?'s':''} ${toDo>1?'vous attendent':'vous attend'} aujourd’hui.`:'Tout est à jour. Belle journée !';
     const ring=`<span class="dash-ring-wrap"><svg class="dash-ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.9" class="ring-bg"/><circle cx="18" cy="18" r="15.9" class="ring-fg" pathLength="100" stroke-dasharray="${deliveredPct} 100"/></svg><span class="ring-pct num">${deliveredPct} %</span></span>`;
     v.innerHTML=`<div class="dash">
@@ -1997,10 +1997,11 @@ function viewTarifs(v){
     const original=index===null?null:S.tarifs[index];
     const t=original?{...original}:{tr:P.trs[0]||'',mode:'Avion',svc:P.svcs[0]||'',cats:'Général',tarif:null,unit:'kg',cur:'Ar',palier:null,tarif2:null,min:null,dmin:null,dmax:null,d1:null,c1:null,d2:null,c2:null,h:null,note:null,base:null};
     const opener=document.activeElement,dialog=document.createElement('dialog');dialog.className='calendar-dialog tariff-dialog';dialog.setAttribute('aria-labelledby','tariffTitle');
-    const select=(key,label,values,blank)=>`<div class="field"><label for="tf_${key}">${label}</label><select class="sel" id="tf_${key}" name="${key}"${blank===undefined?' required':''}>${opts([...new Set([...values,...(t[key]?[t[key]]:[])])],t[key],blank)}</select></div>`;
-    const serviceSelect=`<div class="field"><label for="tf_svc">Service</label><select class="sel" id="tf_svc" name="svc"></select></div>`;
-    const number=(key,label,max)=>`<div class="field"><label for="tf_${key}">${label}</label><input class="inp" id="tf_${key}" name="${key}" type="number" min="0" step="any" ${max===undefined?'':`max="${max}"`} value="${t[key]??''}"></div>`;
-    dialog.innerHTML=`<form><h2 id="tariffTitle">${readOnly?'Consulter l’offre':original?'Modifier l’offre':'Ajouter une offre'}</h2><p class="hint">Les valeurs vides restent « à obtenir ». Aucun changement n’est enregistré avant validation.</p><fieldset ${readOnly?'disabled':''} style="border:0;padding:0;margin:0"><div class="tariff-fields">${select('tr','Transitaire',P.trs)}${select('mode','Transport',['Avion','Maritime'])}${serviceSelect}${select('unit','Unité de facturation',['kg','pièce','m³'])}<fieldset class="wide"><legend>Catégories acceptées</legend><div class="row">${[...new Set([...P.cats,...catList(t.cats)])].map(c=>`<label><input type="checkbox" name="category" value="${esc(c)}"${catList(t.cats).includes(c)?' checked':''}> ${esc(c)}</label>`).join('')}</div></fieldset>${number('tarif','Tarif de base')}${select('cur','Devise',['Ar','USD'])}${number('min','Minimum facturable')}${select('base','Base poids imposée',['Poids réel','Poids volumétrique'],'Selon le devis')}<fieldset class="wide"><legend>Délais et départs</legend></fieldset>${number('dmin','Délai minimum (jours)')}${number('dmax','Délai maximum (jours)')}${select('d1','Premier départ',JOURS,'Non communiqué')}${number('c1','Clôture avant départ 1 (jours)')}${select('d2','Second départ',JOURS,'Aucun')}${number('c2','Clôture avant départ 2 (jours)')}${number('h','Heure limite en Chine (0–23)',23)}<div></div><details class="wide"${isNum(t.palier)||isNum(t.tarif2)?' open':''}><summary>Tarification par volume</summary><div class="tariff-fields">${number('palier','Seuil de volume (m³)')}${number('tarif2','Tarif au-delà du seuil')}</div></details><div class="field wide"><label for="tf_note">Conditions et points à vérifier</label><textarea class="inp" id="tf_note" name="note">${esc(t.note||'')}</textarea></div></div></fieldset><p class="badtxt" id="tariffError" role="alert"></p><div class="row"><button type="button" class="btn" id="tariffCancel">${readOnly?'Fermer':'Annuler'}</button>${readOnly?'':'<button class="btn pri" type="submit">Enregistrer</button>'}</div></form>`;
+    const REQ_MARK=' <span style="color:var(--warn);font-weight:700" aria-hidden="true">*</span>';
+    const select=(key,label,values,blank)=>`<div class="field"><label for="tf_${key}">${label}${blank===undefined?REQ_MARK:''}</label><select class="sel" id="tf_${key}" name="${key}"${blank===undefined?' required':''}>${opts([...new Set([...values,...(t[key]?[t[key]]:[])])],t[key],blank)}</select></div>`;
+    const serviceSelect=`<div class="field"><label for="tf_svc">Service<span id="tf_svc_req" style="color:var(--warn);font-weight:700" aria-hidden="true"> *</span></label><select class="sel" id="tf_svc" name="svc"></select></div>`;
+    const number=(key,label,max,req)=>`<div class="field"><label for="tf_${key}">${label}${req?REQ_MARK:''}</label><input class="inp" id="tf_${key}" name="${key}" type="number" min="0" step="any" ${req?'required':''} ${max===undefined?'':`max="${max}"`} value="${t[key]??''}"></div>`;
+    dialog.innerHTML=`<form><h2 id="tariffTitle">${readOnly?'Consulter l’offre':original?'Modifier l’offre':'Ajouter une offre'}</h2><p class="hint">Les champs marqués * sont obligatoires. Les autres restent « à obtenir » s’ils sont vides. Aucun changement n’est enregistré avant validation.</p><fieldset ${readOnly?'disabled':''} style="border:0;padding:0;margin:0"><div class="tariff-fields">${select('tr','Transitaire',P.trs)}${select('mode','Transport',['Avion','Maritime'])}${serviceSelect}${select('unit','Unité de facturation',['kg','pièce','m³'])}<fieldset class="wide"><legend>Catégories acceptées<span style="color:var(--warn);font-weight:700" aria-hidden="true"> *</span></legend><div class="row">${[...new Set([...P.cats,...catList(t.cats)])].map(c=>`<label><input type="checkbox" name="category" value="${esc(c)}"${catList(t.cats).includes(c)?' checked':''}> ${esc(c)}</label>`).join('')}</div></fieldset>${number('tarif','Tarif de base',undefined,true)}${select('cur','Devise',['Ar','USD'])}${number('min','Minimum facturable')}${select('base','Poids à facturer',['Poids réel','Poids volumétrique'],'Selon le devis')}<fieldset class="wide"><legend>Délais et départs</legend></fieldset>${number('dmin','Délai minimum (jours)',undefined,true)}${number('dmax','Délai maximum (jours)',undefined,true)}${select('d1','Premier départ',JOURS,'Non communiqué')}${number('c1','Dépôt limite : jours avant le départ 1')}${select('d2','Second départ',JOURS,'Aucun')}${number('c2','Dépôt limite : jours avant le départ 2')}${number('h','Heure limite de dépôt en Chine (0 à 23 h)',23)}<div></div><details class="wide"${isNum(t.palier)||isNum(t.tarif2)?' open':''}><summary>Tarification par volume</summary><div class="tariff-fields">${number('palier','Seuil de volume (m³)')}${number('tarif2','Tarif au-delà du seuil')}</div></details><div class="field wide"><label for="tf_note">Conditions et points à vérifier</label><textarea class="inp" id="tf_note" name="note">${esc(t.note||'')}</textarea></div></div></fieldset><p class="badtxt" id="tariffError" role="alert"></p><div class="row"><button type="button" class="btn" id="tariffCancel">${readOnly?'Fermer':'Annuler'}</button>${readOnly?'':'<button class="btn pri" type="submit">Enregistrer</button>'}</div></form>`;
     document.body.appendChild(dialog);dialog.showModal();
     let lastAvionService=t.svc||P.svcs[0]||'';
     const updateServiceOptions=()=>{
@@ -2009,6 +2010,7 @@ function viewTarifs(v){
       if(service.value)lastAvionService=service.value;
       service.disabled=noService;
       service.required=!noService;
+      $('#tf_svc_req',dialog).hidden=noService;
       service.innerHTML=noService?'<option value="" selected></option>':opts([...new Set([...P.svcs,...(t.svc?[t.svc]:[])])],P.svcs.includes(lastAvionService)||lastAvionService===t.svc?lastAvionService:P.svcs[0]);
     };
     $('#tf_tr',dialog).onchange=updateServiceOptions;$('#tf_mode',dialog).onchange=updateServiceOptions;updateServiceOptions();
@@ -2102,7 +2104,7 @@ function viewParams(v){
   <section class="card"><h2>Taux de change</h2>
    ${pf('p_usd','Taux USD → Ar','usd','Taux de base. La marge de sécurité s’y ajoute pour le yuan.','Ar')}
    ${pf('p_cny','¥ pour 1 USD','cnyUsd','Conversion yuan ↔ dollar réellement obtenue.','¥')}
-   <div class="field"><label for="p_marge">Marge de sécurité sur le change</label><input class="inp" id="p_marge" data-p="marge" data-pct="1" type="number" step="any" min="0" value="${Number((P.marge*100).toPrecision(12))}"><span>%</span><div class="help">Couvre les frais et les variations de change.</div></div>
+   <div class="field"><label for="p_marge">Marge de sécurité du change</label><input class="inp" id="p_marge" data-p="marge" data-pct="1" type="number" step="any" min="0" value="${Number((P.marge*100).toPrecision(12))}"><span>%</span><div class="help">Couvre les frais et les variations de change.</div></div>
    <div class="field"><label>Taux yuan → Ar (calculé)</label><div class="num" id="p_yr"></div><div class="help">Taux USD → Ar × (1 + marge) ÷ ¥ pour 1 USD.</div></div>
    <details class="params-advanced"><summary>Règles de calcul avancées</summary>
    ${pf('p_div','Diviseur poids volumétrique (avion)','div','L × l × H (cm) ÷ diviseur = kg volumétrique.','')}
@@ -2430,7 +2432,7 @@ takeDailySnapshot();drawTabs();go(startTab());
   moreBtn.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Plus</span>';
   tabs.after(moreBtn);
   const MORE=[['tarifs','Tarifs des transitaires'],['cal','Calendrier des départs'],['params','Paramètres'],['guide','Mode d’emploi']];
-  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 18/10 21:44</p></div></div></div>`};
+  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 18/10 22:04</p></div></div></div>`};
   layer.addEventListener('click',e=>{
     const g=e.target.closest('[data-go]');
     if(e.target.closest('[data-new-quote]')){layer.innerHTML='';startNewQuote();return}
@@ -2651,11 +2653,12 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
     const prefix=m[1],suffix=m[3],t0=performance.now(),dur=520;
     el.textContent=prefix+'0'+suffix;
     function step(t){
-      const p=Math.min(1,(t-t0)/dur),v=Math.round(target*(1-Math.pow(1-p,3)));
+      /* La progression reste entre 0 et 1 : le premier image peut arriver avant l’heure de départ et donnait des montants négatifs. */
+      const p=Math.min(1,Math.max(0,(performance.now()-t0)/dur)),v=Math.round(target*(1-Math.pow(1-p,3)));
       el.textContent=p<1?prefix+v.toLocaleString('fr-FR')+suffix:raw;
-      if(p<1)requestAnimationFrame(step);
+      if(p<1)setTimeout(()=>step(performance.now()),16);
     }
-    requestAnimationFrame(step);
+    setTimeout(()=>step(performance.now()),16);
   }
   function enter(){
     const view=document.getElementById('view');if(!view)return;
@@ -2815,13 +2818,13 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
 (function(){
   const mq=matchMedia('(max-width:760px)');
   const STEPS=['Produit','Transport','Prix'];
-  let cur=0,lastTab=null;
+  let cur=0,lastTab=null,openAtProduct=false;
   const head=document.createElement('nav');
   head.className='m-steps';head.setAttribute('aria-label','Étapes du devis');
   head.innerHTML=STEPS.map((s,i)=>`<button type="button" data-wiz-go="${i}">${s}</button>`).join('');
   const wiz=document.createElement('div');
   wiz.className='m-wiz';
-  wiz.innerHTML='<button type="button" class="btn" data-wiz="-1">Retour</button><button type="button" class="btn pri" data-wiz="1">Suivant</button>';
+  wiz.innerHTML='<button type="button" class="btn" data-wiz="-1">Retour</button><button type="button" class="btn pri" data-wiz="1">Suivant</button><button type="button" class="btn pri" data-wiz-confirm hidden>Confirmer le devis</button>';
   const msg=document.createElement('p');
   msg.className='m-wiz-msg';msg.setAttribute('role','alert');msg.hidden=true;
   wiz.prepend(msg);
@@ -2917,20 +2920,26 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
     const cols=document.querySelector('.quote-cols');if(!cols)return;
     const B=blocks(cols);if(!B)return;
     const tab=typeof S!=='undefined'?S.tab:null;
-    if(tab!==lastTab){lastTab=tab;if(tab==='devis')cur=0}
+    if(tab!==lastTab){lastTab=tab;if(tab==='devis'){cur=0;openAtProduct=!String(S.draft.name||'').trim()}}
     helpToInfo(cols);
     if(head.parentElement!==cols)cols.prepend(head);
+    /* Nouveau devis : on arrive directement sur la section Produit (une seule fois par ouverture) */
+    if(openAtProduct&&B[0].els[0]){openAtProduct=false;B[0].els[0].scrollIntoView({block:'start'})}
     B.forEach((b,i)=>b.els.forEach(el=>el.classList.toggle('m-off',i!==cur)));
     const host=B[cur].host;
     if(wiz.parentElement!==host)host.appendChild(wiz);
     wiz.querySelector('[data-wiz="-1"]').hidden=cur===0;
     wiz.querySelector('[data-wiz="1"]').hidden=cur===STEPS.length-1;
+    /* Confirmer : seulement à la dernière étape, quand le bureau le propose */
+    const bc=document.getElementById('bConfirm');
+    wiz.querySelector('[data-wiz-confirm]').hidden=!(cur===STEPS.length-1&&bc&&!bc.hidden);
     marks();
     dimsSync();
     destSync();
     head.querySelectorAll('button').forEach((b,i)=>{if(i===cur)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
   }
   document.addEventListener('click',e=>{
+    if(e.target.closest('[data-wiz-confirm]')){document.getElementById('bConfirm')?.click();return}
     const w=e.target.closest('[data-wiz]'),j=e.target.closest('[data-wiz-go]');
     if(!w&&!j)return;
     const target=Math.max(0,Math.min(STEPS.length-1,w?cur+Number(w.dataset.wiz):Number(j.dataset.wizGo)));
@@ -2943,7 +2952,9 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
     document.querySelectorAll('.m-invalid').forEach(el=>el.classList.remove('m-invalid'));
     cur=target;
     sync();
-    head.scrollIntoView({behavior:'smooth',block:'start'});
+    /* Après « Suivant », on arrive directement sur le formulaire de l’étape, pas sur le fil d’étapes */
+    const cols=document.querySelector('.quote-cols'),B=cols&&blocks(cols);
+    (B&&B[cur].els[0]||head).scrollIntoView({behavior:'smooth',block:'start'});
   });
   /* Saisie d’une case de dimension : on recopie « L x l x H » dans le champ d’origine, qui prévient le bureau. */
   document.addEventListener('input',e=>{
@@ -2978,8 +2989,67 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
   .chip>button{min-width:44px;min-height:44px}
   /* Compteur des onglets : 11 px au minimum */
   .tab .count{font-size:11px}
+  /* Message d’erreur vide : pas de bande orange sans texte (dialogues Offre et Départ) */
+  .badtxt:empty{display:none}
+  /* Historique : les cartes de devis gardent leur bordure, le cadre qui les entoure n’en ajoute pas une seconde */
+  .tw:has(.hcards){border:0;background:none;overflow:visible}
+  /* Tarifs et Calendrier : chaque ligne est une carte, le cadre du tableau n’ajoute pas de bordure */
+  .tariff-card .tw,.calendar-card .tw{border:0;background:none}
+  /* Confirmer et sa phrase d’aide : déplacés en fin d’étape Prix (bouton du bas), plus en haut du devis */
+  #bConfirm,#confirmHint{display:none!important}
+  .m-wiz [data-wiz-confirm]{flex:1 1 0;justify-content:center}
+  /* Cartes : liseré fin à l’extérieur, décalé de 5 px (même rendu que la maquette) */
+  /* Étape du devis : le haut du bloc se pose juste sous l’en-tête collant */
+  #stepProduit,.quote-cols .stack{scroll-margin-top:96px}
+  /* Salutation du soir : icône lune (Bonsoir) ; le matin et l’après-midi gardent le soleil */
+  .dash-greet h2.m-night::before{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z'/%3E%3C/svg%3E")}
   /* Offre : étiquette en bloc, sur deux lignes au besoin */
   .summary-offer{display:block;border-radius:14px;line-height:1.35}
 }
 </style>
+<style>
+/* Mode d’emploi (téléphone) : quatre étapes courtes, le texte complet replié */
+@media (max-width:760px){
+  .m-guide-step{display:flex;gap:12px;align-items:flex-start;margin:14px 0}
+  .m-guide-n{flex:0 0 28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+  .m-guide-step p{margin:2px 0 0;font-size:14px}
+  .m-full{margin-top:16px}
+  .m-full summary{cursor:pointer;color:var(--accent);font-weight:600;padding:8px 0}
+}
+</style>
+<script>
+/* Mode d’emploi : sur téléphone, on affiche quatre étapes courtes ; le texte complet reste sous « Lire le texte complet ». */
+(function(){
+  const mq=matchMedia('(max-width:760px)');
+  const SHORT='<h2>Faire un devis</h2>'
+    +'<div class="m-guide-step"><span class="m-guide-n">1</span><div><b>Produit</b><p>Nom, prix, quantité, dimensions, poids.</p></div></div>'
+    +'<div class="m-guide-step"><span class="m-guide-n">2</span><div><b>Transport</b><p>Choisissez la destination, puis « Moins cher » ou « Plus rapide ».</p></div></div>'
+    +'<div class="m-guide-step"><span class="m-guide-n">3</span><div><b>Prix</b><p>Vérifiez le prix, enregistrez, puis confirmez le devis.</p></div></div>'
+    +'<div class="m-guide-step"><span class="m-guide-n">4</span><div><b>Suivi</b><p>Retrouvez le dossier dans l’Historique.</p></div></div>'
+    +'<p class="hint">Ajoutez d’abord vos offres dans Tarifs, et vos dates de départ dans Calendrier.</p>';
+  function apply(){
+    if(!mq.matches)return;
+    const card=document.querySelector('#view .card.guide');
+    if(!card||card.dataset.mShort)return;
+    card.dataset.mShort='1';
+    const full=card.innerHTML.replace(/<h2>[\s\S]*?<\/h2>/,'');
+    card.innerHTML=SHORT+'<details class="m-full"><summary>Lire le texte complet</summary>'+full+'</details>';
+  }
+  new MutationObserver(apply).observe(document.body,{subtree:true,childList:true});
+  apply();
+})();
+</script>
+<script>
+/* Salutation : la classe m-night met l’icône lune quand le texte est « Bonsoir ». */
+(function(){
+  function sync(){
+    document.querySelectorAll('.dash-greet h2').forEach(h=>{
+      const night=/^Bonsoir/.test(h.textContent.trim());
+      if(h.classList.contains('m-night')!==night)h.classList.toggle('m-night',night);
+    });
+  }
+  new MutationObserver(sync).observe(document.body,{subtree:true,childList:true,characterData:true});
+  sync();
+})();
+</script>
 </body></html>

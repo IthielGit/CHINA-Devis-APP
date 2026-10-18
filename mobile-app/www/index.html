@@ -204,16 +204,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 .inp.txt{font-family:var(--f-body)}
 .inp:disabled,.sel:disabled,.inp.off{background:var(--off-bg);color:var(--off-fg);border-color:var(--line)}
 textarea.inp{font-family:var(--f-body);resize:vertical}
-/* Repères d'étapes et carte « Il reste à compléter » */
+/* Repères d'étapes */
 .quote-steps{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
 .quote-steps .qs{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 14px 6px 6px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
 .quote-steps .qs-n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:12px}
 .quote-steps .qs.is-done{color:var(--ink)}
 .quote-steps .qs.is-done .qs-n{background:var(--accent);color:var(--accent-ink)}
-.quote-missing{border-left:4px solid #c2410c}
-.quote-missing h3{margin:0 0 8px;font-size:14px}
-.quote-missing ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.quote-missing li{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
 .step-foot{display:flex;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 /* Suffixe d'unité (¥ / pièce, Ar, cm…) : placé dans la même cellule que le champ, sans conteneur supplémentaire */
 .field>label{grid-column:1;grid-row:1}
@@ -1060,8 +1056,6 @@ function viewDevis(v){
     <button class="btn pri" id="bSave">Enregistrer le devis <span aria-hidden="true">↗</span></button><button class="btn pri" id="bConfirm" hidden>Confirmer le devis</button>
     <details class="more-actions"><summary class="btn">Plus</summary><div><button class="btn" id="bNew"><span aria-hidden="true">＋</span>Nouveau devis</button><button class="btn" id="bFollow" hidden>Ouvrir le suivi</button></div></details></div>
   <p class="kv-note" id="confirmHint" hidden></p>
-  <nav class="quote-steps" id="quoteSteps" aria-label="Étapes du devis"></nav>
-  <section class="card quote-missing" id="quoteMissing" hidden><h3>Il reste à compléter</h3><ul id="quoteMissingList"></ul></section>
   <div class="manual-note" id="lockBanner" hidden>Devis confirmé : lecture seule. Pour le modifier, réviser le devis (la version confirmée reste dans l’historique). <button class="btn sm" id="bRevise" type="button">Réviser le devis</button></div>
   <div class="result" id="result"></div>
   <div class="cols quote-cols">
@@ -1171,7 +1165,6 @@ function refresh(){
   const statusTag=record?` <span class="pill ${STATUS_TONE[record.status]}">${esc(record.status)}</span>`:'';
   $('#qStat').innerHTML=!record?'<span class="pill">Pas encore enregistré</span>':locked?statusTag+' <span class="hint">Lecture seule : ouvrez le suivi pour agir</span>':(dirty?'<span class="pill warn">Modifications non enregistrées</span>':'<span class="pill good">Enregistré</span>')+statusTag;
   $('#bSave').hidden=locked;
-  renderQuoteSteps(d,R,locked);
   $('#bFollow').hidden=!record;
   $('#lockBanner').hidden=!locked;
   const confirmable=!!record&&record.status===STATUS.DRAFT&&!dirty,hasDestination=DESTINATION_LIST.includes(record?.destination);
@@ -1198,7 +1191,7 @@ function refresh(){
 /* Le résultat montre d’abord deux chiffres : le prix de vente et la date. Coûts, marge et commande entière sont repliés.
    L’état replié/ouvert est gardé à chaque recalcul. */
 const detailOpen=!!$('#result .result-detail')?.open;
-$('#result').innerHTML=`<div class="price-summary"><div class="result-main"><div class="row-label">Prix de revient pour 1 pièce</div><b id="sellingPrice">${isNum(R.costP)?ar(R.costP):'—'}</b></div><details class="result-detail"><summary>Voir le coût et la marge <span aria-hidden="true">▾</span></summary><div class="cost-grid${R.qty>1?' is-multi':''}"><span></span><span class="cost-head">1 pièce</span>${R.qty>1?`<span class="cost-head">${R.qty} pièces</span>`:''}<span>Coût sans marge arrivé à Madagascar</span><b class="num">${isNum(R.costP)?ar(R.costP):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.costLot)?ar(R.costLot):'—'}</b>`:''}<span>Marge</span><b class="num">${isNum(R.margeP)?ar(R.margeP):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.margeLot)?ar(R.margeLot):'—'}</b>`:''}<span>Prix de vente</span><b class="num">${isNum(R.pv)?ar(R.pv):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.revenueLot)?ar(R.revenueLot):'—'}</b>`:''}</div><div class="estimate-note">Estimation à confirmer avec le transitaire. La livraison inclut votre marge de sécurité.</div><div class="summary-note">La commande entière correspond à la quantité saisie : ${R.qty} pièce${R.qty>1?'s':''} du même produit.${N(R.transacLot)?' Les frais de transaction de '+ar(R.transacLot)+' sont payés une seule fois et répartis sur les pièces ; ils sont inclus dans tous les coûts et marges affichés.':''}</div></details><div class="delivery-line"><span>Date de livraison au client</span><b>${s&&isNum(s.I)?fd(s.I):'À confirmer avec le transitaire'}</b><span class="hint">Estimation avec votre marge de sécurité</span></div></div><div class="summary-offer">${s?esc(s.label):'Aucune offre disponible'}</div></div>`;
+$('#result').innerHTML=`<div class="price-summary"><div class="result-main"><div class="row-label">Prix de revient pour 1 pièce</div><b id="sellingPrice">${isNum(R.costP)?ar(R.costP):'—'}</b></div><details class="result-detail"><summary>Voir le coût et la marge <span aria-hidden="true">▾</span></summary><div class="cost-grid${R.qty>1?' is-multi':''}"><span></span><span class="cost-head">Pour 1 pièce</span>${R.qty>1?`<span class="cost-head">Pour ${R.qty} pièces</span>`:''}<span>Prix de revient</span><b class="num">${isNum(R.costP)?ar(R.costP):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.costLot)?ar(R.costLot):'—'}</b>`:''}<span>Marge</span><b class="num">${isNum(R.margeP)?ar(R.margeP):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.margeLot)?ar(R.margeLot):'—'}</b>`:''}<span>Prix de vente</span><b class="num">${isNum(R.pv)?ar(R.pv):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.revenueLot)?ar(R.revenueLot):'—'}</b>`:''}</div><div class="estimate-note">Estimation à confirmer avec le transitaire. La livraison inclut votre marge de sécurité.</div><div class="summary-note">La commande entière correspond à la quantité saisie : ${R.qty} pièce${R.qty>1?'s':''} du même produit.${N(R.transacLot)?' Les frais de transaction de '+ar(R.transacLot)+' sont payés une seule fois et répartis sur les pièces ; ils sont inclus dans tous les coûts et marges affichés.':''}</div></details><div class="delivery-line"><span>Date de livraison au client</span><b>${s&&isNum(s.I)?fd(s.I):'À confirmer avec le transitaire'}</b><span class="hint">Estimation avec votre marge de sécurité</span></div></div><div class="summary-offer">${s?esc(s.label):'Aucune offre disponible'}</div></div>`;
   if(detailOpen)$('#result .result-detail').open=true;
   const note=$('#result .summary-note'),explanation=document.createElement('details');explanation.className='summary-note';
   explanation.innerHTML='<summary>Quantité et frais inclus</summary><p></p>';explanation.querySelector('p').textContent=note.textContent;note.replaceWith(explanation);
@@ -1275,20 +1268,6 @@ function saleCard(d,R){
   ${isNum(R.margeP)&&R.margeP<0?'<div class="badtxt" style="margin-top:6px">⚠ Vous vendez à perte.</div>':''}
   <details class="market-compare" data-detail="market"><summary>Comparer au prix du marché</summary><div class="field"><label for="f_marketPrice">Prix observé sur le marché</label><input class="inp" id="f_marketPrice" data-k="marketPrice" type="number" min="0" step="any" inputmode="decimal"><span>Ar / pièce</span><div class="help">Saisissez le prix actuel observé pour un produit comparable.</div></div>${marketComparison(d,R)}</details></section>
   `}
-/* Repères d'étapes : la pastille est cochée quand l'étape est complète. La carte « Il reste à compléter » liste ce qui bloque, avec un lien vers chaque étape. */
-const STEP_TARGET={prod:'stepProduit',transport:'stepTransport',prix:'stepPrix'};
-function stepOfIssue(m){return /offre|destination/i.test(m)?'transport':/prix de vente|prix de revient|coût/i.test(m)?'prix':'prod'}
-function renderQuoteSteps(d,R,locked){
-  const nav=$('#quoteSteps'),box=$('#quoteMissing'),list=$('#quoteMissingList');
-  if(!nav||!box||!list)return;
-  const errors=locked?[]:[...checkQuote(d,R).errors];
-  if(!locked&&!d.destination)errors.push('Choisissez la destination : elle est obligatoire avant la confirmation.');
-  const hasIssue=k=>errors.some(m=>stepOfIssue(m)===k);
-  const done={prod:!hasIssue('prod'),transport:!hasIssue('transport'),prix:!hasIssue('prix')&&isNum(R.pv)};
-  nav.innerHTML=[['prod','1','Produit'],['transport','2','Transport'],['prix','3','Prix de vente']].map(([k,n,label])=>`<button type="button" class="qs${done[k]?' is-done':''}" data-step-go="${k}"><span class="qs-n">${done[k]?'✓':n}</span>${label}</button>`).join('');
-  box.hidden=!errors.length;
-  list.innerHTML=errors.map(m=>`<li><span>${esc(m)}</span><button type="button" class="btn sm" data-step-go="${stepOfIssue(m)}">Corriger</button></li>`).join('');
-}
 document.addEventListener('click',e=>{const step=e.target.closest('[data-step-go],[data-step-next]');if(step){const k=step.dataset.stepGo||step.dataset.stepNext;document.getElementById(STEP_TARGET[k])?.scrollIntoView({behavior:'smooth',block:'start'});return}});
 document.addEventListener('click',e=>{const price=e.target.closest('[data-price-mode]');if(price){const R=compute(S.draft);S.draft.pvRetenu=price.dataset.priceMode==='manual'?(R.pv??0):null;dirty=true;persist();refresh();const target=$('#f_marge')||$('#f_pvR');target?.focus();return}const b=e.target.closest('[data-pick]');if(b){S.draft.offer=b.dataset.pick;S.draft.mode='manuel';dirty=true;persist();if(S.tab==='devis')refresh();else go('devis')}});
 
@@ -2451,7 +2430,7 @@ takeDailySnapshot();drawTabs();go(startTab());
   moreBtn.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Plus</span>';
   tabs.after(moreBtn);
   const MORE=[['tarifs','Tarifs des transitaires'],['cal','Calendrier des départs'],['params','Paramètres'],['guide','Mode d’emploi']];
-  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 18/10 20:31</p></div></div></div>`};
+  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 18/10 21:14</p></div></div></div>`};
   layer.addEventListener('click',e=>{
     const g=e.target.closest('[data-go]');
     if(e.target.closest('[data-new-quote]')){layer.innerHTML='';startNewQuote();return}
@@ -2748,6 +2727,8 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
 <style>
 /* Cartes 2 % plus foncées que le blanc en mode clair (255 → 250) pour mieux voir les champs. Le mode sombre garde ses valeurs. */
 @media (max-width:760px){:root{--glass-strong:rgba(250,250,250,.78)}}
+/* Barre d’action du devis : 15 % plus foncée que les cartes, en clair comme en sombre. */
+@media (max-width:760px){.m-bar{background:color-mix(in srgb,var(--glass-strong) 85%,#000)!important}}
 </style>
 <style>
 /* Numéro de section 10 % plus grand (26 → 28,6 px, police 13 → 14,3 px) */
@@ -2757,4 +2738,125 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
 /* Numéro de version, discret, en bas du menu Plus */
 @media (max-width:760px){.app-build{margin:12px 0 0;text-align:center;font-size:11px;color:var(--m-muted,#6b7280)}}
 </style>
+<style>
+/* Espace réduit au-dessus du prix de revient (plus de barre d'étapes) */
+@media (max-width:760px){#result{margin-top:4px!important}#result .price-summary{margin-top:0!important;padding-top:0!important}}
+</style>
+<style>
+/* En-têtes « 1 pièce » / « N pièces » du détail du coût : mis en évidence */
+@media (max-width:760px){.cost-grid .cost-head{display:inline-flex;justify-self:end;align-items:center;justify-content:center;padding:4px 12px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:12px;white-space:nowrap}}
+</style>
+<style>
+/* Pastilles « Pour 1 pièce » / « Pour N pièces » : espace entre elles */
+@media (max-width:760px){.cost-grid.is-multi{column-gap:10px}.cost-grid .cost-head{margin:2px 0;padding:5px 12px}}
+</style>
+<style>
+/* Colonnes des pastilles adaptées à leur texte, avec un vrai espace entre elles */
+@media (max-width:760px){.cost-grid.is-multi{grid-template-columns:minmax(0,1fr) max-content max-content;column-gap:12px}}
+</style>
+<style>
+/* Détail du coût sur téléphone : chaque poste devient une fiche, les montants côte à côte */
+@media (max-width:760px){
+  .tw:has(.cost-table){overflow:visible;border:0}
+  .cost-table{display:block;width:100%;border:0}
+  .cost-table thead{display:none}
+  .cost-table tbody{display:block}
+  .cost-table tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:12px 4px;border-bottom:1px solid var(--m-line,#e6e9ec)}
+  .cost-table td{display:flex;flex-direction:column;gap:2px;padding:0;border:0;text-align:left;min-width:0;background:none}
+  .cost-table td:first-child{grid-column:1/-1}
+  .cost-table td:nth-child(2)::before,.cost-table td:nth-child(3)::before{content:attr(data-label);font-size:11px;color:var(--m-muted,#6b7280)}
+  .cost-table td:nth-child(2),.cost-table td:nth-child(3){align-items:center;text-align:center}
+  .cost-table td.r{text-align:center}
+  .cost-table tr.total{border-bottom:0;background:var(--accent-soft);border-radius:14px;margin-top:6px;padding:12px}
+  .cost-table tr.total td:first-child{font-weight:700}
+}
+</style>
+<style>
+/* Devis en étapes (téléphone) : un bloc à la fois, fil d’étapes en haut, Retour / Suivant en bas. Pictos sur les étapes et les choix. */
+@media (max-width:760px){
+  .m-off{display:none!important}
+  .m-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0 2px;padding:5px;background:var(--m-surface2);border-radius:18px;scroll-margin-top:96px}
+  .m-steps button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:54px;padding:4px 2px;border:0;border-radius:14px;background:transparent;color:var(--m-muted);font-size:12px;font-weight:600;line-height:1.1;box-shadow:none}
+  .m-steps button[aria-current=step]{background:var(--m-surface);color:var(--accent);box-shadow:var(--m-shadow)}
+  .m-steps button::before,.seg button[data-mode]::before,.seg button[data-price-mode]::before{content:"";width:18px;height:18px;flex:0 0 auto;background-color:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+  .m-steps button:nth-child(1){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 7l9-4 9 4v10l-9 4-9-4z'/%3E%3Cpath d='M3 7l9 4 9-4M12 11v10'/%3E%3C/svg%3E")}
+  .m-steps button:nth-child(2){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M2 6h12v10H2z'/%3E%3Cpath d='M14 10h4l3 3v3h-7'/%3E%3Ccircle cx='6' cy='18' r='2'/%3E%3Ccircle cx='17' cy='18' r='2'/%3E%3C/svg%3E")}
+  .m-steps button:nth-child(3){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 12V4h8l10 10-8 8L3 12z'/%3E%3Ccircle cx='7.5' cy='7.5' r='1.5'/%3E%3C/svg%3E")}
+  .seg button[data-mode],.seg button[data-price-mode]{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .seg button[data-mode]::before,.seg button[data-price-mode]::before{width:15px;height:15px}
+  .seg button[data-mode=prix]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M15 9a4 4 0 100 6M7 11h6M7 13h6'/%3E%3C/svg%3E")}
+  .seg button[data-mode=rapide]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M13 2L4 14h7l-1 8 9-12h-7z'/%3E%3C/svg%3E")}
+  .seg button[data-mode=manuel]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 7h16M4 17h16'/%3E%3Ccircle cx='9' cy='7' r='2'/%3E%3Ccircle cx='15' cy='17' r='2'/%3E%3C/svg%3E")}
+  .seg button[data-price-mode=auto]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M19 5L5 19'/%3E%3Ccircle cx='7' cy='7' r='2.5'/%3E%3Ccircle cx='17' cy='17' r='2.5'/%3E%3C/svg%3E")}
+  .seg button[data-price-mode=manual]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M4 20l4-1L19 8l-3-3L5 16z'/%3E%3C/svg%3E")}
+  /* Titres d’étape : le fil d’étapes remplace le numéro et le sous-titre */
+  #stepProduit h2 small,#stepTransport h2 small,#stepPrix h2 small,#stepProduit .section-index,#stepTransport .section-index,#stepPrix .section-index{display:none}
+  .quote-cols .step-foot{display:none}
+  .quote-cols .field-info{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:6px;padding:0;border:0;border-radius:50%;background:var(--m-surface2);color:var(--accent);font-size:12px;font-weight:700;line-height:1;vertical-align:middle;cursor:pointer}
+  .m-wiz{display:flex;gap:10px;margin-top:18px}
+  .m-wiz .btn{flex:1 1 0;justify-content:center}
+  .m-wiz [hidden]{display:none!important}
+}
+</style>
+<script>
+/* Devis en étapes (téléphone) : Produit, Transport, Prix, un seul bloc à la fois. Une aide longue (texte sous un champ) devient une infobulle « i ». */
+(function(){
+  const mq=matchMedia('(max-width:760px)');
+  const STEPS=['Produit','Transport','Prix'];
+  let cur=0,lastTab=null;
+  const head=document.createElement('nav');
+  head.className='m-steps';head.setAttribute('aria-label','Étapes du devis');
+  head.innerHTML=STEPS.map((s,i)=>`<button type="button" data-wiz-go="${i}">${s}</button>`).join('');
+  const wiz=document.createElement('div');
+  wiz.className='m-wiz';
+  wiz.innerHTML='<button type="button" class="btn" data-wiz="-1">Retour</button><button type="button" class="btn pri" data-wiz="1">Suivant</button>';
+  /* Bloc de chaque étape, et l’endroit où loger Retour / Suivant */
+  function blocks(cols){
+    const produit=cols.querySelector('#stepProduit'),transport=cols.querySelector('#stepTransport'),right=document.getElementById('right');
+    if(!produit||!transport||!right)return null;
+    const transportStack=transport.parentElement;
+    return [{els:[produit],host:produit},{els:[transportStack],host:transportStack},{els:[right],host:right}];
+  }
+  /* Le texte d’aide sous un champ part dans une infobulle « i » à côté du libellé. L’élément d’aide reste dans la page (masqué) : le code du bureau le met à jour. */
+  function helpToInfo(cols){
+    cols.querySelectorAll('.field > .help').forEach(h=>{
+      const label=h.parentElement.querySelector(':scope > label');
+      if(!label)return;
+      if(!h._info){
+        const b=document.createElement('button');
+        b.type='button';b.className='field-info';b.textContent='i';
+        label.appendChild(b);h._info=b;
+        h.style.display='none';
+      }
+      const text=h.textContent.trim();
+      h._info.title=text;h._info.setAttribute('aria-label','Information : '+text);
+      h._info.style.display=text?'':'none';
+    });
+  }
+  function sync(){
+    if(!mq.matches)return;
+    const cols=document.querySelector('.quote-cols');if(!cols)return;
+    const B=blocks(cols);if(!B)return;
+    const tab=typeof S!=='undefined'?S.tab:null;
+    if(tab!==lastTab){lastTab=tab;if(tab==='devis')cur=0}
+    helpToInfo(cols);
+    if(head.parentElement!==cols)cols.prepend(head);
+    B.forEach((b,i)=>b.els.forEach(el=>el.classList.toggle('m-off',i!==cur)));
+    const host=B[cur].host;
+    if(wiz.parentElement!==host)host.appendChild(wiz);
+    wiz.children[0].hidden=cur===0;
+    wiz.children[1].hidden=cur===STEPS.length-1;
+    head.querySelectorAll('button').forEach((b,i)=>{if(i===cur)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
+  }
+  document.addEventListener('click',e=>{
+    const w=e.target.closest('[data-wiz]'),j=e.target.closest('[data-wiz-go]');
+    if(!w&&!j)return;
+    cur=Math.max(0,Math.min(STEPS.length-1,w?cur+Number(w.dataset.wiz):Number(j.dataset.wizGo)));
+    sync();
+    head.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  new MutationObserver(sync).observe(document.body,{subtree:true,childList:true});
+  sync();
+})();
+</script>
 </body></html>

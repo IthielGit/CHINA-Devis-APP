@@ -204,16 +204,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 .inp.txt{font-family:var(--f-body)}
 .inp:disabled,.sel:disabled,.inp.off{background:var(--off-bg);color:var(--off-fg);border-color:var(--line)}
 textarea.inp{font-family:var(--f-body);resize:vertical}
-/* Repères d'étapes et carte « Il reste à compléter » */
+/* Repères d'étapes */
 .quote-steps{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
 .quote-steps .qs{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 14px 6px 6px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted);font:inherit;font-size:13px;cursor:pointer}
 .quote-steps .qs-n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:12px}
 .quote-steps .qs.is-done{color:var(--ink)}
 .quote-steps .qs.is-done .qs-n{background:var(--accent);color:var(--accent-ink)}
-.quote-missing{border-left:4px solid #c2410c}
-.quote-missing h3{margin:0 0 8px;font-size:14px}
-.quote-missing ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-.quote-missing li{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px}
 .step-foot{display:flex;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 /* Suffixe d'unité (¥ / pièce, Ar, cm…) : placé dans la même cellule que le champ, sans conteneur supplémentaire */
 .field>label{grid-column:1;grid-row:1}
@@ -1060,8 +1056,6 @@ function viewDevis(v){
     <button class="btn pri" id="bSave">Enregistrer le devis <span aria-hidden="true">↗</span></button><button class="btn pri" id="bConfirm" hidden>Confirmer le devis</button>
     <details class="more-actions"><summary class="btn">Plus</summary><div><button class="btn" id="bNew"><span aria-hidden="true">＋</span>Nouveau devis</button><button class="btn" id="bFollow" hidden>Ouvrir le suivi</button></div></details></div>
   <p class="kv-note" id="confirmHint" hidden></p>
-  <nav class="quote-steps" id="quoteSteps" aria-label="Étapes du devis"></nav>
-  <section class="card quote-missing" id="quoteMissing" hidden><h3>Il reste à compléter</h3><ul id="quoteMissingList"></ul></section>
   <div class="manual-note" id="lockBanner" hidden>Devis confirmé : lecture seule. Pour le modifier, réviser le devis (la version confirmée reste dans l’historique). <button class="btn sm" id="bRevise" type="button">Réviser le devis</button></div>
   <div class="result" id="result"></div>
   <div class="cols quote-cols">
@@ -1171,7 +1165,6 @@ function refresh(){
   const statusTag=record?` <span class="pill ${STATUS_TONE[record.status]}">${esc(record.status)}</span>`:'';
   $('#qStat').innerHTML=!record?'<span class="pill">Pas encore enregistré</span>':locked?statusTag+' <span class="hint">Lecture seule : ouvrez le suivi pour agir</span>':(dirty?'<span class="pill warn">Modifications non enregistrées</span>':'<span class="pill good">Enregistré</span>')+statusTag;
   $('#bSave').hidden=locked;
-  renderQuoteSteps(d,R,locked);
   $('#bFollow').hidden=!record;
   $('#lockBanner').hidden=!locked;
   const confirmable=!!record&&record.status===STATUS.DRAFT&&!dirty,hasDestination=DESTINATION_LIST.includes(record?.destination);
@@ -1198,7 +1191,7 @@ function refresh(){
 /* Le résultat montre d’abord deux chiffres : le prix de vente et la date. Coûts, marge et commande entière sont repliés.
    L’état replié/ouvert est gardé à chaque recalcul. */
 const detailOpen=!!$('#result .result-detail')?.open;
-$('#result').innerHTML=`<div class="price-summary"><div class="result-main"><div class="row-label">Prix de revient pour 1 pièce</div><b id="sellingPrice">${isNum(R.costP)?ar(R.costP):'—'}</b></div><details class="result-detail"><summary>Voir le coût et la marge <span aria-hidden="true">▾</span></summary><div class="cost-grid${R.qty>1?' is-multi':''}"><span></span><span class="cost-head">1 pièce</span>${R.qty>1?`<span class="cost-head">${R.qty} pièces</span>`:''}<span>Coût sans marge arrivé à Madagascar</span><b class="num">${isNum(R.costP)?ar(R.costP):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.costLot)?ar(R.costLot):'—'}</b>`:''}<span>Marge</span><b class="num">${isNum(R.margeP)?ar(R.margeP):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.margeLot)?ar(R.margeLot):'—'}</b>`:''}<span>Prix de vente</span><b class="num">${isNum(R.pv)?ar(R.pv):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.revenueLot)?ar(R.revenueLot):'—'}</b>`:''}</div><div class="estimate-note">Estimation à confirmer avec le transitaire. La livraison inclut votre marge de sécurité.</div><div class="summary-note">La commande entière correspond à la quantité saisie : ${R.qty} pièce${R.qty>1?'s':''} du même produit.${N(R.transacLot)?' Les frais de transaction de '+ar(R.transacLot)+' sont payés une seule fois et répartis sur les pièces ; ils sont inclus dans tous les coûts et marges affichés.':''}</div></details><div class="delivery-line"><span>Date de livraison au client</span><b>${s&&isNum(s.I)?fd(s.I):'À confirmer avec le transitaire'}</b><span class="hint">Estimation avec votre marge de sécurité</span></div></div><div class="summary-offer">${s?esc(s.label):'Aucune offre disponible'}</div></div>`;
+$('#result').innerHTML=`<div class="price-summary"><div class="result-main"><div class="row-label">Prix de revient pour 1 pièce</div><b id="sellingPrice">${isNum(R.costP)?ar(R.costP):'—'}</b></div><details class="result-detail"><summary>Voir le coût et la marge <span aria-hidden="true">▾</span></summary><div class="cost-grid${R.qty>1?' is-multi':''}"><span></span><span class="cost-head">Pour 1 pièce</span>${R.qty>1?`<span class="cost-head">Pour ${R.qty} pièces</span>`:''}<span>Prix de revient</span><b class="num">${isNum(R.costP)?ar(R.costP):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.costLot)?ar(R.costLot):'—'}</b>`:''}<span>Marge</span><b class="num">${isNum(R.margeP)?ar(R.margeP):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.margeLot)?ar(R.margeLot):'—'}</b>`:''}<span>Prix de vente</span><b class="num">${isNum(R.pv)?ar(R.pv):'—'}</b>${R.qty>1?`<b class="num">${isNum(R.revenueLot)?ar(R.revenueLot):'—'}</b>`:''}</div><div class="estimate-note">Estimation à confirmer avec le transitaire. La livraison inclut votre marge de sécurité.</div><div class="summary-note">La commande entière correspond à la quantité saisie : ${R.qty} pièce${R.qty>1?'s':''} du même produit.${N(R.transacLot)?' Les frais de transaction de '+ar(R.transacLot)+' sont payés une seule fois et répartis sur les pièces ; ils sont inclus dans tous les coûts et marges affichés.':''}</div></details><div class="delivery-line"><span>Date de livraison au client</span><b>${s&&isNum(s.I)?fd(s.I):'À confirmer avec le transitaire'}</b><span class="hint">Estimation avec votre marge de sécurité</span></div></div><div class="summary-offer">${s?esc(s.label):'Aucune offre disponible'}</div></div>`;
   if(detailOpen)$('#result .result-detail').open=true;
   const note=$('#result .summary-note'),explanation=document.createElement('details');explanation.className='summary-note';
   explanation.innerHTML='<summary>Quantité et frais inclus</summary><p></p>';explanation.querySelector('p').textContent=note.textContent;note.replaceWith(explanation);
@@ -1275,20 +1268,6 @@ function saleCard(d,R){
   ${isNum(R.margeP)&&R.margeP<0?'<div class="badtxt" style="margin-top:6px">⚠ Vous vendez à perte.</div>':''}
   <details class="market-compare" data-detail="market"><summary>Comparer au prix du marché</summary><div class="field"><label for="f_marketPrice">Prix observé sur le marché</label><input class="inp" id="f_marketPrice" data-k="marketPrice" type="number" min="0" step="any" inputmode="decimal"><span>Ar / pièce</span><div class="help">Saisissez le prix actuel observé pour un produit comparable.</div></div>${marketComparison(d,R)}</details></section>
   `}
-/* Repères d'étapes : la pastille est cochée quand l'étape est complète. La carte « Il reste à compléter » liste ce qui bloque, avec un lien vers chaque étape. */
-const STEP_TARGET={prod:'stepProduit',transport:'stepTransport',prix:'stepPrix'};
-function stepOfIssue(m){return /offre|destination/i.test(m)?'transport':/prix de vente|prix de revient|coût/i.test(m)?'prix':'prod'}
-function renderQuoteSteps(d,R,locked){
-  const nav=$('#quoteSteps'),box=$('#quoteMissing'),list=$('#quoteMissingList');
-  if(!nav||!box||!list)return;
-  const errors=locked?[]:[...checkQuote(d,R).errors];
-  if(!locked&&!d.destination)errors.push('Choisissez la destination : elle est obligatoire avant la confirmation.');
-  const hasIssue=k=>errors.some(m=>stepOfIssue(m)===k);
-  const done={prod:!hasIssue('prod'),transport:!hasIssue('transport'),prix:!hasIssue('prix')&&isNum(R.pv)};
-  nav.innerHTML=[['prod','1','Produit'],['transport','2','Transport'],['prix','3','Prix de vente']].map(([k,n,label])=>`<button type="button" class="qs${done[k]?' is-done':''}" data-step-go="${k}"><span class="qs-n">${done[k]?'✓':n}</span>${label}</button>`).join('');
-  box.hidden=!errors.length;
-  list.innerHTML=errors.map(m=>`<li><span>${esc(m)}</span><button type="button" class="btn sm" data-step-go="${stepOfIssue(m)}">Corriger</button></li>`).join('');
-}
 document.addEventListener('click',e=>{const step=e.target.closest('[data-step-go],[data-step-next]');if(step){const k=step.dataset.stepGo||step.dataset.stepNext;document.getElementById(STEP_TARGET[k])?.scrollIntoView({behavior:'smooth',block:'start'});return}});
 document.addEventListener('click',e=>{const price=e.target.closest('[data-price-mode]');if(price){const R=compute(S.draft);S.draft.pvRetenu=price.dataset.priceMode==='manual'?(R.pv??0):null;dirty=true;persist();refresh();const target=$('#f_marge')||$('#f_pvR');target?.focus();return}const b=e.target.closest('[data-pick]');if(b){S.draft.offer=b.dataset.pick;S.draft.mode='manuel';dirty=true;persist();if(S.tab==='devis')refresh();else go('devis')}});
 

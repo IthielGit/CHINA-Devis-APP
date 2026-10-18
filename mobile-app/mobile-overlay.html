@@ -552,6 +552,8 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
 <style>
 /* Cartes 2 % plus foncées que le blanc en mode clair (255 → 250) pour mieux voir les champs. Le mode sombre garde ses valeurs. */
 @media (max-width:760px){:root{--glass-strong:rgba(250,250,250,.78)}}
+/* Barre d’action du devis : 15 % plus foncée que les cartes, en clair comme en sombre. */
+@media (max-width:760px){.m-bar{background:color-mix(in srgb,var(--glass-strong) 85%,#000)!important}}
 </style>
 <style>
 /* Numéro de section 10 % plus grand (26 → 28,6 px, police 13 → 14,3 px) */
@@ -561,3 +563,124 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
 /* Numéro de version, discret, en bas du menu Plus */
 @media (max-width:760px){.app-build{margin:12px 0 0;text-align:center;font-size:11px;color:var(--m-muted,#6b7280)}}
 </style>
+<style>
+/* Espace réduit au-dessus du prix de revient (plus de barre d'étapes) */
+@media (max-width:760px){#result{margin-top:4px!important}#result .price-summary{margin-top:0!important;padding-top:0!important}}
+</style>
+<style>
+/* En-têtes « 1 pièce » / « N pièces » du détail du coût : mis en évidence */
+@media (max-width:760px){.cost-grid .cost-head{display:inline-flex;justify-self:end;align-items:center;justify-content:center;padding:4px 12px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:12px;white-space:nowrap}}
+</style>
+<style>
+/* Pastilles « Pour 1 pièce » / « Pour N pièces » : espace entre elles */
+@media (max-width:760px){.cost-grid.is-multi{column-gap:10px}.cost-grid .cost-head{margin:2px 0;padding:5px 12px}}
+</style>
+<style>
+/* Colonnes des pastilles adaptées à leur texte, avec un vrai espace entre elles */
+@media (max-width:760px){.cost-grid.is-multi{grid-template-columns:minmax(0,1fr) max-content max-content;column-gap:12px}}
+</style>
+<style>
+/* Détail du coût sur téléphone : chaque poste devient une fiche, les montants côte à côte */
+@media (max-width:760px){
+  .tw:has(.cost-table){overflow:visible;border:0}
+  .cost-table{display:block;width:100%;border:0}
+  .cost-table thead{display:none}
+  .cost-table tbody{display:block}
+  .cost-table tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:12px 4px;border-bottom:1px solid var(--m-line,#e6e9ec)}
+  .cost-table td{display:flex;flex-direction:column;gap:2px;padding:0;border:0;text-align:left;min-width:0;background:none}
+  .cost-table td:first-child{grid-column:1/-1}
+  .cost-table td:nth-child(2)::before,.cost-table td:nth-child(3)::before{content:attr(data-label);font-size:11px;color:var(--m-muted,#6b7280)}
+  .cost-table td:nth-child(2),.cost-table td:nth-child(3){align-items:center;text-align:center}
+  .cost-table td.r{text-align:center}
+  .cost-table tr.total{border-bottom:0;background:var(--accent-soft);border-radius:14px;margin-top:6px;padding:12px}
+  .cost-table tr.total td:first-child{font-weight:700}
+}
+</style>
+<style>
+/* Devis en étapes (téléphone) : un bloc à la fois, fil d’étapes en haut, Retour / Suivant en bas. Pictos sur les étapes et les choix. */
+@media (max-width:760px){
+  .m-off{display:none!important}
+  .m-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0 2px;padding:5px;background:var(--m-surface2);border-radius:18px;scroll-margin-top:96px}
+  .m-steps button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:54px;padding:4px 2px;border:0;border-radius:14px;background:transparent;color:var(--m-muted);font-size:12px;font-weight:600;line-height:1.1;box-shadow:none}
+  .m-steps button[aria-current=step]{background:var(--m-surface);color:var(--accent);box-shadow:var(--m-shadow)}
+  .m-steps button::before,.seg button[data-mode]::before,.seg button[data-price-mode]::before{content:"";width:18px;height:18px;flex:0 0 auto;background-color:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+  .m-steps button:nth-child(1){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 7l9-4 9 4v10l-9 4-9-4z'/%3E%3Cpath d='M3 7l9 4 9-4M12 11v10'/%3E%3C/svg%3E")}
+  .m-steps button:nth-child(2){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M2 6h12v10H2z'/%3E%3Cpath d='M14 10h4l3 3v3h-7'/%3E%3Ccircle cx='6' cy='18' r='2'/%3E%3Ccircle cx='17' cy='18' r='2'/%3E%3C/svg%3E")}
+  .m-steps button:nth-child(3){--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 12V4h8l10 10-8 8L3 12z'/%3E%3Ccircle cx='7.5' cy='7.5' r='1.5'/%3E%3C/svg%3E")}
+  .seg button[data-mode],.seg button[data-price-mode]{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .seg button[data-mode]::before,.seg button[data-price-mode]::before{width:15px;height:15px}
+  .seg button[data-mode=prix]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M15 9a4 4 0 100 6M7 11h6M7 13h6'/%3E%3C/svg%3E")}
+  .seg button[data-mode=rapide]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M13 2L4 14h7l-1 8 9-12h-7z'/%3E%3C/svg%3E")}
+  .seg button[data-mode=manuel]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M4 7h16M4 17h16'/%3E%3Ccircle cx='9' cy='7' r='2'/%3E%3Ccircle cx='15' cy='17' r='2'/%3E%3C/svg%3E")}
+  .seg button[data-price-mode=auto]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M19 5L5 19'/%3E%3Ccircle cx='7' cy='7' r='2.5'/%3E%3Ccircle cx='17' cy='17' r='2.5'/%3E%3C/svg%3E")}
+  .seg button[data-price-mode=manual]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M4 20l4-1L19 8l-3-3L5 16z'/%3E%3C/svg%3E")}
+  /* Titres d’étape : le fil d’étapes remplace le numéro et le sous-titre */
+  #stepProduit h2 small,#stepTransport h2 small,#stepPrix h2 small,#stepProduit .section-index,#stepTransport .section-index,#stepPrix .section-index{display:none}
+  .quote-cols .step-foot{display:none}
+  .quote-cols .field-info{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:6px;padding:0;border:0;border-radius:50%;background:var(--m-surface2);color:var(--accent);font-size:12px;font-weight:700;line-height:1;vertical-align:middle;cursor:pointer}
+  .m-wiz{display:flex;gap:10px;margin-top:18px}
+  .m-wiz .btn{flex:1 1 0;justify-content:center}
+  .m-wiz [hidden]{display:none!important}
+}
+</style>
+<script>
+/* Devis en étapes (téléphone) : Produit, Transport, Prix, un seul bloc à la fois. Une aide longue (texte sous un champ) devient une infobulle « i ». */
+(function(){
+  const mq=matchMedia('(max-width:760px)');
+  const STEPS=['Produit','Transport','Prix'];
+  let cur=0,lastTab=null;
+  const head=document.createElement('nav');
+  head.className='m-steps';head.setAttribute('aria-label','Étapes du devis');
+  head.innerHTML=STEPS.map((s,i)=>`<button type="button" data-wiz-go="${i}">${s}</button>`).join('');
+  const wiz=document.createElement('div');
+  wiz.className='m-wiz';
+  wiz.innerHTML='<button type="button" class="btn" data-wiz="-1">Retour</button><button type="button" class="btn pri" data-wiz="1">Suivant</button>';
+  /* Bloc de chaque étape, et l’endroit où loger Retour / Suivant */
+  function blocks(cols){
+    const produit=cols.querySelector('#stepProduit'),transport=cols.querySelector('#stepTransport'),right=document.getElementById('right');
+    if(!produit||!transport||!right)return null;
+    const transportStack=transport.parentElement;
+    return [{els:[produit],host:produit},{els:[transportStack],host:transportStack},{els:[right],host:right}];
+  }
+  /* Le texte d’aide sous un champ part dans une infobulle « i » à côté du libellé. L’élément d’aide reste dans la page (masqué) : le code du bureau le met à jour. */
+  function helpToInfo(cols){
+    cols.querySelectorAll('.field > .help').forEach(h=>{
+      const label=h.parentElement.querySelector(':scope > label');
+      if(!label)return;
+      if(!h._info){
+        const b=document.createElement('button');
+        b.type='button';b.className='field-info';b.textContent='i';
+        label.appendChild(b);h._info=b;
+        h.style.display='none';
+      }
+      const text=h.textContent.trim();
+      h._info.title=text;h._info.setAttribute('aria-label','Information : '+text);
+      h._info.style.display=text?'':'none';
+    });
+  }
+  function sync(){
+    if(!mq.matches)return;
+    const cols=document.querySelector('.quote-cols');if(!cols)return;
+    const B=blocks(cols);if(!B)return;
+    const tab=typeof S!=='undefined'?S.tab:null;
+    if(tab!==lastTab){lastTab=tab;if(tab==='devis')cur=0}
+    helpToInfo(cols);
+    if(head.parentElement!==cols)cols.prepend(head);
+    B.forEach((b,i)=>b.els.forEach(el=>el.classList.toggle('m-off',i!==cur)));
+    const host=B[cur].host;
+    if(wiz.parentElement!==host)host.appendChild(wiz);
+    wiz.children[0].hidden=cur===0;
+    wiz.children[1].hidden=cur===STEPS.length-1;
+    head.querySelectorAll('button').forEach((b,i)=>{if(i===cur)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
+  }
+  document.addEventListener('click',e=>{
+    const w=e.target.closest('[data-wiz]'),j=e.target.closest('[data-wiz-go]');
+    if(!w&&!j)return;
+    cur=Math.max(0,Math.min(STEPS.length-1,w?cur+Number(w.dataset.wiz):Number(j.dataset.wizGo)));
+    sync();
+    head.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  new MutationObserver(sync).observe(document.body,{subtree:true,childList:true});
+  sync();
+})();
+</script>

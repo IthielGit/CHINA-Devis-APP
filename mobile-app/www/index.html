@@ -476,9 +476,9 @@ function calendarServices(tr,mode){
   return [...new Set(S.tarifs.filter(t=>t.tr===tr&&t.mode===mode).map(t=>t.svc||''))].sort((a,b)=>a.localeCompare(b,'fr'));
 }
 function blankDraft(no){return{no,name:'',cat:'Général',catManual:false,batteryStatus:'',handling:'',dangerous:'',magnet:'',deviceType:'',price:null,qty:1,dims:'',wt:null,mode:'prix',offer:'',base:'Le plus élevé',
-  pay:dayStr(Math.floor(Date.now()/864e5)),delai:2,heure:16,livCh:0,exclus:0,livFin:0,trans:2,marge:0.5,pvRetenu:null,marketPrice:null,status:STATUS.DRAFT,destination:'',wantBy:''}}
+  pay:dayStr(Math.floor(Date.now()/864e5)),delai:2,heure:16,livCh:0,exclus:0,livFin:0,trans:2,marge:0.5,pvRetenu:null,marketPrice:null,status:STATUS.DRAFT,destination:''}}
 function exampleDraft(no){return{...blankDraft(no),name:'Spray anti-pluie 50 ml',cat:'Poudre/liquide',catManual:true,price:4.04,qty:1,dims:'14 x 6 x 6',wt:0.08,mode:'prix',pay:'2026-10-10',marge:0.5}}
-function norm(d){if(typeof d.marge==='string'&&Number.isFinite(Number(d.marge)))d.marge=Number(d.marge);if(d.dims===undefined)d.dims=d.L?`${d.L} x ${d.W} x ${d.H}`:'';if(!d.mode)d.mode=d.offer?'manuel':'prix';if(d.catManual===undefined)d.catManual=true;for(const k of ['batteryStatus','handling','dangerous','magnet','deviceType'])if(d[k]===undefined)d[k]='';if(d.marketPrice===undefined)d.marketPrice=null;if(d.wantBy===undefined)d.wantBy='';return d}
+function norm(d){if(typeof d.marge==='string'&&Number.isFinite(Number(d.marge)))d.marge=Number(d.marge);if(d.dims===undefined)d.dims=d.L?`${d.L} x ${d.W} x ${d.H}`:'';if(!d.mode)d.mode=d.offer?'manuel':'prix';if(d.catManual===undefined)d.catManual=true;for(const k of ['batteryStatus','handling','dangerous','magnet','deviceType'])if(d[k]===undefined)d[k]='';if(d.marketPrice===undefined)d.marketPrice=null;return d}
 function serviceKey(x){return String(x||'').trim().toLocaleLowerCase('fr').replace(/\s+/g,' ')}
 function quoteService(t){return String(t.svc||'')}
 function normalizeLegacyOffer(d){
@@ -960,17 +960,12 @@ function compute(d,p=S.params,tarifs=S.tarifs,cal=S.cal){
     o.rD=isNum(o.I)?comp.filter(x=>isNum(x.I)&&x.I<o.I).length+1:null;
   });
   const bestP0=comp.find(o=>o.rP===1)||null, bestD0=comp.find(o=>o.rD===1)||null, mode=d.mode||'manuel';
-  // Date souhaitée : « Moins cher » choisit l’offre la moins chère qui arrive avant cette date, sinon l’offre la moins chère.
-  const arrivesWanted=o=>isNum(o.I)&&o.I<dayNum(d.wantBy)+1;
-  const cheapestWanted=d.wantBy?comp.filter(o=>isNum(o.J)&&arrivesWanted(o)).sort((a,b)=>a.J-b.J)[0]||null:null;
-  const wantByMissed=!!d.wantBy&&mode==='prix'&&!cheapestWanted;
-  const sel=mode==='prix'?(cheapestWanted||bestP0):mode==='rapide'?(bestD0||bestP0):(comp.find(o=>o.label===d.offer)||null);
+  const sel=mode==='prix'?bestP0:mode==='rapide'?(bestD0||bestP0):(comp.find(o=>o.label===d.offer)||null);
   // field usage: 2 = used, 1 = used by other offers only, 0 = unused
   const use=k=>{ if(!comp.length)return 2; if(sel)return sel.fl[k]?2:(comp.some(o=>o.fl[k])?1:0); return comp.some(o=>o.fl[k])?2:0 };
   const R={qty,reel:reel||null,vol_w,vol,arr,yr,achat:isNum(yr)&&d.price?achat:null,offers,comp,sel,use:{base:use('base'),dims:use('dims'),wt:use('wt')}};
   const transP=sel&&isNum(sel.E)?sel.E:null;
   R.transP=transP;
-  R.wantByMissed=wantByMissed;
   R.livChP=N(d.livCh)?d.livCh/qty:null; R.exclP=N(d.exclus)?d.exclus/qty:null; R.livFinP=N(d.livFin)?d.livFin/qty:null;
   R.transacLot=transactionTotal;
   R.transacP=transactionPerPiece;
@@ -1083,8 +1078,7 @@ function viewDevis(v){
       <div class="seg" role="group" aria-label="Choix de l’offre"><button type="button" data-mode="prix">Moins cher</button><button type="button" data-mode="rapide">Plus rapide</button><button type="button" data-mode="manuel">Choix manuel</button></div>
       <div id="offerInfo" class="hint" style="margin-top:8px"></div>
       <div class="field" id="offerRow" style="border:0"><label for="f_offer">Offre</label><select class="sel" id="f_offer" data-k="offer"></select></div>
-      <div class="field"><label for="f_wantBy">Livraison souhaitée avant le <span class="hint">(optionnel)</span></label><input class="inp" id="f_wantBy" data-k="wantBy" type="date"><div class="help">« Moins cher » choisit alors l’offre la moins chère qui arrive à temps.</div></div>
-      <div class="row" style="margin-top:12px"><button class="btn" id="bCompare" type="button">Comparer les offres</button></div>
+            <div class="row" style="margin-top:12px"><button class="btn" id="bCompare" type="button">Comparer les offres</button></div>
       <div class="step-foot"><button type="button" class="btn sm" data-step-next="prix">Étape suivante : prix de vente →</button></div>
     </section>
     <details class="card adv"><summary>Dates et frais supplémentaires <small>Paiement, dépôt, douane et livraisons</small></summary>
@@ -1195,7 +1189,7 @@ $('#result').innerHTML=`<div class="price-summary"><div class="result-main"><div
   if(detailOpen)$('#result .result-detail').open=true;
   const note=$('#result .summary-note'),explanation=document.createElement('details');explanation.className='summary-note';
   explanation.innerHTML='<summary>Quantité et frais inclus</summary><p></p>';explanation.querySelector('p').textContent=note.textContent;note.replaceWith(explanation);
-  const alerts=[!s?'Sélectionnez une offre compatible pour obtenir le coût et la livraison.':'',R.wantByMissed?'Aucune offre n’arrive avant la date souhaitée : c’est l’offre la moins chère qui est affichée.':'',isNum(R.margeP)&&R.margeP<0?'Vente à perte : le prix choisi est inférieur au prix de revient.':''];
+  const alerts=[!s?'Sélectionnez une offre compatible pour obtenir le coût et la livraison.':'',isNum(R.margeP)&&R.margeP<0?'Vente à perte : le prix choisi est inférieur au prix de revient.':''];
   alerts.filter(Boolean).forEach(message=>{const alert=document.createElement('p');alert.className='result-alert';alert.setAttribute('role','status');alert.textContent=message;$('#result .price-summary').appendChild(alert)});
   const right=$('#right');
   const live=document.activeElement&&right.contains(document.activeElement)?document.activeElement.id:null;
@@ -2432,7 +2426,7 @@ takeDailySnapshot();drawTabs();go(startTab());
   moreBtn.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Plus</span>';
   tabs.after(moreBtn);
   const MORE=[['tarifs','Tarifs des transitaires'],['cal','Calendrier des départs'],['params','Paramètres'],['guide','Mode d’emploi']];
-  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 18/10 22:32</p></div></div></div>`};
+  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 18/10 22:43</p></div></div></div>`};
   layer.addEventListener('click',e=>{
     const g=e.target.closest('[data-go]');
     if(e.target.closest('[data-new-quote]')){layer.innerHTML='';startNewQuote();return}

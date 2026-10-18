@@ -1026,6 +1026,27 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
   },true);
 })();
 </script>
+<style>
+/* Résultat sans calcul possible : tout le bloc est masqué, sans espace vide */
+@media (max-width:760px){
+  #result.m-empty{display:none!important}
+}
+</style>
+<script>
+/* Résultat : masqué quand le prix de vente n’est pas calculable (même signal que la barre de prix). */
+(function(){
+  const mq=matchMedia('(max-width:760px)');
+  function sync(){
+    if(!mq.matches)return;
+    const res=document.getElementById('result'),qs=document.getElementById('quoteSellPrice');
+    if(!res||!qs)return;
+    const empty=qs.hidden;
+    if(res.classList.contains('m-empty')!==empty)res.classList.toggle('m-empty',empty);
+  }
+  new MutationObserver(sync).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});
+  sync();
+})();
+</script>
 <script>
 /* Salutation : la classe m-night met l’icône lune quand le texte est « Bonsoir ». */
 (function(){

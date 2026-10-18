@@ -796,3 +796,14 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
   sync();
 })();
 </script>
+<style>
+/* Corrections de l’audit (téléphone) */
+@media (max-width:760px){
+  /* Boutons « × » des puces : zone de toucher de 44 px */
+  .chip>button{min-width:44px;min-height:44px}
+  /* Compteur des onglets : 11 px au minimum */
+  .tab .count{font-size:11px}
+  /* Offre : étiquette en bloc, sur deux lignes au besoin */
+  .summary-offer{display:block;border-radius:14px;line-height:1.35}
+}
+</style>

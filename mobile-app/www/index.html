@@ -2430,7 +2430,7 @@ takeDailySnapshot();drawTabs();go(startTab());
   moreBtn.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Plus</span>';
   tabs.after(moreBtn);
   const MORE=[['tarifs','Tarifs des transitaires'],['cal','Calendrier des départs'],['params','Paramètres'],['guide','Mode d’emploi']];
-  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 18/10 21:29</p></div></div></div>`};
+  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 18/10 21:44</p></div></div></div>`};
   layer.addEventListener('click',e=>{
     const g=e.target.closest('[data-go]');
     if(e.target.closest('[data-new-quote]')){layer.innerHTML='';startNewQuote();return}
@@ -2971,4 +2971,15 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
   sync();
 })();
 </script>
+<style>
+/* Corrections de l’audit (téléphone) */
+@media (max-width:760px){
+  /* Boutons « × » des puces : zone de toucher de 44 px */
+  .chip>button{min-width:44px;min-height:44px}
+  /* Compteur des onglets : 11 px au minimum */
+  .tab .count{font-size:11px}
+  /* Offre : étiquette en bloc, sur deux lignes au besoin */
+  .summary-offer{display:block;border-radius:14px;line-height:1.35}
+}
+</style>
 </body></html>

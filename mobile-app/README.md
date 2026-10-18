@@ -30,7 +30,7 @@ gradlew.bat assembleDebug
 
 Première fois sur ce PC : le fichier `android\local.properties` doit contenir `sdk.dir=C\:/Users/My PC/AppData/Local/Android/Sdk` (sinon Gradle répond « SDK location not found »).
 
-L’APK officiel se trouve dans `android/app/build/outputs/apk/debug/app-debug.apk`. Installez ce fichier sur le téléphone. Autorisez l’installation depuis une source inconnue pour le gestionnaire de fichiers.
+L’APK officiel se trouve dans `android/app/build/outputs/apk/debug/app-debug.apk`. Installez ce fichier sur le téléphone. Une copie nommée `Devis Transitaire.apk` est placée à côté de ce README : c’est elle qu’il faut installer. Autorisez l’installation depuis une source inconnue pour le gestionnaire de fichiers.
 
 ## Données sur le téléphone
 

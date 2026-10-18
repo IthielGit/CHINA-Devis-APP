@@ -389,3 +389,19 @@ When changing calculation behavior:
 5. Exercise the browser UI at desktop and mobile widths if markup or layout changed.
 
 When changing persisted fields, update `blankDraft`, `exampleDraft` where applicable, `norm`/`normAll`, export/import assumptions, save snapshots, and historical display together.
+
+## 17. Quote workflow (statuses, operations, stock)
+
+Source of truth: the block titled "SUIVI DES DOSSIERS" in the HTML file, placed before the state loader so `normAll` can use it. It holds the status list, the transition table (`STATUS_NEXT`), the reception branch by destination (`RECEPTION_BRANCH`), the actual-date chain (`ACTUAL_DATES`), the planned-date fields (`PLANNED_DATES`), and the pure rules: `transitionError`, `applyTransition`, `receptionError`, `buildExpense`, `buildStockEntry`, `quoteActionBlock`, `quoteIsStale`. These functions do not touch the DOM or `S`.
+
+Each saved quote keeps `inputs` and `res` unchanged (the initial quote). Operational data is stored beside them on the same record: `status`, `destination`, `statusHistory`, `dateHistory`, `estimates` (figées at confirmation), `logistics`, `order`, `client`, `delivery`, `expenses`, `receptions`, `incidents`, `revisions`, `cancellation`, `needsStatusReview`. The state also has `stock` (one entry per quote, created once).
+
+Rules:
+- Only Brouillon quotes can be edited, grouped, or deleted. Confirmed quotes are locked; "Réviser" (before the Chinese order) keeps the previous version in `revisions`.
+- Cancellation is allowed from Brouillon, Confirmé, Commandé en Chine and En transit; it never deletes data.
+- Receptions are cumulative (partial deliveries allowed); missing = ordered − received; accepted + damaged ≤ received.
+- Stock entry is created in the same state commit as the transition to "Stock boutique", and only if none exists for the quote.
+- Old saved quotes without a status are set to Brouillon with `needsStatusReview: true`; they can be corrected manually. Migration is idempotent.
+- Shared expenses: each quote records only its share, pro rata to ordered pieces (same principle as shared payments). The app does not split an expense across quotes automatically.
+
+Tests: `scripts/check-workflow.cjs` (rules, migration, immutability) and `scripts/check-workflow-ui.cjs` (full browser path, double click, reload, client branch).

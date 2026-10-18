@@ -13,40 +13,52 @@ new Function(updated.match(/<script>([\s\S]*?)<\/script>/)[1]);
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto(pathToFileURL(target).href);
+    await page.goto(pathToFileURL(target).href); await page.locator('#tab-devis').click();
     assert.equal(await page.locator('.price-summary').count(), 1);
-    assert.equal(await page.locator('.command-total:visible').count(),0);
+    // Le résultat n’affiche que le prix de vente et la date ; coûts et marge sont repliés.
+    assert.equal(await page.locator('.result-detail').getAttribute('open'),null);
+    assert.equal(await page.locator('.result-detail .kv').isVisible(),false);
     const calendar=page.locator('[data-detail="dates"]');
     assert.equal(await calendar.getAttribute('open'),null);
     assert.equal(await calendar.locator('.kv').isVisible(),false);
     await page.locator('#f_qty').fill('2');
-    assert.equal(await page.locator('.command-total:visible').count(),4);
+    await page.locator('.result-detail > summary').click();
+    assert.match(await page.locator('.result-detail').innerText(),/2 pièces/);
+    assert.equal(await page.locator('.cost-grid.is-multi').count(),1,'colonne « 2 pièces » affichée');
     assert.equal(await calendar.getAttribute('open'),null);
     await calendar.locator('> summary').click();
     assert.equal(await calendar.locator('.kv').isVisible(),true);
     await page.locator('#f_qty').fill('1');
-    assert.equal(await page.locator('.command-total:visible').count(),0);
+    assert.equal(await page.locator('.cost-grid.is-multi').count(),0,'une seule colonne pour 1 pièce');
     const initialPrice=await page.locator('#sellingPrice').innerText();
     await page.locator('#f_marge').selectOption('1');
     assert.notEqual(await page.locator('#sellingPrice').innerText(),initialPrice);
     assert.equal(await page.evaluate(()=>typeof S.draft.marge),'number');
     await page.locator('#f_marge').selectOption('0.5');
     assert.equal(await page.locator('#sellingPrice').innerText(),initialPrice);
-    for(const detail of ['cost','alternatives']){
-      assert.equal(await page.locator(`[data-detail="${detail}"]`).getAttribute('open'),null);
-      await page.locator(`[data-detail="${detail}"] > summary`).click();
+    // Le détail du coût s’ouvre par défaut (premier affichage) ; les alternatives restent fermées.
+    for(const [detail,openByDefault] of [['cost',true],['alternatives',false]]){
+      const isOpen=await page.locator(`[data-detail="${detail}"]`).getAttribute('open')!==null;
+      assert.equal(isOpen,openByDefault,detail);
+      if(!isOpen)await page.locator(`[data-detail="${detail}"] > summary`).click();
     }
     await page.locator('#f_qty').fill('3');
     await page.locator('#f_qty').blur();
-    assert.match(await page.locator('.result-table').innerText(), /3 pièces/i);
-    const costBefore=await page.locator('.result-cost').first().innerText();
+    if(await page.locator('.result-detail').getAttribute('open')===null)await page.locator('.result-detail > summary').click();
+    // Régression : le détail reste ouvert après une saisie (le résultat est recalculé à chaque changement).
+    await page.locator('#f_qty').fill('4');
+    assert.notEqual(await page.locator('.result-detail').getAttribute('open'),null,'le détail reste ouvert après une modification');
+    await page.locator('#f_qty').fill('3');
+    assert.match(await page.locator('.result-detail').innerText(), /3 pièces/i);
+    const unitCost=async()=>(await page.locator('.result-detail').innerText()).match(/Coût sans marge arrivé à Madagascar\n[^\n]+/)[0];
+    const costBefore=await unitCost();
     await page.locator('[data-price-mode="manual"]').click();
     await page.locator('#f_pvR').fill('50000');
     assert.equal(await page.locator('#f_marge').count(),0);
     assert.match(await page.locator('#sellingPrice').innerText(),/50\s*000/);
     await page.locator('[data-price-mode="auto"]').click();
     await page.locator('#f_marge').selectOption('2');
-    assert.equal(await page.locator('.result-cost').first().innerText(),costBefore);
+    assert.equal(await unitCost(),costBefore);
     assert.notEqual(await page.locator('#sellingPrice').innerText(),'50 000 Ar');
     assert.equal(await page.locator('#f_pvR').count(),0);
     assert.notEqual(await page.locator('[data-detail="cost"]').getAttribute('open'),null);
@@ -60,7 +72,7 @@ new Function(updated.match(/<script>([\s\S]*?)<\/script>/)[1]);
     await page.locator('[data-a="view"]').click();
     await page.locator('#ovc').click();
     for (const key of ['comp', 'tarifs', 'cal', 'params', 'guide', 'devis']) {
-      await page.locator('#tab-' + key).click();
+      if (key === 'comp') await page.evaluate(() => go('comp')); else await page.locator('#tab-' + key).click();
       assert.ok((await page.locator('#view').innerText()).length > 20);
       if(key!=='devis'){
         assert.equal(await page.locator('#returnQuote').isVisible(),true);
@@ -140,15 +152,20 @@ new Function(updated.match(/<script>([\s\S]*?)<\/script>/)[1]);
     assert.equal(await page.locator('#tb tr').count(),tariffCount);
     await page.locator('#tariffSearch').fill('E-SOA');
     assert.ok((await page.locator('#tb tr').count())<tariffCount);
-    await page.locator('#tab-comp').click();
-    await page.locator('#compCarrier').selectOption('E-SOA');
-    assert.equal(await page.locator('#view tbody tr').count(),1);
-    assert.match(await page.locator('#view tbody').innerText(),/E-SOA/);
-    await page.locator('#compCarrier').selectOption('');
+    await page.evaluate(()=>go('devis'));await page.locator('#bCompare').click();
+    // Les filtres (transitaire, tri) sont dans la fenêtre « Filtres » du comparatif.
+    await page.locator('[data-cmp-filters]').click();
+    await page.locator('#fCarrier').selectOption('E-SOA');
+    await page.locator('#layer .m-close').click();
+    const carrierCards=await page.locator('.offer-card').allInnerTexts();
+    assert.ok(carrierCards.length>0&&carrierCards.every(text=>/E-SOA/.test(text)),'seules les offres E-SOA sont affichées');
+    await page.locator('[data-cmp-filters]').click();
+    await page.locator('#fCarrier').selectOption('');
     for(const sort of ['cost','date','carrier']){
-      await page.locator('#compSort').selectOption(sort);
-      assert.equal(await page.locator('#compSort').inputValue(),sort);
+      await page.locator('#fSort').selectOption(sort);
+      assert.equal(await page.locator('#fSort').inputValue(),sort);
     }
+    await page.locator('#layer .m-close').click();
     await page.locator('#tab-cal').click();
     assert.equal(await page.locator('#cb input,#cb select').count(),0);
     await page.locator('[data-cal-period="past"]').click();
@@ -248,7 +265,7 @@ new Function(updated.match(/<script>([\s\S]*?)<\/script>/)[1]);
     assert.equal(await page.evaluate(()=>S.cal.filter(entry=>(entry.note||'').startsWith('E-SOA départ test'))
       .every(entry=>entry.tr==='E-SOA'&&entry.mode==='Maritime'&&entry.svc===''&&['2099-12-20','2099-12-27'].includes(entry.date))),true);
     await page.locator('#returnQuote').click();
-    await page.locator('#bNew').click();
+    await page.evaluate(()=>{document.querySelector('.more-actions').open=true});await page.locator('#bNew').click();
     await page.locator('#f_name').fill('Test produit E-SOA Maritime');
     await page.locator('#f_cat').selectOption('Général');
     await page.locator('#f_price').fill('10');
@@ -270,6 +287,7 @@ new Function(updated.match(/<script>([\s\S]*?)<\/script>/)[1]);
     const maritimeQuote=page.locator('#hlist tr').filter({hasText:'Test produit E-SOA Maritime'});
     assert.match(await maritimeQuote.innerText(),/E-SOA\s+Maritime/);
     await maritimeQuote.locator('[data-a="view"]').click();
+    await page.evaluate(()=>{[...document.querySelectorAll('#ov details')].find(d=>d.textContent.includes('Devis initial')).open=true});
     assert.match(await page.locator('#ov').innerText(),/E-SOA \| Maritime \| Général/);
     assert.match(await page.locator('#ov').innerText(),/20\/12\/2099/);
     await page.locator('#ovc').click();
@@ -295,6 +313,7 @@ new Function(updated.match(/<script>([\s\S]*?)<\/script>/)[1]);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: path.join(root, 'devis-mobile.png'), fullPage: true });
     await page.reload();
+    await page.locator('#tab-devis').click();
     assert.equal(await page.locator('#f_qty').inputValue(), '3');
     assert.deepEqual(errors, []);
     console.log('PASS: script syntax; margin recalculation; summary; collapsible sections; tariff CRUD; carrier filtering/sorting; calendar CRUD, cancel and past-date lock; return to quote from every page; save/history; keyboard; theme; backup; persistence; layouts at 390/768/1440px.');

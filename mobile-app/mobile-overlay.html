@@ -618,9 +618,21 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
   #stepProduit h2 small,#stepTransport h2 small,#stepPrix h2 small,#stepProduit .section-index,#stepTransport .section-index,#stepPrix .section-index{display:none}
   .quote-cols .step-foot{display:none}
   .quote-cols .field-info{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:6px;padding:0;border:0;border-radius:50%;background:var(--m-surface2);color:var(--accent);font-size:12px;font-weight:700;line-height:1;vertical-align:middle;cursor:pointer}
-  .m-wiz{display:flex;gap:10px;margin-top:18px}
+  .m-wiz{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
   .m-wiz .btn{flex:1 1 0;justify-content:center}
   .m-wiz [hidden]{display:none!important}
+  .m-wiz-msg{flex-basis:100%;margin:0;background:var(--warn-soft);color:var(--warn);border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.4}
+  /* Champs obligatoires : astérisque, et contour rouge sur ceux qui manquent */
+  .m-req{color:var(--warn);font-weight:700}
+  .m-req[hidden]{display:none}
+  .m-invalid{box-shadow:0 0 0 2px var(--warn)!important}
+  /* Dimensions en trois cases (L × l × H), destination en deux boutons. Les champs d’origine restent cachés et gardent le calcul. */
+  .m-dims{display:flex;align-items:center;gap:6px;min-width:0;border-radius:14px}
+  .m-dims input{flex:1 1 0;min-width:0;min-height:44px;padding:0 6px;text-align:center;border:0;border-radius:12px;background:var(--m-surface2);color:var(--m-ink);font-size:16px}
+  .m-dims span,.m-dims em{color:var(--m-muted);font-size:14px;font-style:normal}
+  .field .m-dims+span{display:none}
+  .m-dest{width:100%}
+  .m-dest button{min-height:48px;flex:1 1 0}
 }
 </style>
 <script>
@@ -635,6 +647,73 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
   const wiz=document.createElement('div');
   wiz.className='m-wiz';
   wiz.innerHTML='<button type="button" class="btn" data-wiz="-1">Retour</button><button type="button" class="btn pri" data-wiz="1">Suivant</button>';
+  const msg=document.createElement('p');
+  msg.className='m-wiz-msg';msg.setAttribute('role','alert');msg.hidden=true;
+  wiz.prepend(msg);
+  /* Champs obligatoires, mêmes règles que le bureau (checkQuote) : Nom, Prix d’achat, Quantité ; Dimensions et Poids seulement si l’offre les utilise ; Destination et une offre avant la suite. */
+  const REQ=[['f_name','Nom du produit'],['f_cat','Catégorie'],['f_price','Prix d’achat'],['f_qty','Quantité'],['f_dims','Dimensions emballées'],['f_wt','Poids emballé'],['f_destination','Destination']];
+  function missing(step){
+    const d=S.draft,R=compute(d),out=[];
+    if(!String(d.name||'').trim())out.push(['f_name','Nom du produit']);
+    if(!(d.price!==null&&d.price!==''&&+d.price>=0))out.push(['f_price','Prix d’achat']);
+    if(!(Number.isInteger(+d.qty)&&+d.qty>=1))out.push(['f_qty','Quantité']);
+    if(R.use.dims===2&&(!/^\s*\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*[x×*]\s*\d+(?:[.,]\d+)?\s*$/i.test(d.dims||'')||dimsOf(d).some(n=>n<=0)))out.push(['f_dims','Dimensions emballées']);
+    if(R.use.wt===2&&!(+d.wt>0))out.push(['f_wt','Poids emballé']);
+    if(step>=1){
+      if(!d.destination)out.push(['f_destination','Destination']);
+      if(!R.sel)out.push([null,'une offre compatible']);
+    }
+    return out;
+  }
+  function showMissing(list){
+    document.querySelectorAll('.m-invalid').forEach(el=>el.classList.remove('m-invalid'));
+    list.forEach(([id])=>{if(id)boxFor(id)?.classList.add('m-invalid')});
+    msg.textContent='Pour continuer, renseignez : '+list.map(([,l])=>l).join(', ')+'.';
+    msg.hidden=false;
+    const first=list.find(([id])=>id);
+    if(first)document.getElementById(first[0])?.closest('.field')?.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  /* Élément affiché pour un champ : les cases des dimensions et les boutons de destination remplacent les champs cachés. */
+  function boxFor(id){
+    if(id==='f_dims')return document.querySelector('.m-dims');
+    if(id==='f_destination')return document.querySelector('.m-dest');
+    return document.getElementById(id);
+  }
+  /* Dimensions : trois cases ; le champ d’origine « 14 x 6 x 6 » est recopié à chaque saisie. */
+  function dimsSync(){
+    const f=document.getElementById('f_dims');if(!f)return;
+    let box=f.nextElementSibling;
+    if(!box||!box.classList.contains('m-dims')){
+      box=document.createElement('div');box.className='m-dims';
+      box.innerHTML='<input type="text" inputmode="decimal" data-dim="0" aria-label="Longueur (cm)" placeholder="L"><span>×</span><input type="text" inputmode="decimal" data-dim="1" aria-label="Largeur (cm)" placeholder="l"><span>×</span><input type="text" inputmode="decimal" data-dim="2" aria-label="Hauteur (cm)" placeholder="H"><em>cm</em>';
+      f.after(box);f.style.display='none';
+    }
+    const parts=f.value.match(/\d+(?:[.,]\d+)?/g)||[];
+    box.querySelectorAll('input').forEach((el,i)=>{
+      if(el!==document.activeElement&&el.value!==(parts[i]||''))el.value=parts[i]||'';
+    });
+  }
+  /* Destination : deux boutons (Stock boutique / Commande client) qui règlent la liste d’origine. */
+  function destSync(){
+    const sel=document.getElementById('f_destination');if(!sel)return;
+    let seg=sel.nextElementSibling;
+    if(!seg||!seg.classList.contains('m-dest')){
+      seg=document.createElement('div');seg.className='seg m-dest';seg.setAttribute('role','group');seg.setAttribute('aria-label','Destination');
+      seg.innerHTML=[...sel.options].filter(o=>o.value).map(o=>`<button type="button" data-dest="${o.value}">${o.textContent}</button>`).join('');
+      sel.after(seg);sel.style.display='none';
+    }
+    seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.dest===sel.value)));
+  }
+  /* Astérisque sur chaque champ obligatoire ; dimensions et poids seulement quand l’offre les demande. */
+  function marks(){
+    const R=compute(S.draft);
+    REQ.forEach(([id])=>{
+      const lab=document.querySelector(`label[for="${id}"]`);if(!lab)return;
+      if(!lab.querySelector('.m-req')){const s=document.createElement('span');s.className='m-req';s.textContent=' *';s.setAttribute('aria-hidden','true');lab.appendChild(s)}
+      if(id==='f_dims')lab.querySelector('.m-req').hidden=R.use.dims!==2;
+      if(id==='f_wt')lab.querySelector('.m-req').hidden=R.use.wt!==2;
+    });
+  }
   /* Bloc de chaque étape, et l’endroit où loger Retour / Suivant */
   function blocks(cols){
     const produit=cols.querySelector('#stepProduit'),transport=cols.querySelector('#stepTransport'),right=document.getElementById('right');
@@ -669,16 +748,49 @@ dialog fieldset.wide legend{font-weight:600;margin-bottom:8px}
     B.forEach((b,i)=>b.els.forEach(el=>el.classList.toggle('m-off',i!==cur)));
     const host=B[cur].host;
     if(wiz.parentElement!==host)host.appendChild(wiz);
-    wiz.children[0].hidden=cur===0;
-    wiz.children[1].hidden=cur===STEPS.length-1;
+    wiz.querySelector('[data-wiz="-1"]').hidden=cur===0;
+    wiz.querySelector('[data-wiz="1"]').hidden=cur===STEPS.length-1;
+    marks();
+    dimsSync();
+    destSync();
     head.querySelectorAll('button').forEach((b,i)=>{if(i===cur)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current')});
   }
   document.addEventListener('click',e=>{
     const w=e.target.closest('[data-wiz]'),j=e.target.closest('[data-wiz-go]');
     if(!w&&!j)return;
-    cur=Math.max(0,Math.min(STEPS.length-1,w?cur+Number(w.dataset.wiz):Number(j.dataset.wizGo)));
+    const target=Math.max(0,Math.min(STEPS.length-1,w?cur+Number(w.dataset.wiz):Number(j.dataset.wizGo)));
+    if(target>cur){
+      /* Avancer : toutes les étapes jusqu’à l’étape en cours doivent être complètes */
+      const miss=missing(cur);
+      if(miss.length){showMissing(miss);return}
+    }
+    msg.hidden=true;
+    document.querySelectorAll('.m-invalid').forEach(el=>el.classList.remove('m-invalid'));
+    cur=target;
     sync();
     head.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  /* Saisie d’une case de dimension : on recopie « L x l x H » dans le champ d’origine, qui prévient le bureau. */
+  document.addEventListener('input',e=>{
+    const cell=e.target.closest&&e.target.closest('.m-dims input');
+    if(cell){
+      const box=cell.closest('.m-dims'),f=document.getElementById('f_dims');
+      const v=[...box.querySelectorAll('input')].map(x=>x.value.trim());
+      f.value=v.every(x=>!x)?'':v.map(x=>x||'_').join(' x ').replace(/_/g,'');
+      f.dispatchEvent(new Event('input',{bubbles:true}));
+      box.classList.remove('m-invalid');
+      return;
+    }
+    const t=e.target.closest&&e.target.closest('.m-invalid');
+    if(t)t.classList.remove('m-invalid');
+    if(e.target.classList&&e.target.classList.contains('m-invalid'))e.target.classList.remove('m-invalid');
+  });
+  /* Destination : un toucher règle la liste d’origine et le bureau reprend la valeur. */
+  document.addEventListener('click',e=>{
+    const b=e.target.closest&&e.target.closest('.m-dest [data-dest]');if(!b)return;
+    const sel=document.getElementById('f_destination');
+    sel.value=b.dataset.dest;sel.dispatchEvent(new Event('change',{bubbles:true}));
+    b.closest('.m-dest').classList.remove('m-invalid');
   });
   new MutationObserver(sync).observe(document.body,{subtree:true,childList:true});
   sync();

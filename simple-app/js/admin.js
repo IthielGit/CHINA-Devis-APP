@@ -40,6 +40,7 @@ body.addEventListener('click',async e=>{
   if(error)toast('Action impossible : '+error.message,{sticky:true});
   refresh();
 });
-$('adminBtn').addEventListener('click',()=>{panel.hidden=false;refresh()});
+// Le bouton est dans la page Réglages, recréée à chaque affichage : délégation sur le document.
+document.addEventListener('click',e=>{if(e.target.closest('#adminBtn')){panel.hidden=false;refresh()}});
 $('adminClose').addEventListener('click',()=>{panel.hidden=true});
 })();

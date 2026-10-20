@@ -187,10 +187,9 @@ function start(sessionId,target,userRole){
   owner=target;
   authEl.hidden=true;
   shell.hidden=false;
-  $('logoutBtn').hidden=false;
+  window.hygoRole=userRole;
   setSync(localStorage.getItem(DIRTY_KEY)?'pending':'synced');
   $('viewAs').hidden=target===sessionId;
-  if(userRole==='super_admin'){$('adminBtn').hidden=false}
   load('js/engine.js')
     .then(()=>load('js/app.js'))
     .then(()=>{if(userRole==='super_admin')return load('js/admin.js')})
@@ -264,7 +263,8 @@ async function switchTo(target){
   clearCache();
   location.reload();
 }
-$('logoutBtn').addEventListener('click',logout);
+// Le bouton est dans la page Réglages, recréée à chaque affichage : délégation sur le document.
+document.addEventListener('click',e=>{if(e.target.closest('#logoutBtn'))logout()});
 $('viewAsExit').addEventListener('click',()=>switchTo(null));
 
 // Utilisé par js/admin.js.

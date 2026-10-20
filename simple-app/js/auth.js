@@ -30,57 +30,70 @@ function friendly(err){
 
 /* ---------- écrans ---------- */
 function show(html){box.innerHTML=html;authEl.hidden=false;shell.hidden=true}
+/* Gabarit commun : logo, titre, sous-titre, puis le contenu de l’écran. */
+const LOGO='<span class="auth-logo" aria-hidden="true"><img src="icon-192.png" alt=""></span>';
+const card=(title,sub,body)=>`${LOGO}<div class="auth-head"><h2>${esc(title)}</h2>${sub?`<p>${esc(sub)}</p>`:''}</div>${body}`;
+const GOOGLE_BTN='<button class="btn block social" type="button" data-action="google"><span class="g-mark" aria-hidden="true">G</span>Continuer avec Google</button>';
+const OR='<div class="or" aria-hidden="true"><span>OU</span></div>';
+const EMAIL_FIELD='<label class="field"><span>Email</span><input class="inp" type="email" name="email" autocomplete="email" placeholder="Entrez votre email" required></label>';
+const PW_TOGGLE='<button type="button" class="pw-toggle" data-action="toggle-pw" aria-label="Afficher le mot de passe" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>';
+const pwField=(label,autocomplete)=>`<label class="field"><span>${label}</span><span class="input-wrap"><input class="inp has-toggle" type="password" name="password" autocomplete="${autocomplete}" minlength="${MIN_PASSWORD}" placeholder="Entrez votre mot de passe" required>${PW_TOGGLE}</span></label>`;
+const BACK_TO_LOGIN='<p class="auth-foot"><button type="button" class="link" data-view="login">Retour à la connexion</button></p>';
+
 function viewLogin(msg,bad){
-  show(`<h2>Connexion</h2>
+  show(card('Bienvenue','Entrez vos identifiants pour vous connecter.',`
+  ${GOOGLE_BTN}
+  ${OR}
   <form class="auth-form" data-form="login">
-    <label class="field"><span>Email</span><input class="inp" type="email" name="email" autocomplete="email" required></label>
-    <label class="field"><span>Mot de passe</span><input class="inp" type="password" name="password" autocomplete="current-password" required></label>
+    ${EMAIL_FIELD}
+    ${pwField('Mot de passe','current-password')}
+    <p class="auth-aside"><button type="button" class="link" data-view="forgot">Mot de passe oublié ?</button></p>
     ${notice(msg,bad)}
-    <button class="btn primary block" type="submit">Se connecter</button>
+    <button class="btn auth-submit" type="submit">Se connecter</button>
   </form>
-  <button class="btn block" type="button" data-action="google">Continuer avec Google</button>
-  <p class="auth-links"><button type="button" class="link" data-view="forgot">Mot de passe oublié ?</button> · <button type="button" class="link" data-view="signup">Créer un compte</button></p>`);
+  <p class="auth-foot">Vous n’avez pas de compte ? <button type="button" class="link" data-view="signup">Créer un compte</button></p>`));
 }
 function viewSignup(msg,bad){
-  show(`<h2>Créer un compte</h2>
+  show(card('Créer un compte',`Choisissez un mot de passe d’au moins ${MIN_PASSWORD} caractères.`,`
+  ${GOOGLE_BTN}
+  ${OR}
   <form class="auth-form" data-form="signup">
-    <label class="field"><span>Email</span><input class="inp" type="email" name="email" autocomplete="email" required></label>
-    <label class="field"><span>Mot de passe (${MIN_PASSWORD} caractères minimum)</span><input class="inp" type="password" name="password" autocomplete="new-password" minlength="${MIN_PASSWORD}" required></label>
+    ${EMAIL_FIELD}
+    ${pwField('Mot de passe','new-password')}
     ${notice(msg,bad)}
-    <button class="btn primary block" type="submit">Créer le compte</button>
+    <button class="btn auth-submit" type="submit">Créer le compte</button>
   </form>
-  <p class="auth-links"><button type="button" class="link" data-view="login">Retour à la connexion</button></p>`);
+  <p class="auth-foot">Vous avez déjà un compte ? <button type="button" class="link" data-view="login">Se connecter</button></p>`));
 }
 function viewForgot(msg,bad){
-  show(`<h2>Mot de passe oublié</h2>
+  show(card('Mot de passe oublié','Nous vous enverrons un lien de réinitialisation.',`
   <form class="auth-form" data-form="forgot">
-    <label class="field"><span>Email</span><input class="inp" type="email" name="email" autocomplete="email" required></label>
+    ${EMAIL_FIELD}
     ${notice(msg,bad)}
-    <button class="btn primary block" type="submit">Envoyer le lien</button>
+    <button class="btn auth-submit" type="submit">Envoyer le lien</button>
   </form>
-  <p class="auth-links"><button type="button" class="link" data-view="login">Retour à la connexion</button></p>`);
+  ${BACK_TO_LOGIN}`));
 }
 function viewRecover(msg,bad){
-  show(`<h2>Nouveau mot de passe</h2>
+  show(card('Nouveau mot de passe',`Au moins ${MIN_PASSWORD} caractères.`,`
   <form class="auth-form" data-form="recover">
-    <label class="field"><span>Mot de passe (${MIN_PASSWORD} caractères minimum)</span><input class="inp" type="password" name="password" autocomplete="new-password" minlength="${MIN_PASSWORD}" required></label>
+    ${pwField('Mot de passe','new-password')}
     ${notice(msg,bad)}
-    <button class="btn primary block" type="submit">Enregistrer</button>
-  </form>`);
+    <button class="btn auth-submit" type="submit">Enregistrer</button>
+  </form>`));
 }
 function viewInfo(text){
-  show(`<h2>Vérifiez vos emails</h2><p>${esc(text)}</p>
-  <p class="auth-links"><button type="button" class="link" data-view="login">Retour à la connexion</button></p>`);
+  show(card('Vérifiez vos emails','',`<p class="auth-note">${esc(text)}</p>${BACK_TO_LOGIN}`));
 }
 function viewPending(){
-  show(`<h2>Compte en attente</h2>
-  <p>Votre compte a bien été créé. Le super administrateur doit le valider avant que vous puissiez accéder aux devis.</p>
-  <button class="btn primary block" type="button" data-action="recheck">Vérifier à nouveau</button>
-  <p class="auth-links"><button type="button" class="link" data-action="logout">Se déconnecter</button></p>`);
+  show(card('Compte en attente','Votre compte a bien été créé.',`
+  <p class="auth-note">Le super administrateur doit le valider avant que vous puissiez accéder aux devis.</p>
+  <button class="btn auth-submit" type="button" data-action="recheck">Vérifier à nouveau</button>
+  <p class="auth-foot"><button type="button" class="link" data-action="logout">Se déconnecter</button></p>`));
 }
 function viewBlocked(text){
-  show(`<h2>Accès impossible</h2><p>${esc(text)}</p>
-  <p class="auth-links"><button type="button" class="link" data-action="logout">Se déconnecter</button></p>`);
+  show(card('Accès impossible','',`<p class="auth-note">${esc(text)}</p>
+  <p class="auth-foot"><button type="button" class="link" data-action="logout">Se déconnecter</button></p>`));
 }
 const VIEWS={login:viewLogin,signup:viewSignup,forgot:viewForgot};
 
@@ -122,6 +135,14 @@ authEl.addEventListener('submit',async e=>{
 authEl.addEventListener('click',e=>{
   const b=e.target.closest('[data-view],[data-action]');
   if(!b)return;
+  if(b.dataset.action==='toggle-pw'){
+    const input=b.parentElement.querySelector('input');
+    const reveal=input.type==='password';
+    input.type=reveal?'text':'password';
+    b.setAttribute('aria-pressed',String(reveal));
+    b.setAttribute('aria-label',reveal?'Masquer le mot de passe':'Afficher le mot de passe');
+    return;
+  }
   if(b.dataset.view)return VIEWS[b.dataset.view]();
   ({google:signInGoogle,recheck:boot,logout})[b.dataset.action]();
 });

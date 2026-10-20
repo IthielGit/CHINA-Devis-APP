@@ -67,6 +67,7 @@
   /* Formes */
   --r-card:22px; --r-btn:16px; --r-field:14px; --r-pill:999px;
   --control:52px;
+  --shadow-card:light-dark(0 10px 40px rgba(25,24,39,.08),0 10px 40px rgba(0,0,0,.4));
   /* Mouvement */
   --t-fast:150ms; --t:220ms; --t-slow:300ms; --ease:cubic-bezier(.2,.8,.2,1);
 }
@@ -264,9 +265,25 @@ details[open]>.grid{margin-top:var(--s3)}
 /* ---------- Connexion ---------- */
 .shell[hidden],.auth[hidden]{display:none}
 .auth{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:var(--s5)}
-.auth-box{width:min(400px,100%);display:grid;gap:var(--s4)}
-.auth-box h2{margin:0;font-size:var(--fs-section)}
-.auth-box>p{margin:0;color:var(--muted)}
+/* Écran de connexion : carte centrée, logo, titre, puis le formulaire */
+.auth-box{width:min(400px,100%);padding:var(--s8) var(--s6);border-radius:24px;box-shadow:var(--shadow-card);display:grid;gap:var(--s4)}
+.auth-logo{width:56px;height:56px;border-radius:16px;overflow:hidden;justify-self:center;box-shadow:0 6px 18px rgba(108,92,231,.35)}
+.auth-logo img{width:100%;height:100%;display:block}
+.auth-head{display:grid;gap:var(--s1);justify-items:center;text-align:center}
+.auth-head h2{margin:0;font-size:1.6rem;font-weight:700;letter-spacing:-.01em}
+.auth-head p{margin:0;color:var(--muted);font-size:.95rem}
+.social{font-weight:500;gap:var(--s3)}
+.g-mark{display:inline-grid;place-items:center;width:20px;font-weight:800;font-size:1.05rem;color:#4285F4}
+.or{display:flex;align-items:center;gap:var(--s3);color:var(--muted);font-size:var(--fs-meta);font-weight:600;letter-spacing:.08em}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--divider)}
+.inp.has-toggle{padding-right:52px}
+.pw-toggle{position:absolute;right:0;top:0;width:52px;height:100%;border:0;background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer}
+.pw-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.auth-aside{margin:calc(var(--s2) * -1) 0 0;text-align:right;font-size:.9rem}
+.auth-submit{width:100%;background:var(--ink);color:var(--bg);border-color:transparent}
+.auth-submit:hover{background:var(--ink)}
+.auth-foot{margin:0;text-align:center;font-size:.92rem;color:var(--muted)}
+.auth-note{margin:0;color:var(--muted);text-align:center}
 .auth-form{display:grid;gap:var(--s4)}
 .auth-links{margin:0;text-align:center;font-size:.92rem;color:var(--muted)}
 .link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;cursor:pointer}

@@ -640,7 +640,7 @@ function viewReglages(){
       ${field('mMar','Délai client maritime (jours)',p.mMar,'number')}
       ${sel('dimanche','Disponibilité tombant un dimanche',[['Non','Décaler au lundi'],['Oui','Garder le dimanche']],p.dimanche)}
       ${sel('calendarClosePolicy','Départs après l’heure limite',[['exclude','Les écarter'],['keep','Les garder, avec un avertissement']],p.calendarClosePolicy)}
-      <label class="field wide"><span>Catégories de produits (séparées par des virgules)</span><textarea class="inp" name="cats" rows="3">${esc(p.cats.join(', '))}</textarea></label>
+      ${catsField(p.cats)}
     </div>
     <div class="actions"><button class="btn primary" type="submit">Enregistrer les paramètres</button></div>
   </form>
@@ -653,10 +653,34 @@ function viewReglages(){
   </section>`;
 }
 
+/* Catégories : étiquettes retirables + une seule saisie pour en ajouter. La valeur réelle est dans un champ caché (séparé par « ; »). */
+const catChip=c=>`<span class="cat-chip">${esc(c)}<button type="button" data-rm-cat="${esc(c)}" aria-label="Retirer ${esc(c)}">×</button></span>`;
+function catsField(list){
+  return `<div class="field wide" data-cats>
+    <span>Catégories de produits</span>
+    <div class="cat-chips" data-cat-list>${list.map(catChip).join('')||'<small class="muted">Aucune catégorie.</small>'}</div>
+    <input type="hidden" name="cats" value="${esc(list.join(';'))}">
+    <div class="cat-add"><input class="inp" id="newCat" autocomplete="off" enterkeyhint="done" placeholder="Ajouter une catégorie" aria-label="Ajouter une catégorie"><button type="button" class="btn small" data-add-cat>Ajouter</button></div>
+  </div>`;
+}
+function catsOf(root){return [...root.querySelectorAll('[data-cat-list] [data-rm-cat]')].map(b=>b.dataset.rmCat)}
+function setCats(root,list){
+  root.querySelector('[name="cats"]').value=list.join(';');
+  root.querySelector('[data-cat-list]').innerHTML=list.map(catChip).join('')||'<small class="muted">Aucune catégorie.</small>';
+}
+function addCat(){
+  const inp=$('newCat');if(!inp)return;
+  const v=inp.value.trim(), root=inp.closest('[data-cats]');
+  if(!v){inp.focus();return}
+  const list=catsOf(root);
+  if(list.some(x=>x.toLowerCase()===v.toLowerCase())){toast('Cette catégorie existe déjà.',{sticky:true});inp.select();return}
+  setCats(root,[...list,v]);
+  inp.value='';inp.focus();
+}
 function saveParams(data){
   const p={...S.params,usd:numOf(data,'usd'),cnyUsd:numOf(data,'cnyUsd'),marge:(numOf(data,'marge')??0)/100,div:numOf(data,'div'),
     dispo:numOf(data,'dispo'),mAvion:numOf(data,'mAvion'),mMar:numOf(data,'mMar'),dimanche:strOf(data,'dimanche'),
-    calendarClosePolicy:strOf(data,'calendarClosePolicy'),cats:strOf(data,'cats').split(',').map(s=>s.trim()).filter(Boolean)};
+    calendarClosePolicy:strOf(data,'calendarClosePolicy'),cats:strOf(data,'cats').split(';').map(s=>s.trim()).filter(Boolean)};
   if(!(p.usd>0)||!(p.cnyUsd>0)||!(p.div>0)){toast('Taux et diviseur doivent être supérieurs à 0.',{sticky:true});return}
   S.params=p;persist();toast('Paramètres enregistrés.');renderRates();viewReglages();
 }
@@ -715,6 +739,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)close
 app.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   const ds=t.dataset;
+  if(ds.addCat!==undefined){addCat();return}
+  if(ds.rmCat!==undefined){setCats(t.closest('[data-cats]'),catsOf(t.closest('[data-cats]')).filter(x=>x!==ds.rmCat));return}
   if(ds.step){S.draft.qty=Math.max(1,(Number(S.draft.qty)||1)+Number(ds.step));persist();renderResult();return}
   if(ds.marge){S.draft.marge=Number(ds.marge);syncMarge();const mi=app.querySelector('[data-k="marge"]');if(mi)mi.value=Math.round(S.draft.marge*100);persist();renderResult();return}
   if(ds.appearance){setAppearance(ds.appearance);viewReglages();return}
@@ -791,6 +817,7 @@ function setEnterKeys(){
 /* Une section repliée qui s’ouvre ajoute des champs : on recalcule la touche « Suivant ». */
 app.addEventListener('toggle',setEnterKeys,true);
 const onNextKey=e=>{
+  if(e.key==='Enter'&&e.target.id==='newCat'){e.preventDefault();addCat();return}
   if(e.key!=='Enter'||e.target.tagName!=='INPUT'||['file','checkbox','radio','button','submit'].includes(e.target.type))return;
   e.preventDefault();
   const list=fieldsInOrder(), i=list.indexOf(e.target);

@@ -4,13 +4,17 @@
 const DATA_KEY='hygo-v1';     // clé de js/engine.js
 const USER_KEY='hygo-user';   // compte auquel appartient le cache local
 const DIRTY_KEY='hygo-dirty'; // modifications pas encore envoyées au serveur
+const ROLE_KEY='hygo-role';   // rôle du compte connecté (pour l’affichage hors ligne)
+const VIEW_KEY='hygo-view-as'; // sessionStorage : compte consulté par le super admin
 const MIN_PASSWORD=8;
 const cfg=window.HYGO_CONFIG;
 const client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
 const $=id=>document.getElementById(id);
 const authEl=$('auth'), box=$('authBox'), shell=$('shell');
 const redirectTo=location.origin+location.pathname;
-let uid=null, started=false, syncing=false, warned=false, retryT=null;
+let uid=null;      // compte connecté
+let owner=null;    // compte dont les données sont dans le cache (le même, sauf en consultation)
+let started=false, syncing=false, warned=false, retryT=null;
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const notice=(text,bad)=>text?`<p class="hint${bad?' bad':''}" role="status">${esc(text)}</p>`:'';
@@ -132,28 +136,34 @@ async function boot(){
   const {data:{session}}=await client.auth.getSession();
   if(!session){
     // Hors ligne avec une session déjà enregistrée : on ouvre le cache du compte.
-    if(!navigator.onLine&&localStorage.getItem(USER_KEY)&&hasStoredSession())return start(localStorage.getItem(USER_KEY));
+    if(!navigator.onLine&&localStorage.getItem(USER_KEY)&&hasStoredSession()){
+      const cached=localStorage.getItem(USER_KEY);
+      return start(cached,cached,localStorage.getItem(ROLE_KEY));
+    }
     return viewLogin();
   }
   const id=session.user.id;
   let profile;
   try{
-    const {data,error}=await client.from('profiles').select('status').eq('id',id).maybeSingle();
+    const {data,error}=await client.from('profiles').select('status,role').eq('id',id).maybeSingle();
     if(error)throw error;
     profile=data;
   }catch(e){
-    if(localStorage.getItem(USER_KEY)===id)return start(id);
+    if(localStorage.getItem(USER_KEY)===id)return start(id,id,localStorage.getItem(ROLE_KEY));
     return viewLogin('Connexion Internet nécessaire pour ouvrir ce compte.',true);
   }
   if(!profile)return viewBlocked('Profil introuvable. Contactez le super administrateur.');
   if(profile.status==='suspended')return viewBlocked('Ce compte a été suspendu. Contactez le super administrateur.');
   if(profile.status==='pending')return viewPending();
-  try{await loadData(id)}
+  localStorage.setItem(ROLE_KEY,profile.role);
+  // Le super admin peut consulter le compte choisi dans le panneau « Comptes ».
+  const target=profile.role==='super_admin'&&sessionStorage.getItem(VIEW_KEY)||id;
+  try{await loadData(target)}
   catch(e){
-    if(localStorage.getItem(USER_KEY)===id)return start(id);
+    if(localStorage.getItem(USER_KEY)===target)return start(id,target,profile.role);
     return viewLogin('Impossible de charger vos données. Réessayez.',true);
   }
-  start(id);
+  start(id,target,profile.role);
 }
 
 /* Serveur → cache. Si des modifications locales attendent encore d’être envoyées, elles l’emportent. */
@@ -170,14 +180,20 @@ async function loadData(id){
   localStorage.setItem(USER_KEY,id);
 }
 
-function start(id){
+function start(sessionId,target,userRole){
   if(started)return;
   started=true;
-  uid=id;
+  uid=sessionId;
+  owner=target;
   authEl.hidden=true;
   shell.hidden=false;
   $('logoutBtn').hidden=false;
-  load('js/engine.js').then(()=>load('js/app.js')).then(()=>pushState());
+  $('viewAs').hidden=target===sessionId;
+  if(userRole==='super_admin'){$('adminBtn').hidden=false}
+  load('js/engine.js')
+    .then(()=>load('js/app.js'))
+    .then(()=>{if(userRole==='super_admin')return load('js/admin.js')})
+    .then(()=>pushState());
 }
 function load(src){
   return new Promise((ok,ko)=>{
@@ -191,13 +207,13 @@ function load(src){
 // Appelé par js/engine.js après chaque enregistrement local.
 window.hygoSync=()=>{localStorage.setItem(DIRTY_KEY,'1');pushState()};
 async function pushState(){
-  if(!uid||syncing||!localStorage.getItem(DIRTY_KEY))return;
+  if(!owner||syncing||!localStorage.getItem(DIRTY_KEY))return;
   syncing=true;
   try{
     while(localStorage.getItem(DIRTY_KEY)){
       localStorage.removeItem(DIRTY_KEY);
       const state=JSON.parse(localStorage.getItem(DATA_KEY));
-      const {error}=await client.from('app_data').upsert({owner_id:uid,state,updated_at:new Date().toISOString()});
+      const {error}=await client.from('app_data').upsert({owner_id:owner,state,updated_at:new Date().toISOString()});
       if(error)throw error;
     }
     warned=false;
@@ -210,18 +226,37 @@ async function pushState(){
 }
 window.addEventListener('online',pushState);
 
-async function logout(){
-  if(localStorage.getItem(DIRTY_KEY)){
-    await pushState();
-    if(localStorage.getItem(DIRTY_KEY)&&!confirm('Des modifications ne sont pas encore envoyées. Se déconnecter les effacera de cet appareil. Continuer ?'))return;
-  }
-  try{await client.auth.signOut()}catch(e){}
+/* Envoie les modifications en attente ; false si l’utilisateur refuse de les perdre. */
+async function flushOrConfirm(question){
+  if(!localStorage.getItem(DIRTY_KEY))return true;
+  await pushState();
+  return !localStorage.getItem(DIRTY_KEY)||confirm(question);
+}
+function clearCache(){
   localStorage.removeItem(DATA_KEY);
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(DIRTY_KEY);
+}
+async function logout(){
+  if(!await flushOrConfirm('Des modifications ne sont pas encore envoyées. Se déconnecter les effacera de cet appareil. Continuer ?'))return;
+  try{await client.auth.signOut()}catch(e){}
+  clearCache();
+  sessionStorage.removeItem(VIEW_KEY);
+  location.reload();
+}
+/* Consulte le compte donné (ou revient au sien si target est vide). Recharge l’app avec ses données. */
+async function switchTo(target){
+  if(!await flushOrConfirm('Des modifications ne sont pas encore envoyées. Les changer de compte les effacera de cet appareil. Continuer ?'))return;
+  if(target)sessionStorage.setItem(VIEW_KEY,target);
+  else sessionStorage.removeItem(VIEW_KEY);
+  clearCache();
   location.reload();
 }
 $('logoutBtn').addEventListener('click',logout);
+$('viewAsExit').addEventListener('click',()=>switchTo(null));
+
+// Utilisé par js/admin.js.
+window.hygoAuth={client,switchTo,esc,get uid(){return uid},get owner(){return owner}};
 
 boot();
 })();

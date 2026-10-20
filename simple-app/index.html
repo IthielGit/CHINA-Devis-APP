@@ -263,6 +263,18 @@ details[open]>.grid{margin-top:var(--s3)}
 .auth-form{display:grid;gap:var(--s4)}
 .auth-links{margin:0;text-align:center;font-size:.92rem;color:var(--muted)}
 .link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;cursor:pointer}
+
+/* ---------- Bandeau de consultation et panneau Comptes (super admin) ---------- */
+.view-as{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);padding:var(--s3) var(--s5);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.view-as[hidden]{display:none}
+.admin{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:var(--s5);background:rgba(10,9,20,.38)}
+.admin[hidden]{display:none}
+.admin-box{width:min(560px,100%);max-height:86vh;overflow:auto;display:grid;gap:var(--s4)}
+.admin-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+.admin-head h2{margin:0;font-size:var(--fs-section)}
+.admin-row{display:grid;gap:var(--s2);padding:var(--s3) 0;border-top:1px solid var(--divider)}
+.admin-meta{font-size:var(--fs-meta);color:var(--muted)}
+.admin-actions{display:flex;flex-wrap:wrap;gap:var(--s2)}
 .scrim{position:absolute;inset:0;background:rgba(10,9,20,.38);animation:fade var(--t) ease both}
 .panel{position:relative;width:min(560px,100%);max-height:86vh;overflow:auto;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);border-bottom:0;border-radius:28px 28px 0 0;padding:var(--s2) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom,0px));box-shadow:var(--glass-shadow);animation:sheetUp var(--t-slow) var(--ease) both}
 @media (min-width:861px){.sheet{align-items:center}.panel{border-radius:28px;border-bottom:1px solid var(--glass-edge)}}
@@ -405,10 +417,15 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
       <button type="button" data-go="reglages"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Réglages</span></button>
     </nav>
     <div class="rate-card" id="rates"></div>
+    <button type="button" class="btn small block" id="adminBtn" hidden>Comptes</button>
     <button type="button" class="btn small block" id="logoutBtn" hidden>Se déconnecter</button>
   </aside>
 
   <div class="content">
+    <div class="view-as" id="viewAs" hidden>
+      <span>Mode consultation : vous voyez les données d’un autre compte.</span>
+      <button type="button" class="btn small" id="viewAsExit">Revenir à mes données</button>
+    </div>
     <header class="top">
       <div>
         <h1 id="pageTitle">Devis</h1>
@@ -422,6 +439,13 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
     <main id="app"></main>
   </div>
 </div>
+
+<section class="admin" id="admin" hidden>
+  <div class="card admin-box" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <header class="admin-head"><h2 id="adminTitle">Comptes</h2><button type="button" class="btn small" id="adminClose">Fermer</button></header>
+    <div id="adminBody"></div>
+  </div>
+</section>
 
 <div class="sheet" id="sheet" hidden>
   <div class="scrim" data-close></div>

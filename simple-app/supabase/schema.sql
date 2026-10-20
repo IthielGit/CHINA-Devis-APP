@@ -107,7 +107,10 @@ create policy "app_data_select"
 create policy "app_data_insert"
   on public.app_data for insert
   to authenticated
-  with check (owner_id = auth.uid() and public.is_active());
+  with check (
+    (owner_id = auth.uid() and public.is_active())
+    or public.is_super_admin()
+  );
 
 create policy "app_data_update"
   on public.app_data for update

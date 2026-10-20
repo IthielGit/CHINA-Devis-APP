@@ -3,7 +3,7 @@ name: Publier Hygo sur GitHub Pages
 on:
   push:
     branches: [version-simple]
-    paths: ['simple-app/**']
+    paths: ['simple-app/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:

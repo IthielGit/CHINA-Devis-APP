@@ -173,6 +173,11 @@ textarea.inp{min-height:0;resize:vertical}
 .btn.block{width:100%}
 .link{background:none;border:0;color:var(--accent);cursor:pointer;min-height:44px;padding:0 var(--s1);font-weight:600}
 .actions{display:flex;flex-wrap:wrap;gap:var(--s3);margin-top:var(--s5);align-items:center}
+/* Actions du résultat : principal pleine largeur, les deux autres côte à côte, même hauteur */
+.result-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-top:var(--s5)}
+.result-actions .wide{grid-column:1/-1}
+.result-actions .btn{width:100%;padding:0 var(--s3);font-size:.95rem;text-align:center;line-height:1.2}
+.result-actions .btn.primary{min-height:56px;font-size:1.02rem}
 
 details.adv{margin-top:var(--s5);border-top:1px solid var(--divider);padding-top:var(--s3)}
 details summary{cursor:pointer;font-weight:600;min-height:48px;display:flex;align-items:center;justify-content:space-between;list-style:none}

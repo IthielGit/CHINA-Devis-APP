@@ -1,6 +1,6 @@
 /* Hygo — cache hors ligne. Réseau d’abord (les mises à jour arrivent tout de suite), cache en secours. */
 const CACHE='hygo-v1';
-const ASSETS=['./','./index.html','./js/engine.js','./js/app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+const ASSETS=['./','./index.html','./js/engine.js','./js/app.js','./manifest.webmanifest','./favicon.svg','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));

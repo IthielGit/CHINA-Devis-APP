@@ -1,15 +1,17 @@
 {
-  "name": "Hygo",
+  "name": "Hygo — devis import",
   "short_name": "Hygo",
-  "description": "Devis d’importation : prix de revient, prix de vente et date d’arrivée.",
+  "description": "Devis d’importation : prix de revient, prix de vente et date d’arrivée en un écran.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f6f7f9",
-  "theme_color": "#167567",
+  "orientation": "portrait",
+  "background_color": "#eef1f8",
+  "theme_color": "#0b7f77",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

@@ -5,7 +5,9 @@ const sheet=document.getElementById('sheet');
 const sheetBody=document.getElementById('sheetBody');
 const NUM=['price','qty','wt','delai','heure','trans','livCh','exclus','livFin','pvRetenu'];
 const MODES=['Avion','Maritime','Express'];
+const MARGES=[0.3,0.5,1];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const systemDark=matchMedia('(prefers-color-scheme: dark)');
 let tab='devis', hSearch='', editT=-1, editC=-1, lastSig=null;
 const shown={};   // dernière valeur affichée par chiffre animé
 
@@ -15,14 +17,38 @@ const m=x=>isNum(x)?ar(x):'—';
 const pct=x=>isNum(x)?(Math.round(x*1000)/10)+' %':'—';
 const numOf=(data,k)=>{const v=data.get(k);return v===null||String(v).trim()===''?null:Number(String(v).replace(',','.'))};
 const strOf=(data,k)=>String(data.get(k)??'').trim();
-/* Couleur de couverture dérivée du nom : chaque produit a son dégradé, comme une affiche d’événement. */
 const hueOf=s=>{let h=0;for(const c of String(s||'Hygo'))h=(h*31+c.charCodeAt(0))>>>0;return h%360};
 const coverOf=s=>{const h=hueOf(s);return `linear-gradient(135deg,hsl(${h} 86% 64%),hsl(${(h+52)%360} 82% 50%))`};
 const initials=s=>(String(s||'?').trim()[0]||'?').toUpperCase();
+const $=id=>document.getElementById(id);
+
+/* ---------- thème : suit le système, ou le choix de l’utilisateur ---------- */
+function effectiveTheme(){
+  const t=document.documentElement.dataset.theme;
+  return t==='dark'||t==='light'?t:(systemDark.matches?'dark':'light');
+}
+function syncTheme(){
+  const eff=effectiveTheme();
+  $('themeToggle').dataset.eff=eff;
+  $('themeToggle').setAttribute('aria-label',eff==='dark'?'Passer au thème clair':'Passer au thème sombre');
+  $('themeToggle').title=$('themeToggle').getAttribute('aria-label');
+  let tc=document.querySelector('meta[name="theme-color"]:not([media])');
+  if(document.documentElement.dataset.theme){
+    if(!tc){tc=document.createElement('meta');tc.name='theme-color';document.head.appendChild(tc)}
+    tc.content=eff==='dark'?'#0a0e1a':'#eef1f8';
+  }else if(tc)tc.remove();
+}
+systemDark.addEventListener?.('change',syncTheme);
+$('themeToggle').addEventListener('click',()=>{
+  const next=effectiveTheme()==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=next;
+  try{localStorage.setItem('hygo-theme',next)}catch(e){}
+  syncTheme();
+});
 
 /* ---------- navigation ---------- */
 const PAGES={
-  devis:['Devis d’importation','Renseignez votre produit. Comparez le transport. Fixez votre prix.'],
+  devis:['Devis d’importation','Renseignez votre produit. Le reste se calcule.'],
   histo:['Historique','Produits enregistrés sur cet appareil.'],
   tarifs:['Tarifs et calendrier','Transitaires, tarifs et dates de départ.'],
   reglages:['Paramètres','Taux de change, délais et sauvegarde.']
@@ -35,14 +61,13 @@ function go(t){
 function render(){
   document.querySelectorAll('.nav [data-go]').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
   placeIndicator();
-  document.getElementById('pageTitle').textContent=PAGES[tab][0];
-  document.getElementById('pageSub').textContent=PAGES[tab][1];
+  $('pageTitle').textContent=PAGES[tab][0];
+  $('pageSub').textContent=PAGES[tab][1];
   renderRates();
   ({devis:viewDevis,histo:viewHisto,tarifs:viewTarifs,reglages:viewReglages})[tab]();
 }
-/* La pastille de navigation glisse jusqu’à l’onglet actif. */
 function placeIndicator(){
-  const nav=document.getElementById('nav');
+  const nav=$('nav');
   const btn=nav.querySelector('[aria-current="page"]');
   if(!btn)return;
   const n=nav.getBoundingClientRect(), r=btn.getBoundingClientRect();
@@ -55,48 +80,62 @@ function placeIndicator(){
 window.addEventListener('resize',placeIndicator);
 function renderRates(){
   const p=S.params;
-  document.getElementById('rates').innerHTML=`<small>Taux de change</small>
+  $('rates').innerHTML=`<small>Taux de change</small>
     <p>1 ¥ = <b>${dec(yuanRate(p),2)} Ar</b></p>
     <p>1 USD = <b>${dec(p.usd,0)} Ar</b></p>`;
 }
 
-/* ---------- Thème clair / sombre ---------- */
-function setTheme(theme){
-  document.documentElement.dataset.theme=theme;
-  const btn=document.getElementById('themeToggle');
-  const next=theme==='dark'?'Activer le thème clair':'Activer le thème sombre';
-  btn.setAttribute('aria-label',next);
-  btn.title=next;
-  try{localStorage.setItem('hygo-theme',theme)}catch(e){}
-}
-document.getElementById('themeToggle').addEventListener('click',()=>{
-  setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
-});
-
 /* ---------- Devis ---------- */
+/* Règles de validation : calculées en continu, sans bouton « vérifier ». */
+function checksFor(d,R){
+  const out=[];
+  const dims=dimsOf(d), prod=dims[0]*dims[1]*dims[2];
+  out.push({key:'name',label:'Nom',state:d.name.trim()?'ok':'bad',txt:d.name.trim()?'':'à saisir'});
+  out.push({key:'price',label:'Prix d’achat',state:d.price>0?'ok':'bad',txt:d.price>0?'':'en yuans'});
+  const dimsOk=dims.every(x=>x>0);
+  out.push({key:'dims',label:'Dimensions',state:dimsOk?'ok':'bad',txt:dimsOk?'':'L x l x H'});
+  const wtState=!(d.wt>0)?'bad':d.wt>30?'warn':'ok';
+  out.push({key:'wt',label:'Poids',state:wtState,txt:wtState==='bad'?'à saisir':wtState==='warn'?'élevé, vérifiez':''});
+  out.push({key:'offer',label:'Transport',state:R.sel?'ok':'bad',txt:R.sel?'':'aucune offre'});
+  if(d.pvRetenu!=null&&isNum(R.costP))out.push({key:'pv',label:'Prix imposé',state:d.pvRetenu<R.costP?'bad':'ok',txt:d.pvRetenu<R.costP?'sous le revient':''});
+  const margeState=(d.marge??0)<0?'bad':(d.marge??0)<0.1?'warn':'ok';
+  out.push({key:'marge',label:'Marge',state:margeState,txt:margeState==='warn'?'faible':margeState==='bad'?'négative':''});
+  if(d.pay){const old=Math.floor(Date.now()/864e5)-dayNum(d.pay)>30;out.push({key:'pay',label:'Date de paiement',state:old?'warn':'ok',txt:old?'ancienne':''})}
+  return out;
+}
 function viewDevis(){
   const d=S.draft, cats=[...S.params.cats];
   if(d.cat&&!cats.includes(d.cat))cats.unshift(d.cat);
   const opt=(list,cur)=>list.map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('');
-  const inp=(k,label,type='text',attrs='')=>`<label class="field"><span>${label}</span><input class="inp" data-k="${k}" type="${type}" ${attrs} value="${esc(val(d[k]))}"></label>`;
+  const inp=(k,label,type='text',attrs='',suffix='')=>`<label class="field"><span>${label}</span><span class="input-wrap"><input class="inp" data-k="${k}" type="${type}" ${attrs} value="${esc(val(d[k]))}">${suffix?`<span class="suffix">${suffix}</span>`:''}</span></label>`;
+  const names=[...new Map(S.quotes.map(q=>[String(q.inputs?.name||'').trim().toLowerCase(),q.inputs?.name]).filter(([k])=>k)).values()];
   app.innerHTML=`
+  <datalist id="names">${names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
   <section class="card">
-    <h2>Nouveau produit</h2>
+    <h2>Produit</h2>
     <div class="grid">
-      ${inp('name','Nom du produit','text','autocomplete="off"')}
-      <label class="field"><span>Catégorie</span><select class="inp" data-k="cat">${opt(cats,d.cat)}</select></label>
-      ${inp('price','Prix d’achat (CNY / pièce)','number','step="any" inputmode="decimal"')}
-      ${inp('qty','Quantité','number','min="1" step="1" inputmode="numeric"')}
-      ${inp('dims','Dimensions cm (L x l x H)','text','placeholder="14 x 6 x 6"')}
-      ${inp('wt','Poids (kg / pièce)','number','step="any" inputmode="decimal"')}
-      <label class="field"><span>Base de facturation</span><select class="inp" data-k="base">${opt(['Le plus élevé','Poids réel','Poids volumétrique'],d.base)}</select></label>
-      ${inp('pay','Date de paiement','date')}
-      ${inp('delai','Jours vendeur → dépôt','number','min="0" step="1"')}
-      ${inp('heure','Heure d’arrivée au dépôt (Chine)','number','min="0" max="23" step="1"')}
-      <label class="field"><span>Marge souhaitée (%)</span><input class="inp" data-k="marge" type="number" step="any" value="${Math.round((d.marge??0)*1000)/10}"></label>
+      <label class="field wide"><span>Nom du produit</span><input class="inp" data-k="name" list="names" autocomplete="off" placeholder="Ex. Spray anti-pluie 50 ml" value="${esc(val(d.name))}"><span class="hint" id="hint-name">${esc(d.repris?'Repris de '+d.repris+' : vérifiez le prix.':'Un nom déjà enregistré remplit le reste.')}</span></label>
+      <label class="field"><span>Prix d’achat</span><span class="input-wrap"><input class="inp" data-k="price" type="number" step="any" inputmode="decimal" value="${esc(val(d.price))}"><span class="suffix">¥</span></span><span class="hint" id="hint-price"></span></label>
+      <div class="field"><span>Quantité</span>
+        <div class="stepper"><button type="button" data-step="-1" aria-label="Retirer une pièce">−</button><output id="qty-out">${d.qty||1}</output><button type="button" data-step="1" aria-label="Ajouter une pièce">+</button></div>
+        <span class="hint">Pièces identiques</span></div>
+      <label class="field wide"><span>Dimensions (cm, L × l × H)</span><input class="inp" data-k="dims" placeholder="14 x 6 x 6" inputmode="decimal" value="${esc(val(d.dims))}"><span class="hint" id="hint-dims"></span></label>
+      <label class="field"><span>Poids d’un produit emballé</span><span class="input-wrap"><input class="inp" data-k="wt" type="number" step="any" inputmode="decimal" value="${esc(val(d.wt))}"><span class="suffix">kg</span></span><span class="hint" id="hint-wt"></span></label>
+      <div class="field"><span>Marge</span>
+        <div class="chips" id="margeChips">
+          ${MARGES.map(v=>`<button type="button" class="chip-btn" data-marge="${v}" aria-pressed="false">${Math.round(v*100)} %</button>`).join('')}
+          <input class="inp mini" data-k="marge" type="number" step="1" inputmode="numeric" aria-label="Marge personnalisée en pourcentage" value="${Math.round((d.marge??0)*1000)/10}">
+        </div></div>
     </div>
-    <details class="adv"><summary>Frais de commande <small>facultatif</small></summary>
+    <div class="chk-title">Contrôles automatiques</div>
+    <div class="checks" id="checks"></div>
+    <details class="adv"><summary>Catégorie, dates et frais <small>automatique, modifiable</small></summary>
       <div class="grid">
+        <label class="field"><span>Catégorie</span><select class="inp" data-k="cat">${opt(cats,d.cat)}</select></label>
+        <label class="field"><span>Base de facturation</span><select class="inp" data-k="base">${opt(['Le plus élevé','Poids réel','Poids volumétrique'],d.base)}</select></label>
+        ${inp('pay','Date de paiement','date')}
+        ${inp('delai','Jours vendeur → dépôt','number','min="0" step="1"')}
+        ${inp('heure','Heure d’arrivée au dépôt (Chine)','number','min="0" max="23" step="1"')}
         ${inp('trans','Frais de transaction (CNY, commande)','number','step="any"')}
         ${inp('livCh','Livraison en Chine (Ar, commande)','number','step="any"')}
         ${inp('exclus','Frais exclusifs (Ar, commande)','number','step="any"')}
@@ -106,7 +145,13 @@ function viewDevis(){
     </details>
   </section>
   <section class="card" id="result"></section>`;
+  syncMarge();
   renderResult();
+}
+
+function syncMarge(){
+  const v=S.draft.marge??0;
+  document.querySelectorAll('[data-marge]').forEach(b=>b.setAttribute('aria-pressed',String(Math.abs(Number(b.dataset.marge)-v)<1e-9)));
 }
 
 function onDraftField(el){
@@ -120,8 +165,21 @@ function onDraftField(el){
     const g=guessCat(v);
     if(g&&S.params.cats.includes(g)){S.draft.cat=g;const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=g}
   }
+  if(k==='marge')syncMarge();
   persist();
   renderResult();
+}
+
+/* Nom déjà enregistré : on reprend prix, dimensions, poids, catégorie et marge du dernier devis. */
+function applyKnownName(){
+  const key=String(S.draft.name||'').trim().toLowerCase();
+  if(!key)return;
+  const known=[...S.quotes].sort((a,b)=>String(b.modified||'').localeCompare(String(a.modified||''))).find(q=>String(q.inputs?.name||'').trim().toLowerCase()===key);
+  if(!known)return;
+  const i=known.inputs;
+  Object.assign(S.draft,{cat:i.cat,catManual:true,price:i.price,dims:i.dims,wt:i.wt,marge:i.marge??S.draft.marge,repris:known.no});
+  persist();
+  viewDevis();
 }
 
 /* Chiffre qui compte depuis sa valeur précédente. */
@@ -134,15 +192,36 @@ function countUp(key,el,to){
   requestAnimationFrame(step);
 }
 
+function updateHints(d,R,checks){
+  const dims=dimsOf(d), prod=dims[0]*dims[1]*dims[2];
+  const set=(id,txt,cls='')=>{const el=$(id);if(el){el.textContent=txt;el.className='hint '+cls}};
+  const nm=checks.find(c=>c.key==='name'), pr=checks.find(c=>c.key==='price'), dm=checks.find(c=>c.key==='dims'), wt=checks.find(c=>c.key==='wt');
+  set('hint-price',isNum(R.achat)?`≈ ${ar(R.achat)} par pièce`:(pr?.state==='bad'?'Saisissez le prix en yuans':''),pr?.state==='bad'?'bad':'');
+  set('hint-dims',dm?.state==='bad'?'Format attendu : 14 x 6 x 6':(prod?`Volume ${dec(prod,0)} cm³ · poids volumétrique ${dec(prod/S.params.div,2)} kg`:''),dm?.state==='bad'?'bad':'');
+  set('hint-wt',wt?.state==='bad'?'Poids d’un produit emballé':(wt?.state==='warn'?'Poids élevé, vérifiez le transport':''),wt?.state==='bad'?'bad':wt?.state==='warn'?'bad':'');
+  set('hint-name',d.repris?`Repris de ${d.repris} : vérifiez le prix.`:(nm?.state==='bad'?'Donnez un nom au produit':'Un nom déjà enregistré remplit le reste.'),nm?.state==='bad'?'bad':'');
+  const out=$('qty-out');if(out)out.textContent=d.qty||1;
+  document.querySelectorAll('.inp[data-k]').forEach(el=>{
+    const k=el.dataset.k, c={name:nm,price:pr,dims:dm,wt}[k];
+    el.classList.toggle('is-bad',!!c&&c.state==='bad');
+    el.classList.toggle('is-ok',!!c&&c.state==='ok'&&!!el.value);
+  });
+}
+
 function renderResult(){
-  const el=document.getElementById('result');
+  const el=$('result');
   if(!el)return;
   const d=S.draft, R=compute(d), s=R.sel, manual=d.mode==='manuel';
+  const checks=checksFor(d,R);
+  const blocking=checks.filter(c=>c.state==='bad');
+  const chk=$('checks');
+  if(chk)chk.innerHTML=checks.map(c=>`<span class="chk ${c.state==='ok'?'':c.state}" title="${esc(c.txt)}"><b>${c.state==='ok'?'✓':c.state==='warn'?'!':'✕'}</b>${esc(c.label)}${c.txt&&c.state!=='ok'?' · '+esc(c.txt):''}</span>`).join('');
+  updateHints(d,R,checks);
   const kpi=(tone,lab,value,sub='',text=false)=>`<div class="kpi ${tone}${text?' text':''}"><span>${lab}</span><b>${value}</b>${sub?`<small>${sub}</small>`:''}</div>`;
   const num=(key,v)=>isNum(v)?` data-num="${v}" data-key="${key}"`:'';
   let body;
   if(!s){
-    body=`<p class="warn">${manual?'L’offre choisie n’est pas compatible avec ce produit. Revenez au meilleur prix.':`Aucune offre pour la catégorie « ${esc(d.cat)} ». Vérifiez la catégorie ou l’onglet Tarifs.`}</p>`;
+    body=`<p class="warn-box">${manual?'L’offre choisie n’est pas compatible avec ce produit. Revenez au meilleur prix.':`Aucun transitaire ne prend la catégorie « ${esc(d.cat)} ». Changez la catégorie dans « Catégorie, dates et frais ».`}</p>`;
   } else {
     const notes=[...(s.t.note?[s.t.note]:[]),...calendarFeedback(s)];
     body=`<div class="kpis">
@@ -151,20 +230,20 @@ function renderResult(){
       ${kpi('t1','Prix de revient',`<span${num('cost',R.costP)}>${m(R.costP)}</span>`,`Total ${m(R.costLot)} · ${R.qty} pièce(s)`)}
     </div>
     ${notes.map(n=>`<p class="note">${esc(n)}</p>`).join('')}`;
-    if(!isNum(R.costP))body+=`<p class="warn">Complétez le prix d’achat et le poids ou les dimensions pour obtenir le prix de revient.</p>`;
   }
   const hero=`<div class="hero" style="--cover:${coverOf(d.name)}">
     <div class="hero-top"><span class="chip">${esc(d.cat||'Sans catégorie')}</span><span class="res-tag ${manual?'manual':''}">${manual?'Offre choisie':'Meilleur prix'}</span></div>
     <div class="hero-name">${esc(d.name||'Nouveau produit')}</div>
     <div class="hero-price"><small>Prix de vente conseillé / pièce</small><b${num('pv',R.pv)}>${m(R.pv)}</b><small>Total ${m(R.revenueLot)} · marge ${m(R.margeP)} (${pct(R.margeRate)})</small></div>
   </div>`;
+  const canSave=blocking.length===0;
+  const why=canSave?'':`À corriger : ${blocking.map(c=>c.label.toLowerCase()).join(', ')}.`;
   const actions=`<div class="actions">
-    <button class="btn primary" id="save">Enregistrer dans l’historique</button>
-    <button class="btn" id="compare">Comparer les offres (${R.comp.length})</button>
+    <button class="btn primary" id="save" ${canSave?'':'disabled'}>Enregistrer dans l’historique</button>
+    <button class="btn" id="compare" ${R.comp.length?'':'disabled'}>Comparer les offres (${R.comp.length})</button>
     <button class="btn" id="new">Nouveau produit</button>
     ${manual?'<button class="link" id="back-best">Revenir au meilleur prix</button>':''}
-  </div>`;
-  // Animation seulement quand les chiffres changent vraiment (pas à chaque frappe).
+  </div>${why?`<p class="hint bad" style="margin-top:10px">${esc(why)}</p>`:''}`;
   const sig=[s?.label,R.costP,R.pv,s?.I,manual].join('|');
   const bump=sig!==lastSig;
   lastSig=sig;
@@ -189,13 +268,11 @@ function renderSheet(R,d){
       </span></button>`;
   }).join('')||'<p class="empty">Aucune offre compatible.</p>';
 }
-function openSheet(){
-  sheet.hidden=false;
-  sheet.querySelector('.panel').focus?.();
-}
+function openSheet(){sheet.hidden=false}
 function closeSheet(){sheet.hidden=true}
 
 /* Validation : pastille animée et confettis. */
+const taille=()=>reduce?0:26;
 function celebrate(){
   const b=document.createElement('div');
   b.className='burst';
@@ -205,15 +282,14 @@ function celebrate(){
   setTimeout(()=>b.classList.add('out'),1500);
   setTimeout(()=>b.remove(),1900);
 }
-const taille=()=>reduce?0:26;
 
 function saveDraft(){
   const d=S.draft, R=compute(d);
-  if(!d.name.trim()){toast('Donnez un nom au produit avant d’enregistrer.');app.querySelector('[data-k="name"]')?.focus();return}
-  if(!R.sel){toast('Aucune offre disponible : vérifiez la catégorie et les tarifs.');return}
+  const bad=checksFor(d,R).filter(c=>c.state==='bad');
+  if(bad.length){toast(`À corriger : ${bad.map(c=>c.label.toLowerCase()).join(', ')}.`,{sticky:true});return}
   const now=nowIso(), i=S.quotes.findIndex(q=>q.no===d.no), existing=i>=0?S.quotes[i]:null;
   if(existing&&existing.status&&existing.status!==STATUS.DRAFT){toast('Ce produit est déjà confirmé : modifiez-le depuis la version bureau.',{sticky:true});return}
-  const {status,destination,...inputFields}=copyData(d);
+  const {status,destination,repris,...inputFields}=copyData(d);
   const inputs={...inputFields,mode:'manuel',offer:R.sel.label};
   const base=existing??normalizeQuoteWorkflow({no:d.no,created:now,status:STATUS.DRAFT,statusHistory:[{from:null,to:STATUS.DRAFT,at:now,comment:'Création'}]});
   const rec={...base,modified:now,inputs,res:snapshot(d,R),offer:R.sel.label,destination:''};
@@ -240,7 +316,7 @@ function viewHisto(){
   renderHisto();
 }
 function renderHisto(){
-  const el=document.getElementById('hlist');
+  const el=$('hlist');
   if(!el)return;
   const q=hSearch.trim().toLowerCase();
   const rows=[...S.quotes]
@@ -438,6 +514,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)close
 app.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   const ds=t.dataset;
+  if(ds.step){S.draft.qty=Math.max(1,(Number(S.draft.qty)||1)+Number(ds.step));persist();renderResult();return}
+  if(ds.marge){S.draft.marge=Number(ds.marge);syncMarge();persist();renderResult();return}
   if(t.id==='back-best'){S.draft.mode='prix';persist();renderResult();return}
   if(t.id==='save'){saveDraft();return}
   if(t.id==='new'){newDraft();return}
@@ -460,6 +538,7 @@ app.addEventListener('input',e=>{
 });
 app.addEventListener('change',e=>{
   const el=e.target;
+  if(el.dataset.k==='name'){S.draft.name=el.value;applyKnownName();return}
   if(el.dataset.k&&el.tagName==='SELECT')onDraftField(el);
   if(el.id==='import')importData(el.files[0]);
 });
@@ -473,7 +552,9 @@ app.addEventListener('submit',e=>{
 
 /* Au premier lancement, le moteur met un exemple de la version bureau : on repart d’un formulaire vide. */
 if(!S.quotes.length&&S.draft.name==='Spray anti-pluie 50 ml')S.draft=blankDraft(nextNo());
+S.draft.marge=S.draft.marge??0.5;
 
+syncTheme();
 render();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();

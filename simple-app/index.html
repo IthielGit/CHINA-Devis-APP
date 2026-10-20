@@ -331,6 +331,11 @@ details[open]>.grid{margin-top:var(--s3)}
 .profile-row.danger{color:var(--negative-ink);font-weight:600}
 .profile-row[hidden]{display:none}
 .profile-row:active{background:var(--elevated)}
+/* Confirmation avant déconnexion, affichée sous le bouton */
+.logout-confirm{display:grid;gap:var(--s3);padding:var(--s3) var(--s1)}
+.logout-confirm[hidden]{display:none}
+.logout-confirm p{margin:0;color:var(--muted);font-size:.92rem;text-align:center}
+.confirm-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
 .top-actions{flex:none;display:flex;align-items:center;gap:var(--s2)}
 .avatar{flex:none;width:44px;height:44px;aspect-ratio:1 / 1;padding:0;border-radius:50%;border:1px solid var(--divider);background:var(--accent-soft);color:var(--accent-text);font:inherit;font-size:1.05rem;font-weight:600;cursor:pointer;display:grid;place-items:center;overflow:hidden;transition:transform var(--t-fast) var(--ease)}
 .avatar:active{transform:scale(.94)}
@@ -516,6 +521,13 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
       <li><button type="button" class="profile-row" id="adminBtn" hidden><span>Gérer les comptes</span><span class="chev" aria-hidden="true">›</span></button></li>
       <li class="profile-row static"><span>Synchronisation</span><span class="muted" id="accountSync"></span></li>
       <li><button type="button" class="profile-row danger" id="logoutBtn"><span>Se déconnecter</span></button></li>
+      <li class="logout-confirm" id="logoutConfirm" hidden>
+        <p>Vous devrez vous reconnecter pour accéder à vos devis.</p>
+        <div class="confirm-actions">
+          <button type="button" class="btn" id="logoutCancel">Annuler</button>
+          <button type="button" class="btn danger" id="logoutYes">Se déconnecter</button>
+        </div>
+      </li>
     </ul>
   </div>
 </section>

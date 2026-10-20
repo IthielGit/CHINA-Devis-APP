@@ -223,15 +223,14 @@ function start(sessionId,target,userRole){
   setAvatar($('avatarInitial'),window.hygoAccount);
   setSync(localStorage.getItem(DIRTY_KEY)?'pending':'synced');
   $('viewAs').hidden=target===sessionId;
-  load('js/engine.js')
-    .then(()=>load('js/app.js'))
-    .then(()=>{if(userRole==='super_admin')return load('js/admin.js')})
-    .then(()=>pushState());
+  // Scripts téléchargés en parallèle, exécutés dans l’ordre (async=false dans load).
+  const scripts=['js/engine.js','js/app.js',...(userRole==='super_admin'?['js/admin.js']:[])];
+  Promise.all(scripts.map(load)).then(()=>pushState());
 }
 function load(src){
   return new Promise((ok,ko)=>{
     const s=document.createElement('script');
-    s.src=src;s.onload=ok;s.onerror=ko;
+    s.src=src;s.async=false;s.onload=ok;s.onerror=ko;
     document.body.appendChild(s);
   });
 }
@@ -285,7 +284,8 @@ function clearCache(){
 }
 async function logout(){
   if(!await flushOrConfirm('Des modifications ne sont pas encore envoyées. Se déconnecter les effacera de cet appareil. Continuer ?'))return;
-  try{await client.auth.signOut()}catch(e){}
+  // Déconnexion locale : immédiate, sans attendre le serveur (fonctionne aussi hors ligne).
+  try{await client.auth.signOut({scope:'local'})}catch(e){}
   clearCache();
   sessionStorage.removeItem(VIEW_KEY);
   location.reload();
@@ -299,7 +299,12 @@ async function switchTo(target){
   location.reload();
 }
 // Le bouton est dans la page Réglages, recréée à chaque affichage : délégation sur le document.
-document.addEventListener('click',e=>{if(e.target.closest('#logoutBtn'))logout()});
+// Déconnexion en deux temps : le bouton affiche d’abord la confirmation.
+document.addEventListener('click',e=>{
+  if(e.target.closest('#logoutBtn')){$('logoutConfirm').hidden=false;return}
+  if(e.target.closest('#logoutCancel')){$('logoutConfirm').hidden=true;return}
+  if(e.target.closest('#logoutYes'))logout();
+});
 /* Nom affiché : celui du compte Google, sinon le début de l’email. */
 function displayName(name,email){
   return name||(email.split('@')[0]||'').replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
@@ -328,6 +333,7 @@ function openAccount(){
   $('accountEmail').textContent=a.email;
   $('accountSync').textContent=SYNC[window.hygoSyncState?.()]||'';
   $('adminBtn').hidden=a.role!=='super_admin';
+  $('logoutConfirm').hidden=true;
   $('account').hidden=false;
 }
 $('accountBtn').addEventListener('click',openAccount);

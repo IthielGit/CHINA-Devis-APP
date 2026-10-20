@@ -53,8 +53,7 @@
   --positive-bg:light-dark(#E3F7EE,#173A2C);
   --negative-bg:light-dark(#FFE9EB,#3E2028);
   --warning-bg:light-dark(#FDF3DC,#3A3020);
-  /* Matériau Liquid Glass : navigation, feuilles, cartes, listes et contrôles flottants */
-  --orb:light-dark(.5,.28);
+  /* Matériau Liquid Glass (navigation, feuilles, contrôles flottants uniquement) */
   --glass:light-dark(rgba(255,255,255,.66),rgba(37,36,56,.62));
   --glass-edge:light-dark(rgba(255,255,255,.85),rgba(255,255,255,.10));
   --glass-blur:blur(24px) saturate(170%);
@@ -84,10 +83,6 @@ html[data-theme="dark"]{color-scheme:dark}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;accent-color:var(--accent);scroll-padding-bottom:140px}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--fs-body);line-height:1.45;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-/* Halos de couleur derrière l’interface : le verre a ainsi quelque chose à faire voir */
-body::before,body::after{content:"";position:fixed;z-index:-1;width:70vmax;height:70vmax;border-radius:50%;filter:blur(70px);opacity:var(--orb);pointer-events:none}
-body::before{background:var(--accent);top:-30vmax;left:-25vmax}
-body::after{background:var(--lavender);bottom:-35vmax;right:-30vmax}
 h1,h2,h3{margin:0;font-weight:600;text-wrap:balance}
 button,input,select,textarea{font:inherit;color:inherit}
 svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -96,7 +91,7 @@ svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-widt
 
 /* ---------- Structure ---------- */
 .shell{display:grid;grid-template-columns:232px minmax(0,1fr);gap:var(--s6);max-width:1180px;margin:0 auto;padding:var(--s5) var(--s6) var(--s8)}
-.side{position:sticky;top:var(--s5);align-self:start;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:var(--glass-shadow);border:1px solid var(--glass-edge);border-radius:var(--r-card);padding:var(--s4) var(--s3);display:flex;flex-direction:column;gap:var(--s5);min-height:calc(100vh - 40px)}
+.side{position:sticky;top:var(--s5);align-self:start;background:var(--surface);border:1px solid var(--divider);border-radius:var(--r-card);padding:var(--s4) var(--s3);display:flex;flex-direction:column;gap:var(--s5);min-height:calc(100vh - 40px)}
 .brand{display:flex;gap:var(--s3);align-items:center;padding:0 var(--s2)}
 .brand b{font-size:1.05rem;font-weight:600}
 .brand small{display:block;font-size:var(--fs-meta);color:var(--muted)}
@@ -131,7 +126,7 @@ main#app{display:grid;gap:var(--s6);min-width:0}
 main#app>*{animation:enter var(--t-slow) var(--ease) both}
 
 /* ---------- Cartes (surfaces pleines, pas de verre) ---------- */
-.card{background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);border-radius:var(--r-card);padding:var(--s5);min-width:0;box-shadow:var(--glass-shadow)}
+.card{background:var(--surface);border:1px solid var(--divider);border-radius:var(--r-card);padding:var(--s5);min-width:0}
 .card>h2{font-size:var(--fs-section);margin:0 0 var(--s4)}
 .section-label{font-size:var(--fs-meta);font-weight:600;color:var(--muted);margin:var(--s5) 0 var(--s2)}
 
@@ -274,7 +269,7 @@ details[open]>.grid{margin-top:var(--s3)}
 .shell[hidden],.auth[hidden]{display:none}
 .auth{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;padding:var(--s5)}
 /* Écran de connexion : carte centrée, logo, titre, puis le formulaire */
-.auth-box{width:min(400px,100%);padding:var(--s8) var(--s6);border-radius:24px;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);display:grid;gap:var(--s4)}
+.auth-box{width:min(400px,100%);padding:var(--s8) var(--s6);border-radius:24px;box-shadow:var(--shadow-card);display:grid;gap:var(--s4)}
 .auth-logo{width:56px;height:56px;border-radius:16px;overflow:hidden;justify-self:center;box-shadow:0 6px 18px rgba(108,92,231,.35)}
 .auth-logo img{width:100%;height:100%;display:block}
 .auth-head{display:grid;gap:var(--s1);justify-items:center;text-align:center}
@@ -373,7 +368,7 @@ details[open]>.grid{margin-top:var(--s3)}
 /* ---------- Historique : liste groupée par date ---------- */
 .day{font-size:var(--fs-meta);font-weight:600;color:var(--muted);margin:var(--s5) var(--s1) var(--s2);text-transform:capitalize}
 .day:first-child{margin-top:0}
-.list{border:1px solid var(--glass-edge);border-radius:var(--r-card);overflow:hidden;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:var(--glass-shadow)}
+.list{border:1px solid var(--divider);border-radius:var(--r-card);overflow:hidden;background:var(--surface)}
 .item{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:var(--s3);align-items:center;width:100%;min-height:68px;padding:var(--s3) var(--s4);background:none;border:0;text-align:left;cursor:pointer;color:var(--ink);transition:background-color var(--t-fast) var(--ease)}
 .item:active,.item:hover{background:var(--elevated)}
 .item-wrap+.item-wrap{border-top:1px solid var(--divider)}

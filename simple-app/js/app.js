@@ -456,7 +456,7 @@ function carrierCard(name,g){
     ||'<p class="muted">Aucun tarif.</p>';
   const dates=[...g.cal].sort((a,b)=>String(a.x.date).localeCompare(String(b.x.date)))
     .map(({x,i})=>`<div class="line"><span><b>${esc(fd(dayNum(x.date)))}</b><small>${esc(x.mode)}${x.svc?' · '+esc(x.svc):''}${x.note?' · '+esc(x.note):''}</small></span>
-      <span class="actions"><button class="btn small danger" data-del-c="${i}" aria-label="Supprimer la date du ${esc(x.date)}">Supprimer</button></span></div>`).join('');
+      <span class="actions"><button class="btn small" data-edit-c="${i}" aria-label="Modifier la date du ${esc(x.date)}">Modifier</button><button class="btn small" data-dup-c="${i}" aria-label="Dupliquer la date du ${esc(x.date)}">Dupliquer</button><button class="btn small danger" data-del-c="${i}" aria-label="Supprimer la date du ${esc(x.date)}">Supprimer</button></span></div>`).join('');
   const opts=[...new Map(g.tariffs.map(({x})=>[x.mode+'|'+(x.svc||''),x])).values()];
   const quick=opts.length?`<form class="quick-date" data-quick-date="${esc(name)}">
       <input class="inp" type="date" name="date" required aria-label="Date de départ">
@@ -612,6 +612,53 @@ function delCal(i){
   if(!c||!confirm(`Supprimer la date du ${c.date} (${c.tr}) ?`))return;
   S.cal.splice(i,1);persist();viewTarifs();
 }
+/* Modifier ou dupliquer une date : même feuille, avec la liste des modes du transitaire. */
+function modeOptions(carrier,current){
+  const list=[...new Map(S.tarifs.filter(x=>(x.tr||'Sans nom')===carrier).map(x=>[x.mode+'|'+(x.svc||''),x])).values()]
+    .map(x=>[x.mode+'|'+(x.svc||''),tariffLabel(x)]);
+  if(current&&!list.some(([v])=>v===current)){const [m,...s]=current.split('|');list.unshift([current,tariffLabel({mode:m,svc:s.join('|')})])}
+  return list.map(([v,l])=>`<option value="${esc(v)}"${v===current?' selected':''}>${esc(l)}</option>`).join('');
+}
+function dateEditorHtml(c,carrier,date){
+  return `<form class="editor" novalidate>
+    <div class="grid">
+      <label class="field"><span>Date de départ</span><input class="inp" name="date" type="date" required value="${esc(date)}"></label>
+      <label class="field"><span>Mode et service</span><select class="inp" name="svc">${modeOptions(carrier,(c.mode||'')+'|'+(c.svc||''))}</select></label>
+      <label class="field wide"><span>Note</span><input class="inp" name="note" value="${esc(c.note||'')}"></label>
+    </div>
+    <p class="form-error" id="editorErr" role="alert"></p>
+    <div class="actions"><button class="btn primary block" type="submit">Enregistrer</button></div>
+  </form>`;
+}
+function openEditDate(i){
+  const c=S.cal[i];
+  if(!c)return;
+  openEditor('Modifier la date',dateEditorHtml(c,c.tr,c.date),form=>submitDate(form,c.tr,i),`${c.tr||'Sans nom'}`);
+}
+function openDuplicateDate(i){
+  const c=S.cal[i];
+  if(!c)return;
+  // Par défaut, la copie tombe une semaine plus tard (départs hebdomadaires) ; la date reste modifiable.
+  const [y,m,d]=c.date.split('-').map(Number);
+  const next=new Date(Date.UTC(y,m-1,d+7)).toISOString().slice(0,10);
+  openEditor('Dupliquer la date',dateEditorHtml(c,c.tr,next),form=>submitDate(form,c.tr,null),'Copie à une semaine. Changez la date si besoin.');
+}
+function submitDate(form,carrier,index){
+  const data=new FormData(form);
+  const date=strOf(data,'date'), [mode,...svc]=strOf(data,'svc').split('|');
+  const errors=[];
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))errors.push('Choisissez une date.');
+  if(!mode)errors.push('Ajoutez d’abord un tarif pour ce transitaire.');
+  const err=form.querySelector('#editorErr');
+  if(errors.length){err.textContent=errors.join(' ');return false}
+  const entry={tr:carrier,mode,svc:mode==='Maritime'?'':svc.join('|'),date,note:strOf(data,'note').trim()};
+  if(index!=null)S.cal[index]={...S.cal[index],...entry};else S.cal.push(entry);
+  persist();
+  closeSheet();
+  toast(index!=null?'Date modifiée.':'Date dupliquée.');
+  viewTarifs();
+  return true;
+}
 
 
 /* Champs de formulaire pour les Réglages. */
@@ -758,6 +805,8 @@ app.addEventListener('click',e=>{
   if(ds.del){delQuote(ds.del);return}
   if(ds.delT!==undefined){delTariff(+ds.delT);return}
   if(ds.delC!==undefined){delCal(+ds.delC);return}
+  if(ds.editC!==undefined){openEditDate(+ds.editC);return}
+  if(ds.dupC!==undefined){openDuplicateDate(+ds.dupC);return}
   if(t.id==='export'){exportData();return}
 });
 /* Dimensions : trois champs, reconstitués en « L x l x H » pour le moteur de calcul. */

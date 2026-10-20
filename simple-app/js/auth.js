@@ -7,6 +7,7 @@ const DIRTY_KEY='hygo-dirty'; // modifications pas encore envoyées au serveur
 const ROLE_KEY='hygo-role';   // rôle du compte connecté (pour l’affichage hors ligne)
 const VIEW_KEY='hygo-view-as'; // sessionStorage : compte consulté par le super admin
 const EMAIL_KEY='hygo-email';  // email du compte connecté (avatar, hors ligne)
+const PROFILE_KEY='hygo-profile'; // nom et photo du compte (Google), hors ligne
 const MIN_PASSWORD=8;
 const cfg=window.HYGO_CONFIG;
 const client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
@@ -33,7 +34,8 @@ function show(html){box.innerHTML=html;authEl.hidden=false;shell.hidden=true}
 /* Gabarit commun : logo, titre, sous-titre, puis le contenu de l’écran. */
 const LOGO='<span class="auth-logo" aria-hidden="true"><img src="icon-192.png" alt=""></span>';
 const card=(title,sub,body)=>`${LOGO}<div class="auth-head"><h2>${esc(title)}</h2>${sub?`<p>${esc(sub)}</p>`:''}</div>${body}`;
-const GOOGLE_BTN='<button class="btn block social" type="button" data-action="google"><span class="g-mark" aria-hidden="true">G</span>Continuer avec Google</button>';
+const GOOGLE_LOGO='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+const GOOGLE_BTN=`<button class="btn block social" type="button" data-action="google"><span class="g-mark">${GOOGLE_LOGO}</span>Continuer avec Google</button>`;
 const OR='<div class="or" aria-hidden="true"><span>OU</span></div>';
 const EMAIL_FIELD='<label class="field"><span>Email</span><input class="inp" type="email" name="email" autocomplete="email" placeholder="Entrez votre email" required></label>';
 const PW_TOGGLE='<button type="button" class="pw-toggle" data-action="toggle-pw" aria-label="Afficher le mot de passe" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button>';
@@ -179,6 +181,9 @@ async function boot(){
   if(profile.status==='pending')return viewPending();
   localStorage.setItem(ROLE_KEY,profile.role);
   localStorage.setItem(EMAIL_KEY,profile.email||'');
+  // Nom et photo fournis par Google (vides pour un compte créé avec un mot de passe).
+  const meta=session.user.user_metadata||{};
+  localStorage.setItem(PROFILE_KEY,JSON.stringify({name:meta.full_name||meta.name||'',avatar:meta.avatar_url||meta.picture||''}));
   // Le super admin peut consulter le compte choisi dans le panneau « Comptes ».
   const target=profile.role==='super_admin'&&sessionStorage.getItem(VIEW_KEY)||id;
   try{await loadData(target)}
@@ -212,8 +217,12 @@ function start(sessionId,target,userRole){
   shell.hidden=false;
   window.hygoRole=userRole;
   const email=localStorage.getItem(EMAIL_KEY)||'';
-  window.hygoAccount={email,role:userRole};
-  $('avatarInitial').textContent=(email[0]||'?').toUpperCase();
+  const profile=JSON.parse(localStorage.getItem(PROFILE_KEY)||'{}');
+  const name=displayName(profile.name,email);
+  window.hygoAccount={email,role:userRole,name,avatar:profile.avatar||''};
+  setAvatar($('avatarInitial'),window.hygoAccount);
+  $('greeting').textContent=name?'Bonjour, '+name.split(' ')[0]:'Bonjour';
+  $('greeting').hidden=false;
   setSync(localStorage.getItem(DIRTY_KEY)?'pending':'synced');
   $('viewAs').hidden=target===sessionId;
   load('js/engine.js')
@@ -274,6 +283,7 @@ function clearCache(){
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(DIRTY_KEY);
   localStorage.removeItem(EMAIL_KEY);
+  localStorage.removeItem(PROFILE_KEY);
 }
 async function logout(){
   if(!await flushOrConfirm('Des modifications ne sont pas encore envoyées. Se déconnecter les effacera de cet appareil. Continuer ?'))return;
@@ -292,13 +302,30 @@ async function switchTo(target){
 }
 // Le bouton est dans la page Réglages, recréée à chaque affichage : délégation sur le document.
 document.addEventListener('click',e=>{if(e.target.closest('#logoutBtn'))logout()});
+/* Nom affiché : celui du compte Google, sinon le début de l’email. */
+function displayName(name,email){
+  return name||(email.split('@')[0]||'').replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+}
+/* Photo du compte si elle existe (repli sur l’initiale si elle ne charge pas). */
+function setAvatar(el,{name,email,avatar}){
+  el.replaceChildren();
+  if(avatar){
+    const img=document.createElement('img');
+    img.alt='';img.referrerPolicy='no-referrer';
+    img.onerror=()=>setAvatar(el,{name,email,avatar:''});
+    img.src=avatar;
+    el.appendChild(img);
+    return;
+  }
+  el.textContent=((name||email||'?')[0]).toUpperCase();
+}
+
 /* Fiche compte, ouverte depuis l’avatar de l’en-tête. */
 function openAccount(){
   const a=window.hygoAccount||{};
-  const name=(a.email.split('@')[0]||'').replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
   const SYNC={synced:'À jour',pending:'En attente',offline:'Hors ligne'};
-  $('profileAvatar').textContent=(a.email[0]||'?').toUpperCase();
-  $('accountName').textContent=name||'Mon compte';
+  setAvatar($('profileAvatar'),a);
+  $('accountName').textContent=a.name||'Mon compte';
   $('accountRole').textContent=a.role==='super_admin'?'Super administrateur':'Administrateur';
   $('accountEmail').textContent=a.email;
   $('accountSync').textContent=SYNC[window.hygoSyncState?.()]||'';

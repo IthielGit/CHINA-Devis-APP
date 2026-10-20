@@ -293,12 +293,22 @@ function renderSheet(R,d){
   }).join('')||'<p class="empty">Aucune offre compatible.</p>';
 }
 /* Feuille « Comparer les offres » (lecture) ou éditeur de tarif (saisie). */
-function openSheet(){sheet.hidden=false}
+let closeTimer=0;
+function openSheet(){
+  clearTimeout(closeTimer);
+  sheet.classList.remove('closing');
+  sheet.hidden=false;
+}
 function closeSheet(){
-  sheet.hidden=true;
   editorSubmit=null;
-  sheetBody.classList.remove('editor-body');
-  sheetBody.innerHTML='';
+  if(sheet.hidden||sheet.classList.contains('closing'))return;
+  sheet.classList.add('closing');
+  closeTimer=setTimeout(()=>{
+    sheet.hidden=true;
+    sheet.classList.remove('closing');
+    sheetBody.classList.remove('editor-body');
+    sheetBody.innerHTML='';
+  },reduce?0:200);
 }
 function showCompare(){
   const d=S.draft;
@@ -536,7 +546,7 @@ function openEditor(title,html,done,hint=''){
   sheetBody.innerHTML=html;
   sheetBody.classList.add('editor-body');
   editorSubmit=done;
-  sheet.hidden=false;
+  openSheet();
   setEnterKeys();
   setTimeout(()=>sheetBody.querySelector('input:not([type=hidden])')?.focus(),260);
 }

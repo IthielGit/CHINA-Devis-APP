@@ -19,7 +19,7 @@ Version web simplifiée de l’outil de devis d’importation (Chine → Madagas
 
 Tous les styles passent par les variables définies en tête de `index.html` (`:root`) : couleurs, typographie, espacements, rayons, matériau et durées d’animation. Ne mettez pas de code couleur directement dans un composant.
 
-- **Thème** : chaque couleur est définie avec `light-dark(clair, sombre)`. Par défaut, l’app suit le mode du système ; Réglages → Apparence (ou le bouton lune/soleil) force le clair ou le sombre (`html[data-theme]`).
+- **Thème** : chaque couleur est définie avec `light-dark(clair, sombre)`. Par défaut, l’app suit le mode du système ; Réglages → Apparence (ou le bouton lune/soleil) force le clair ou le sombre (`html[data-theme]`) avec une transition douce. Le réglage système « Réduire les animations » désactive cette transition.
 - **Couleurs** : violet pour les actions principales et la sélection, vert pour un résultat positif, rouge pour un résultat négatif ou une erreur, ambre pour un avertissement. Une information n’est jamais portée par la couleur seule : chaque état a aussi une icône (✓, !, ✕) ou un signe (+).
 - **Verre (Liquid Glass)** : réservé à la barre d’onglets, à la feuille de comparaison, au bouton de thème, aux notifications et à la confirmation d’enregistrement. Les cartes, listes et champs sont des surfaces pleines. Avec « Réduire la transparence », le verre devient une surface pleine.
 - **Typographie** : police du système (SF Pro sur iOS, Roboto sur Android), chiffres tabulaires pour les montants, tailles en `rem` qui suivent la taille de texte d’iOS.
@@ -56,7 +56,9 @@ L’URL et la clé publique (`anon`) sont dans `js/config.js`. La clé `anon` es
 
 ## Publication
 
-Le site est publié par GitHub Actions (`.github/workflows/pages.yml`) à chaque push sur `version-simple` qui modifie `simple-app/`. Le dossier `supabase/` n’est pas publié. Dans les réglages du dépôt, Pages doit utiliser « GitHub Actions » comme source.
+Le site peut être publié par Netlify en reliant le dépôt GitHub et la branche `version-simple`. La configuration dans `netlify.toml` publie le contenu de `simple-app/` sans le dossier `supabase/` ; Netlify redéploie à chaque push sur cette branche.
+
+GitHub Pages reste également configuré par le workflow `.github/workflows/pages.yml`, à chaque push sur `version-simple` qui modifie `simple-app/`. Dans les réglages du dépôt, Pages doit utiliser « GitHub Actions » comme source.
 
 ## Utilisation sur téléphone
 

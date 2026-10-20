@@ -1,0 +1,3 @@
+[build]
+  command = "mkdir -p netlify-dist && cp -R simple-app/. netlify-dist/ && rm -rf netlify-dist/supabase"
+  publish = "netlify-dist"

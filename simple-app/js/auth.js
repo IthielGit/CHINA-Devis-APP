@@ -221,8 +221,6 @@ function start(sessionId,target,userRole){
   const name=displayName(profile.name,email);
   window.hygoAccount={email,role:userRole,name,avatar:profile.avatar||''};
   setAvatar($('avatarInitial'),window.hygoAccount);
-  $('greeting').textContent=name?'Bonjour, '+name.split(' ')[0]:'Bonjour';
-  $('greeting').hidden=false;
   setSync(localStorage.getItem(DIRTY_KEY)?'pending':'synced');
   $('viewAs').hidden=target===sessionId;
   load('js/engine.js')

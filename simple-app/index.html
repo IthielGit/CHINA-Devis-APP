@@ -264,7 +264,7 @@ details[open]>.grid{margin-top:var(--s3)}
 
 /* ---------- Connexion ---------- */
 .shell[hidden],.auth[hidden]{display:none}
-.auth{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:var(--s5)}
+.auth{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;padding:var(--s5)}
 /* Écran de connexion : carte centrée, logo, titre, puis le formulaire */
 .auth-box{width:min(400px,100%);padding:var(--s8) var(--s6);border-radius:24px;box-shadow:var(--shadow-card);display:grid;gap:var(--s4)}
 .auth-logo{width:56px;height:56px;border-radius:16px;overflow:hidden;justify-self:center;box-shadow:0 6px 18px rgba(108,92,231,.35)}
@@ -288,10 +288,19 @@ details[open]>.grid{margin-top:var(--s3)}
 .auth-form{display:grid;gap:var(--s4)}
 .auth-links{margin:0;text-align:center;font-size:.92rem;color:var(--muted)}
 .link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;cursor:pointer}
-.loading{display:flex;align-items:center;gap:var(--s3)}
-.spinner{width:20px;height:20px;border-radius:50%;border:2px solid var(--divider);border-top-color:var(--accent);animation:spin 900ms linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.spinner{animation:none}}
+/* Chargement : logo qui flotte, halo qui pulse, points qui rebondissent (opacité et transform seulement) */
+.loader{display:grid;justify-items:center;gap:var(--s5);padding:var(--s6) 0}
+.loader-logo{position:relative;width:64px;height:64px;display:grid;place-items:center}
+.loader-logo::before{content:"";position:absolute;inset:-10px;border-radius:50%;background:var(--accent-soft);animation:loaderPulse 1.8s var(--ease) infinite}
+.loader-logo img{position:relative;width:56px;height:56px;border-radius:16px;animation:loaderFloat 1.8s var(--ease) infinite}
+.loader-dots{display:flex;gap:6px}
+.loader-dots i{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:loaderDot 1.2s var(--ease) infinite}
+.loader-dots i:nth-child(2){animation-delay:.15s}
+.loader-dots i:nth-child(3){animation-delay:.3s}
+@keyframes loaderPulse{0%,100%{transform:scale(.9);opacity:.45}50%{transform:scale(1.08);opacity:1}}
+@keyframes loaderFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes loaderDot{0%,100%{transform:translateY(0);opacity:.35}50%{transform:translateY(-6px);opacity:1}}
+@media (prefers-reduced-motion:reduce){.loader-logo::before,.loader-logo img,.loader-dots i{animation:none}}
 
 /* ---------- Bandeau de consultation et panneau Comptes (super admin) ---------- */
 .view-as{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);padding:var(--s3) var(--s5);background:var(--accent-soft);color:var(--accent);font-weight:600}
@@ -328,7 +337,6 @@ details[open]>.grid{margin-top:var(--s3)}
 .avatar span,.avatar img{width:100%;height:100%;display:grid;place-items:center}
 .avatar img,.profile-avatar img{border-radius:50%;object-fit:cover}
 .profile-avatar img{width:100%;height:100%}
-.greeting{margin:0 0 var(--s1);color:var(--muted);font-size:.95rem;font-weight:500}
 .scrim{position:absolute;inset:0;background:var(--scrim);animation:fade var(--t) ease both}
 .panel{position:relative;width:min(560px,100%);max-height:86vh;overflow:auto;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);border-bottom:0;border-radius:28px 28px 0 0;padding:var(--s2) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom,0px));box-shadow:var(--glass-shadow);animation:sheetUp var(--t-slow) var(--ease) both}
 @media (min-width:861px){.sheet{align-items:center}.panel{border-radius:28px;border-bottom:1px solid var(--glass-edge)}}
@@ -460,7 +468,7 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
 </style>
 </head>
 <body>
-<section class="auth" id="auth"><div class="card auth-box" id="authBox"><p class="loading" role="status"><span class="spinner" aria-hidden="true"></span>Chargement…</p></div></section>
+<section class="auth" id="auth"><div class="card auth-box" id="authBox"><div class="loader" role="status" aria-label="Chargement"><span class="loader-logo"><img src="icon-192.png" alt=""></span><span class="loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></div></div></section>
 <div class="shell" id="shell" hidden>
   <aside class="side" id="side" aria-label="Navigation principale">
     <div class="brand"><span class="logo" aria-hidden="true"><img src="icon-192.png" alt=""></span><div><b>Hygo</b><small>Chine → Madagascar</small></div></div>
@@ -480,7 +488,6 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
     </div>
     <header class="top">
       <div>
-        <p class="greeting" id="greeting" hidden></p>
         <h1 id="pageTitle">Devis</h1>
         <p id="pageSub"></p>
       </div>

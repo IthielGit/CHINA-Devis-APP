@@ -38,14 +38,18 @@
   --accent-pressed:#5847D6;
   --accent-ink:#FFFFFF;
   --accent-soft:light-dark(#EEEBFD,#2A2550);
+  /* Variantes de contraste (texte et bouton principal) */
+  --accent-text:light-dark(#5847D6,#A99CFF);
+  --accent-button:#6C5CE7;
+  --scrim:rgba(10,9,20,.38);
   --lavender:#B7A6FF;
   --positive:#34C98B;
   --negative:#FF737D;
   --warning:#F4B740;
   /* Variantes lisibles des couleurs d’état sur fond clair */
-  --positive-ink:light-dark(#1A8A5C,#5FDCA7);
-  --negative-ink:light-dark(#D6404D,#FF8C94);
-  --warning-ink:light-dark(#9A6A00,#F7C866);
+  --positive-ink:light-dark(#137A50,#5FDCA7);
+  --negative-ink:light-dark(#C2313E,#FF8C94);
+  --warning-ink:light-dark(#7A5400,#F7C866);
   --positive-bg:light-dark(#E3F7EE,#173A2C);
   --negative-bg:light-dark(#FFE9EB,#3E2028);
   --warning-bg:light-dark(#FDF3DC,#3A3020);
@@ -163,8 +167,8 @@ textarea.inp{min-height:0;resize:vertical}
 .btn:hover{background:var(--elevated)}
 .btn:active{transform:scale(.97)}
 .btn:disabled,.btn[aria-disabled="true"]{opacity:.42;cursor:pointer;transform:none}
-.btn.primary{background:var(--accent);border-color:transparent;color:var(--accent-ink)}
-.btn.primary:hover{background:var(--accent)}
+.btn.primary{background:var(--accent-button);border-color:transparent;color:var(--accent-ink)}
+.btn.primary:hover{background:var(--accent-button)}
 .btn.primary:active{background:var(--accent-pressed)}
 .btn.danger{color:var(--negative-ink)}
 .btn.small{min-height:44px;padding:0 var(--s4);font-size:.92rem}
@@ -192,7 +196,9 @@ textarea.inp{min-height:0;resize:vertical}
 .chips-field .seg{min-height:40px}
 .cat-chips{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
 .cat-chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 4px 0 var(--s4);border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:.95rem;animation:pop var(--t) var(--spring) both}
-.cat-chip button{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:inherit;font-size:1.25rem;line-height:1;cursor:pointer;display:grid;place-items:center}
+.cat-chip button{position:relative;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:inherit;font-size:1.25rem;line-height:1;cursor:pointer;display:grid;place-items:center}
+/* Zone tactile de 44 px sans agrandir le bouton visible */
+.cat-chip button::after{content:"";position:absolute;inset:-6px}
 .cat-chip button:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .cat-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2);align-items:center}
 .cat-add .inp{min-height:44px}
@@ -201,7 +207,9 @@ textarea.inp{min-height:0;resize:vertical}
 .panel .editor-body .line:first-child{border-top:0}
 .carrier .line>span:first-child{flex:1 1 170px;min-width:0}
 .carrier .line .actions{margin-top:0;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
-.carrier .line .btn.small{min-height:38px;padding:0 10px;font-size:.85rem}
+.carrier .line .btn.small{position:relative;min-height:38px;padding:0 var(--s3);font-size:.85rem}
+/* Zone tactile de 44 px sans agrandir le bouton visible */
+.carrier .line .btn.small::after{content:"";position:absolute;inset:-3px 0}
 .fold{border-top:1px solid var(--divider)}
 .fold summary{list-style:none;display:flex;align-items:center;gap:var(--s2);min-height:44px;cursor:pointer;font-size:var(--fs-meta);font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .fold summary::-webkit-details-marker{display:none}
@@ -230,7 +238,7 @@ details[open]>.grid{margin-top:var(--s3)}
 
 /* ---------- Résultat du devis ---------- */
 .summary-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s2);flex-wrap:wrap}
-.tag{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 var(--s3);border-radius:var(--r-pill);font-size:var(--fs-meta);font-weight:600;background:var(--accent-soft);color:var(--accent)}
+.tag{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 var(--s3);border-radius:var(--r-pill);font-size:var(--fs-meta);font-weight:600;background:var(--accent-soft);color:var(--accent-text)}
 .tag.neutral{background:var(--elevated);color:var(--muted)}
 .product-name{font-size:var(--fs-section);font-weight:600;margin-top:var(--s3)}
 .big-label{font-size:var(--fs-meta);color:var(--muted);margin-top:var(--s4)}
@@ -262,11 +270,15 @@ details[open]>.grid{margin-top:var(--s3)}
 .auth-form{display:grid;gap:var(--s4)}
 .auth-links{margin:0;text-align:center;font-size:.92rem;color:var(--muted)}
 .link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;cursor:pointer}
+.loading{display:flex;align-items:center;gap:var(--s3)}
+.spinner{width:20px;height:20px;border-radius:50%;border:2px solid var(--divider);border-top-color:var(--accent);animation:spin 900ms linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation:none}}
 
 /* ---------- Bandeau de consultation et panneau Comptes (super admin) ---------- */
 .view-as{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s3);padding:var(--s3) var(--s5);background:var(--accent-soft);color:var(--accent);font-weight:600}
 .view-as[hidden]{display:none}
-.admin{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:var(--s5);background:rgba(10,9,20,.38)}
+.admin{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:var(--s5);background:var(--scrim)}
 .admin[hidden]{display:none}
 .admin-box{width:min(560px,100%);max-height:86vh;overflow:auto;display:grid;gap:var(--s4)}
 .admin-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
@@ -274,7 +286,7 @@ details[open]>.grid{margin-top:var(--s3)}
 .admin-row{display:grid;gap:var(--s2);padding:var(--s3) 0;border-top:1px solid var(--divider)}
 .admin-meta{font-size:var(--fs-meta);color:var(--muted)}
 .admin-actions{display:flex;flex-wrap:wrap;gap:var(--s2)}
-.scrim{position:absolute;inset:0;background:rgba(10,9,20,.38);animation:fade var(--t) ease both}
+.scrim{position:absolute;inset:0;background:var(--scrim);animation:fade var(--t) ease both}
 .panel{position:relative;width:min(560px,100%);max-height:86vh;overflow:auto;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);border-bottom:0;border-radius:28px 28px 0 0;padding:var(--s2) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom,0px));box-shadow:var(--glass-shadow);animation:sheetUp var(--t-slow) var(--ease) both}
 @media (min-width:861px){.sheet{align-items:center}.panel{border-radius:28px;border-bottom:1px solid var(--glass-edge)}}
 .grab{width:36px;height:5px;border-radius:99px;background:var(--divider);margin:0 auto var(--s3)}
@@ -405,7 +417,7 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
 </style>
 </head>
 <body>
-<section class="auth" id="auth"><div class="card auth-box" id="authBox"><p>Chargement…</p></div></section>
+<section class="auth" id="auth"><div class="card auth-box" id="authBox"><p class="loading" role="status"><span class="spinner" aria-hidden="true"></span>Chargement…</p></div></section>
 <div class="shell" id="shell" hidden>
   <aside class="side" id="side" aria-label="Navigation principale">
     <div class="brand"><span class="logo" aria-hidden="true"><img src="icon-192.png" alt=""></span><div><b>Hygo</b><small>Chine → Madagascar</small></div></div>

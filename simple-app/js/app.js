@@ -665,6 +665,9 @@ function submitDate(form,carrier,index){
 const field=(name,label,value="",type="text",extra="")=>`<label class="field"><span>${label}</span><input class="inp" name="${name}" type="${type}" value="${esc(val(value))}" ${extra}></label>`;
 
 /* ---------- Réglages et sauvegarde ---------- */
+/* Synchronisation : seul le libellé est mis à jour à chaque changement, pour ne pas effacer la saisie en cours. */
+const SYNC_LABEL={synced:'✓ Données synchronisées',pending:'… Modifications en attente d’envoi',offline:'! Hors ligne : envoi au retour du réseau'};
+window.addEventListener('hygo-sync',e=>{const el=$('syncState');if(el)el.textContent=SYNC_LABEL[e.detail]});
 function viewReglages(){
   const p=S.params;
   const sel=(name,label,opts,cur)=>`<label class="field"><span>${label}</span><select class="inp" name="${name}">${opts.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}</select></label>`;
@@ -675,6 +678,9 @@ function viewReglages(){
       ${[['system','Système'],['light','Clair'],['dark','Sombre']].map(([v,l])=>`<button type="button" class="seg" data-appearance="${v}" aria-pressed="${ap===v}">${l}</button>`).join('')}
     </div>
     <p class="hint" style="margin-top:8px">« Système » suit le mode clair ou sombre de l’appareil.</p>
+  </section>
+  <section class="card"><h2>Synchronisation</h2>
+    <p class="hint" id="syncState">${SYNC_LABEL[window.hygoSyncState?.()]||''}</p>
   </section>
   <form class="card" id="pform"><h2>Taux et paramètres</h2>
     <div class="grid">

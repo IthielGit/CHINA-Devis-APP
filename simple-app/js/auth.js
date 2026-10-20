@@ -188,6 +188,7 @@ function start(sessionId,target,userRole){
   authEl.hidden=true;
   shell.hidden=false;
   $('logoutBtn').hidden=false;
+  setSync(localStorage.getItem(DIRTY_KEY)?'pending':'synced');
   $('viewAs').hidden=target===sessionId;
   if(userRole==='super_admin'){$('adminBtn').hidden=false}
   load('js/engine.js')
@@ -204,8 +205,17 @@ function load(src){
 }
 
 /* ---------- synchronisation ---------- */
+// État affiché dans Réglages : 'synced', 'pending' (à envoyer) ou 'offline'.
+let syncState='synced';
+function setSync(state){
+  if(syncState===state)return;
+  syncState=state;
+  window.dispatchEvent(new CustomEvent('hygo-sync',{detail:state}));
+}
+window.hygoSyncState=()=>syncState;
+
 // Appelé par js/engine.js après chaque enregistrement local.
-window.hygoSync=()=>{localStorage.setItem(DIRTY_KEY,'1');pushState()};
+window.hygoSync=()=>{localStorage.setItem(DIRTY_KEY,'1');setSync('pending');pushState()};
 async function pushState(){
   if(!owner||syncing||!localStorage.getItem(DIRTY_KEY))return;
   syncing=true;
@@ -217,8 +227,10 @@ async function pushState(){
       if(error)throw error;
     }
     warned=false;
+    setSync('synced');
   }catch(e){
     localStorage.setItem(DIRTY_KEY,'1');
+    setSync(navigator.onLine?'pending':'offline');
     if(!warned&&typeof toast==='function'){warned=true;toast('Hors ligne : vos modifications seront envoyées au retour du réseau.')}
     clearTimeout(retryT);
     retryT=setTimeout(pushState,30000);

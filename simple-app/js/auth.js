@@ -149,8 +149,7 @@ authEl.addEventListener('click',e=>{
   ({google:signInGoogle,recheck:boot,logout})[b.dataset.action]();
 });
 async function signInGoogle(){
-  // select_account : Google affiche la liste des comptes avant de connecter, même si un seul est ouvert.
-  const {error}=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo,queryParams:{prompt:'select_account'}}});
+  const {error}=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo}});
   if(error)viewLogin(friendly(error),true);
 }
 

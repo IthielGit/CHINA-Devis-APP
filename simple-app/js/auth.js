@@ -274,8 +274,13 @@ document.addEventListener('click',e=>{if(e.target.closest('#logoutBtn'))logout()
 /* Fiche compte, ouverte depuis l’avatar de l’en-tête. */
 function openAccount(){
   const a=window.hygoAccount||{};
-  $('accountEmail').textContent=a.email;
+  const name=(a.email.split('@')[0]||'').replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  const SYNC={synced:'À jour',pending:'En attente',offline:'Hors ligne'};
+  $('profileAvatar').textContent=(a.email[0]||'?').toUpperCase();
+  $('accountName').textContent=name||'Mon compte';
   $('accountRole').textContent=a.role==='super_admin'?'Super administrateur':'Administrateur';
+  $('accountEmail').textContent=a.email;
+  $('accountSync').textContent=SYNC[window.hygoSyncState?.()]||'';
   $('adminBtn').hidden=a.role!=='super_admin';
   $('account').hidden=false;
 }

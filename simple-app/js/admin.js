@@ -41,6 +41,6 @@ body.addEventListener('click',async e=>{
   refresh();
 });
 // Le bouton est dans la page Réglages, recréée à chaque affichage : délégation sur le document.
-document.addEventListener('click',e=>{if(e.target.closest('#adminBtn')){panel.hidden=false;refresh()}});
+document.addEventListener('click',e=>{if(e.target.closest('#adminBtn')){$('account').hidden=true;panel.hidden=false;refresh()}});
 $('adminClose').addEventListener('click',()=>{panel.hidden=true});
 })();

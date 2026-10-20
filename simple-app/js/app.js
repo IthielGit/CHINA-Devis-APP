@@ -682,12 +682,6 @@ function viewReglages(){
   <section class="card"><h2>Synchronisation</h2>
     <p class="hint" id="syncState">${SYNC_LABEL[window.hygoSyncState?.()]||''}</p>
   </section>
-  <section class="card"><h2>Compte</h2>
-    <div class="admin-actions">
-      ${window.hygoRole==='super_admin'?'<button type="button" class="btn small" id="adminBtn">Comptes</button>':''}
-      <button type="button" class="btn small" id="logoutBtn">Se déconnecter</button>
-    </div>
-  </section>
   <form class="card" id="pform"><h2>Taux et paramètres</h2>
     <div class="grid">
       ${field('usd','Taux du dollar (Ar pour 1 USD)',p.usd,'number','step="any" required')}

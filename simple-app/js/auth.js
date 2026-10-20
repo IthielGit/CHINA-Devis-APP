@@ -6,6 +6,7 @@ const USER_KEY='hygo-user';   // compte auquel appartient le cache local
 const DIRTY_KEY='hygo-dirty'; // modifications pas encore envoyées au serveur
 const ROLE_KEY='hygo-role';   // rôle du compte connecté (pour l’affichage hors ligne)
 const VIEW_KEY='hygo-view-as'; // sessionStorage : compte consulté par le super admin
+const EMAIL_KEY='hygo-email';  // email du compte connecté (avatar, hors ligne)
 const MIN_PASSWORD=8;
 const cfg=window.HYGO_CONFIG;
 const client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
@@ -145,7 +146,7 @@ async function boot(){
   const id=session.user.id;
   let profile;
   try{
-    const {data,error}=await client.from('profiles').select('status,role').eq('id',id).maybeSingle();
+    const {data,error}=await client.from('profiles').select('status,role,email').eq('id',id).maybeSingle();
     if(error)throw error;
     profile=data;
   }catch(e){
@@ -156,6 +157,7 @@ async function boot(){
   if(profile.status==='suspended')return viewBlocked('Ce compte a été suspendu. Contactez le super administrateur.');
   if(profile.status==='pending')return viewPending();
   localStorage.setItem(ROLE_KEY,profile.role);
+  localStorage.setItem(EMAIL_KEY,profile.email||'');
   // Le super admin peut consulter le compte choisi dans le panneau « Comptes ».
   const target=profile.role==='super_admin'&&sessionStorage.getItem(VIEW_KEY)||id;
   try{await loadData(target)}
@@ -188,6 +190,9 @@ function start(sessionId,target,userRole){
   authEl.hidden=true;
   shell.hidden=false;
   window.hygoRole=userRole;
+  const email=localStorage.getItem(EMAIL_KEY)||'';
+  window.hygoAccount={email,role:userRole};
+  $('avatarInitial').textContent=(email[0]||'?').toUpperCase();
   setSync(localStorage.getItem(DIRTY_KEY)?'pending':'synced');
   $('viewAs').hidden=target===sessionId;
   load('js/engine.js')
@@ -247,6 +252,7 @@ function clearCache(){
   localStorage.removeItem(DATA_KEY);
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(DIRTY_KEY);
+  localStorage.removeItem(EMAIL_KEY);
 }
 async function logout(){
   if(!await flushOrConfirm('Des modifications ne sont pas encore envoyées. Se déconnecter les effacera de cet appareil. Continuer ?'))return;
@@ -265,6 +271,16 @@ async function switchTo(target){
 }
 // Le bouton est dans la page Réglages, recréée à chaque affichage : délégation sur le document.
 document.addEventListener('click',e=>{if(e.target.closest('#logoutBtn'))logout()});
+/* Fiche compte, ouverte depuis l’avatar de l’en-tête. */
+function openAccount(){
+  const a=window.hygoAccount||{};
+  $('accountEmail').textContent=a.email;
+  $('accountRole').textContent=a.role==='super_admin'?'Super administrateur':'Administrateur';
+  $('adminBtn').hidden=a.role!=='super_admin';
+  $('account').hidden=false;
+}
+$('accountBtn').addEventListener('click',openAccount);
+$('accountClose').addEventListener('click',()=>{$('account').hidden=true});
 $('viewAsExit').addEventListener('click',()=>switchTo(null));
 
 // Utilisé par js/admin.js.

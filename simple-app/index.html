@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hygo</title>
+<meta name="theme-color" content="#167567">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hygo">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f9;--surface:#fff;--surface2:#f1f4f5;--line:#e1e6e8;--ink:#202e36;--muted:#5f6f79;--accent:#167567;--accent-ink:#fff;--accent-soft:#e8f4ef;--danger:#b42318;--warn-bg:#fff6e5;--warn-ink:#7a4b00;--shadow:0 1px 3px #142c3406;--f:'IBM Plex Sans',system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f171b;--surface:#172228;--surface2:#1d2b32;--line:#2a3b43;--ink:#e6eef1;--muted:#9bb0ba;--accent:#3fb39f;--accent-ink:#06201b;--accent-soft:#173a35;--danger:#ff8a80;--warn-bg:#3a2d12;--warn-ink:#ffd58a;--shadow:none;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f171b;--surface:#172228;--surface2:#1d2b32;--line:#2a3b43;--ink:#e6eef1;--muted:#9bb0ba;--accent:#3fb39f;--accent-ink:#06201b;--accent-soft:#173a35;--danger:#ff8a80;--warn-bg:#3a2d12;--warn-ink:#ffd58a;--shadow:none;color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--f);min-height:100vh}
+
+header{max-width:900px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand b{font-size:18px;letter-spacing:-.01em}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:18px}
+
+main{max-width:900px;margin:0 auto;padding:4px 16px 110px;display:grid;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card h2{margin:0 0 12px;font-size:17px}
+.grid{display:grid;grid-template-columns:1fr;gap:10px 14px}
+@media (min-width:640px){.grid{grid-template-columns:1fr 1fr}}
+.field{display:grid;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+.field.wide{grid-column:1/-1}
+.inp{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit;font-size:16px;color:var(--ink);background:var(--surface);min-width:0}
+textarea.inp{min-height:0;resize:vertical}
+.inp:focus{outline:2px solid var(--accent);outline-offset:1px}
+.search{margin-bottom:12px}
+
+.btn{min-height:44px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 14px;font:inherit;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--danger)}
+.link{background:none;border:0;color:var(--accent);font:inherit;cursor:pointer;padding:6px 0;min-height:44px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+
+details.adv{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+details summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+details summary small{font-weight:400;color:var(--muted);margin-left:6px}
+details[open]>summary{margin-bottom:10px}
+
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:420px){.kpis{grid-template-columns:1fr}}
+.kpi{background:var(--surface2);border-radius:12px;padding:12px;display:grid;gap:2px;min-width:0}
+.kpi span{font-size:12px;color:var(--muted)}
+.kpi b{font-size:18px;overflow-wrap:anywhere}
+.kpi small{font-size:12px;color:var(--muted)}
+.kicker{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);font-weight:600}
+.res-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0}
+.warn{background:var(--warn-bg);color:var(--warn-ink);border-radius:10px;padding:10px 12px;font-size:14px;margin:10px 0 0}
+
+.cmp{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.cmp summary{color:var(--accent)}
+.offers{display:grid;gap:8px;margin-top:8px}
+.offer{display:grid;gap:3px;text-align:left;font:inherit;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;min-height:44px}
+.offer.is-on{border-color:var(--accent);background:var(--accent-soft)}
+.offer small{color:var(--muted)}
+
+#hlist{display:grid;gap:10px}
+.hcard{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:6px;background:var(--surface)}
+.hhead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.hnums{display:flex;gap:14px;flex-wrap:wrap;font-size:14px}
+.line{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)}
+.line>span:first-child{display:grid;min-width:0}
+.line small,.muted{color:var(--muted);font-size:13px}
+.empty{color:var(--muted);text-align:center;padding:24px 8px;margin:0}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;gap:4px;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));z-index:10}
+nav.tabs button{flex:1;min-height:48px;border:0;background:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;border-radius:10px}
+nav.tabs button[aria-current="page"]{color:var(--accent);font-weight:600;background:var(--accent-soft)}
+@media (min-width:720px){
+  nav.tabs{position:static;flex:none;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:4px;width:auto}
+  nav.tabs button{flex:none;padding:8px 14px;min-height:40px}
+}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;z-index:30;max-width:90vw;font-size:14px;box-shadow:var(--shadow)}
+.toast.is-error{background:var(--danger);color:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.toast-close{background:transparent;border:1px solid currentColor;color:inherit;border-radius:6px;padding:2px 10px;cursor:pointer;font:inherit}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo" aria-hidden="true">H</span><b>Hygo</b></div>
+  <nav class="tabs" aria-label="Navigation">
+    <button type="button" data-go="devis">Devis</button>
+    <button type="button" data-go="histo">Historique</button>
+    <button type="button" data-go="tarifs">Tarifs</button>
+    <button type="button" data-go="reglages">Réglages</button>
+  </nav>
+</header>
+<main id="app"></main>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

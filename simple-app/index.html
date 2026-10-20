@@ -83,6 +83,10 @@ html[data-theme="dark"]{color-scheme:dark}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;accent-color:var(--accent);scroll-padding-bottom:140px}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--fs-body);line-height:1.45;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+/* Halos discrets derrière l’interface, pour que les cartes translucides aient un fond à laisser voir */
+body::before,body::after{content:"";position:fixed;z-index:-1;width:70vmax;height:70vmax;border-radius:50%;filter:blur(70px);opacity:.2;pointer-events:none}
+body::before{background:var(--accent);top:-30vmax;left:-25vmax}
+body::after{background:var(--lavender);bottom:-35vmax;right:-30vmax}
 h1,h2,h3{margin:0;font-weight:600;text-wrap:balance}
 button,input,select,textarea{font:inherit;color:inherit}
 svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -126,7 +130,7 @@ main#app{display:grid;gap:var(--s6);min-width:0}
 main#app>*{animation:enter var(--t-slow) var(--ease) both}
 
 /* ---------- Cartes (surfaces pleines, pas de verre) ---------- */
-.card{background:var(--surface);border:1px solid var(--divider);border-radius:var(--r-card);padding:var(--s5);min-width:0}
+.card{background:color-mix(in srgb,var(--surface) 82%,transparent);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border:1px solid var(--divider);border-radius:var(--r-card);padding:var(--s5);min-width:0}
 .card>h2{font-size:var(--fs-section);margin:0 0 var(--s4)}
 .section-label{font-size:var(--fs-meta);font-weight:600;color:var(--muted);margin:var(--s5) 0 var(--s2)}
 

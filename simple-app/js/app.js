@@ -1,9 +1,13 @@
 /* Hygo — interface. Le calcul et les données viennent de js/engine.js (S, compute, snapshot, persist, normAll…). */
 (()=>{
 const app=document.getElementById('app');
+const sheet=document.getElementById('sheet');
+const sheetBody=document.getElementById('sheetBody');
 const NUM=['price','qty','wt','delai','heure','trans','livCh','exclus','livFin','pvRetenu'];
 const MODES=['Avion','Maritime','Express'];
-let tab='devis', hSearch='', editT=-1, editC=-1, compOpen=false, lastSig=null;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let tab='devis', hSearch='', editT=-1, editC=-1, lastSig=null;
+const shown={};   // dernière valeur affichée par chiffre animé
 
 const nowIso=()=>new Date().toISOString();
 const val=x=>x==null?'':String(x);
@@ -11,22 +15,44 @@ const m=x=>isNum(x)?ar(x):'—';
 const pct=x=>isNum(x)?(Math.round(x*1000)/10)+' %':'—';
 const numOf=(data,k)=>{const v=data.get(k);return v===null||String(v).trim()===''?null:Number(String(v).replace(',','.'))};
 const strOf=(data,k)=>String(data.get(k)??'').trim();
+/* Couleur de couverture dérivée du nom : chaque produit a son dégradé, comme une affiche d’événement. */
+const hueOf=s=>{let h=0;for(const c of String(s||'Hygo'))h=(h*31+c.charCodeAt(0))>>>0;return h%360};
+const coverOf=s=>{const h=hueOf(s);return `linear-gradient(135deg,hsl(${h} 86% 64%),hsl(${(h+52)%360} 82% 50%))`};
+const initials=s=>(String(s||'?').trim()[0]||'?').toUpperCase();
 
 /* ---------- navigation ---------- */
-function go(t){tab=t;compOpen=false;render();window.scrollTo(0,0)}
 const PAGES={
   devis:['Devis d’importation','Renseignez votre produit. Comparez le transport. Fixez votre prix.'],
   histo:['Historique','Produits enregistrés sur cet appareil.'],
   tarifs:['Tarifs et calendrier','Transitaires, tarifs et dates de départ.'],
   reglages:['Paramètres','Taux de change, délais et sauvegarde.']
 };
+function go(t){
+  const apply=()=>{tab=t;closeSheet();render()};
+  if(document.startViewTransition&&!reduce)document.startViewTransition(apply);else apply();
+  window.scrollTo(0,0);
+}
 function render(){
   document.querySelectorAll('.nav [data-go]').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
+  placeIndicator();
   document.getElementById('pageTitle').textContent=PAGES[tab][0];
   document.getElementById('pageSub').textContent=PAGES[tab][1];
   renderRates();
   ({devis:viewDevis,histo:viewHisto,tarifs:viewTarifs,reglages:viewReglages})[tab]();
 }
+/* La pastille de navigation glisse jusqu’à l’onglet actif. */
+function placeIndicator(){
+  const nav=document.getElementById('nav');
+  const btn=nav.querySelector('[aria-current="page"]');
+  if(!btn)return;
+  const n=nav.getBoundingClientRect(), r=btn.getBoundingClientRect();
+  nav.style.setProperty('--ind-x',(r.left-n.left)+'px');
+  nav.style.setProperty('--ind-y',(r.top-n.top)+'px');
+  nav.style.setProperty('--ind-w',r.width+'px');
+  nav.style.setProperty('--ind-h',r.height+'px');
+  nav.style.setProperty('--ind-on',1);
+}
+window.addEventListener('resize',placeIndicator);
 function renderRates(){
   const p=S.params;
   document.getElementById('rates').innerHTML=`<small>Taux de change</small>
@@ -98,12 +124,22 @@ function onDraftField(el){
   renderResult();
 }
 
+/* Chiffre qui compte depuis sa valeur précédente. */
+function countUp(key,el,to){
+  const from=isNum(shown[key])?shown[key]:0;
+  shown[key]=to;
+  if(reduce||from===to)return;
+  const t0=performance.now(),D=700;
+  const step=now=>{const k=Math.min(1,(now-t0)/D),e=1-Math.pow(1-k,4);el.textContent=ar(from+(to-from)*e);if(k<1)requestAnimationFrame(step)};
+  requestAnimationFrame(step);
+}
+
 function renderResult(){
   const el=document.getElementById('result');
   if(!el)return;
   const d=S.draft, R=compute(d), s=R.sel, manual=d.mode==='manuel';
   const kpi=(tone,lab,value,sub='',text=false)=>`<div class="kpi ${tone}${text?' text':''}"><span>${lab}</span><b>${value}</b>${sub?`<small>${sub}</small>`:''}</div>`;
-  const head=`<div class="res-head"><span class="res-tag ${manual?'manual':''}">${manual?'Offre choisie':'Meilleur prix'}</span>${manual?'<button class="link" id="back-best">Revenir au meilleur prix</button>':''}</div>`;
+  const num=(key,v)=>isNum(v)?` data-num="${v}" data-key="${key}"`:'';
   let body;
   if(!s){
     body=`<p class="warn">${manual?'L’offre choisie n’est pas compatible avec ce produit. Revenez au meilleur prix.':`Aucune offre pour la catégorie « ${esc(d.cat)} ». Vérifiez la catégorie ou l’onglet Tarifs.`}</p>`;
@@ -112,29 +148,64 @@ function renderResult(){
     body=`<div class="kpis">
       ${kpi('t2','Transitaire',esc(s.t.tr),esc(s.t.mode+(s.t.svc?' · '+s.t.svc:'')),true)}
       ${kpi('t2','Arrivée estimée',isNum(s.I)?fd(Math.floor(s.I)):'—',isNum(s.F)?'Départ '+fd(Math.floor(s.F)):'',true)}
-      ${kpi('t1','Prix de revient',m(R.costP),`Total ${m(R.costLot)} · ${R.qty} pièce(s)`)}
-      ${kpi('t3','Prix de vente conseillé',m(R.pv),`Total ${m(R.revenueLot)} · marge ${m(R.margeP)} (${pct(R.margeRate)})`)}
+      ${kpi('t1','Prix de revient',`<span${num('cost',R.costP)}>${m(R.costP)}</span>`,`Total ${m(R.costLot)} · ${R.qty} pièce(s)`)}
     </div>
     ${notes.map(n=>`<p class="note">${esc(n)}</p>`).join('')}`;
     if(!isNum(R.costP))body+=`<p class="warn">Complétez le prix d’achat et le poids ou les dimensions pour obtenir le prix de revient.</p>`;
   }
+  const hero=`<div class="hero" style="--cover:${coverOf(d.name)}">
+    <div class="hero-top"><span class="chip">${esc(d.cat||'Sans catégorie')}</span><span class="res-tag ${manual?'manual':''}">${manual?'Offre choisie':'Meilleur prix'}</span></div>
+    <div class="hero-name">${esc(d.name||'Nouveau produit')}</div>
+    <div class="hero-price"><small>Prix de vente conseillé / pièce</small><b${num('pv',R.pv)}>${m(R.pv)}</b><small>Total ${m(R.revenueLot)} · marge ${m(R.margeP)} (${pct(R.margeRate)})</small></div>
+  </div>`;
+  const actions=`<div class="actions">
+    <button class="btn primary" id="save">Enregistrer dans l’historique</button>
+    <button class="btn" id="compare">Comparer les offres (${R.comp.length})</button>
+    <button class="btn" id="new">Nouveau produit</button>
+    ${manual?'<button class="link" id="back-best">Revenir au meilleur prix</button>':''}
+  </div>`;
   // Animation seulement quand les chiffres changent vraiment (pas à chaque frappe).
   const sig=[s?.label,R.costP,R.pv,s?.I,manual].join('|');
   const bump=sig!==lastSig;
   lastSig=sig;
-  const offers=[...R.comp].sort((a,b)=>(isNum(a.J)?a.J:Infinity)-(isNum(b.J)?b.J:Infinity));
-  const cmp=`<details class="cmp" id="cmp" ${compOpen?'open':''}>
-    <summary>Comparer les ${offers.length} offre(s) compatibles</summary>
-    <div class="offers">${offers.map(o=>`<button class="offer ${s&&o.label===s.label?'is-on':''}" data-pick="${esc(o.label)}">
-      <span><b>${esc(o.t.tr)}</b> · ${esc(o.t.mode)}${o.t.svc?' · '+esc(o.t.svc):''}</span>
-      <span>Revient ${m(o.J)} · Vente ${isNum(o.J)?ar(Math.ceil(o.J*(1+(d.marge??0))/100)*100):'—'}</span>
-      <small>${isNum(o.I)?'Arrivée '+fd(Math.floor(o.I)):'Date non connue'}${o.calendarNotice?' · '+esc(o.calendarNotice):''}</small>
-    </button>`).join('')||'<p class="empty">Aucune offre compatible.</p>'}</div>
-  </details>`;
-  const actions=`<div class="actions"><button class="btn primary" id="save">Enregistrer dans l’historique</button><button class="btn" id="new">Nouveau produit</button></div>`;
-  el.innerHTML=head+body+cmp+actions;
+  el.innerHTML=hero+body+actions;
   el.classList.toggle('bump',bump);
+  el.querySelectorAll('[data-num]').forEach(b=>countUp(b.dataset.key,b,+b.dataset.num));
+  renderSheet(R,d);
 }
+
+/* Feuille : toutes les offres compatibles, la plus avantageuse en premier. */
+function renderSheet(R,d){
+  const s=R.sel;
+  const offers=[...R.comp].sort((a,b)=>(isNum(a.J)?a.J:Infinity)-(isNum(b.J)?b.J:Infinity));
+  sheetBody.innerHTML=offers.map(o=>{
+    const on=s&&o.label===s.label;
+    return `<button class="offer ${on?'is-on':''}" data-pick="${esc(o.label)}">
+      <span class="radio" aria-hidden="true"></span>
+      <span class="body">
+        <b>${esc(o.t.tr)} · ${esc(o.t.mode)}${o.t.svc?' · '+esc(o.t.svc):''}</b>
+        <small>Revient ${m(o.J)} · Vente ${isNum(o.J)?ar(Math.ceil(o.J*(1+(d.marge??0))/100)*100):'—'}</small>
+        <small>${isNum(o.I)?'Arrivée '+fd(Math.floor(o.I)):'Date non connue'}${o.calendarNotice?' · '+esc(o.calendarNotice):''}</small>
+      </span></button>`;
+  }).join('')||'<p class="empty">Aucune offre compatible.</p>';
+}
+function openSheet(){
+  sheet.hidden=false;
+  sheet.querySelector('.panel').focus?.();
+}
+function closeSheet(){sheet.hidden=true}
+
+/* Validation : pastille animée et confettis. */
+function celebrate(){
+  const b=document.createElement('div');
+  b.className='burst';
+  const bits=Array.from({length:taille()},(_,i)=>`<i style="--a:${i*(360/taille())}deg;--d:${70+((i*37)%70)}px;--c:hsl(${(i*53)%360} 85% 60%);--delay:${(i%4)*.03}s"></i>`).join('');
+  b.innerHTML=`<div class="burst-core"><svg viewBox="0 0 52 52" pathLength="1"><circle cx="26" cy="26" r="23" pathLength="1"/><path d="M15 27l8 8 14-16" pathLength="1"/></svg><p>Produit enregistré</p><small>Retrouvez-le dans l’historique</small></div>${bits}`;
+  document.body.appendChild(b);
+  setTimeout(()=>b.classList.add('out'),1500);
+  setTimeout(()=>b.remove(),1900);
+}
+const taille=()=>reduce?0:26;
 
 function saveDraft(){
   const d=S.draft, R=compute(d);
@@ -150,7 +221,7 @@ function saveDraft(){
   if(i>=0)quotes[i]=rec;else quotes.push(rec);
   S.quotes=quotes;
   persist();
-  toast('Produit '+d.no+' enregistré dans l’historique.');
+  celebrate();
   renderResult();
 }
 
@@ -178,15 +249,18 @@ function renderHisto(){
   el.innerHTML=rows.length?rows.map(histCard).join(''):`<p class="empty">${q?'Aucun résultat.':'Aucun produit enregistré. Préparez un devis puis cliquez sur « Enregistrer dans l’historique ».'}</p>`;
 }
 function histCard(q){
-  const r=q.res||{};
+  const r=q.res||{}, name=q.inputs?.name||'Sans nom';
   return `<article class="hcard">
-    <div class="hhead"><b>${esc(q.inputs?.name||'Sans nom')}</b><small class="muted">${esc(q.no)} · ${esc(fdt(q.modified))}</small></div>
-    <div class="hnums"><span>Revient <b>${m(r.costP)}</b></span><span>Vente <b>${m(r.pv)}</b></span>${isNum(r.dateClient)?`<span>Arrivée ${fd(Math.floor(r.dateClient))}</span>`:''}</div>
-    <small class="muted">${esc([r.tr,r.svc].filter(Boolean).join(' · '))}</small>
-    <div class="actions">
-      <button class="btn" data-open="${esc(q.no)}">Ouvrir</button>
-      <button class="btn" data-dup="${esc(q.no)}">Dupliquer</button>
-      <button class="btn danger" data-del="${esc(q.no)}">Supprimer</button>
+    <div class="thumb" style="--cover:${coverOf(name)}">${esc(initials(name))}</div>
+    <div class="hbody">
+      <div class="hhead"><b>${esc(name)}</b><small class="muted">${esc(q.no)} · ${esc(fdt(q.modified))}</small></div>
+      <div class="hnums"><span>Revient <b>${m(r.costP)}</b></span><span>Vente <b>${m(r.pv)}</b></span>${isNum(r.dateClient)?`<span>Arrivée ${fd(Math.floor(r.dateClient))}</span>`:''}</div>
+      <small class="muted">${esc([r.tr,r.svc].filter(Boolean).join(' · '))}</small>
+      <div class="actions">
+        <button class="btn" data-open="${esc(q.no)}">Ouvrir</button>
+        <button class="btn" data-dup="${esc(q.no)}">Dupliquer</button>
+        <button class="btn danger" data-del="${esc(q.no)}">Supprimer</button>
+      </div>
     </div></article>`;
 }
 function openQuote(no){
@@ -351,17 +425,23 @@ function importData(file){
   reader.readAsText(file);
 }
 
-/* ---------- événements (délégation sur #app et la barre de navigation) ---------- */
+/* ---------- événements ---------- */
 document.querySelector('.side').addEventListener('click',e=>{
   const b=e.target.closest('[data-go]');if(b)go(b.dataset.go);
 });
+sheet.addEventListener('click',e=>{
+  if(e.target.closest('[data-close]')){closeSheet();return}
+  const o=e.target.closest('[data-pick]');
+  if(o){S.draft.mode='manuel';S.draft.offer=o.dataset.pick;persist();closeSheet();renderResult()}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)closeSheet()});
 app.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   const ds=t.dataset;
-  if(ds.pick){S.draft.mode='manuel';S.draft.offer=ds.pick;persist();renderResult();return}
   if(t.id==='back-best'){S.draft.mode='prix';persist();renderResult();return}
   if(t.id==='save'){saveDraft();return}
   if(t.id==='new'){newDraft();return}
+  if(t.id==='compare'){openSheet();return}
   if(ds.open){openQuote(ds.open);return}
   if(ds.dup){dupQuote(ds.dup);return}
   if(ds.del){delQuote(ds.del);return}
@@ -390,7 +470,6 @@ app.addEventListener('submit',e=>{
   else if(f.id==='cform')saveCal(data);
   else if(f.id==='pform')saveParams(data);
 });
-app.addEventListener('toggle',e=>{if(e.target.id==='cmp')compOpen=e.target.open},true);
 
 /* Au premier lancement, le moteur met un exemple de la version bureau : on repart d’un formulaire vide. */
 if(!S.quotes.length&&S.draft.name==='Spray anti-pluie 50 ml')S.draft=blankDraft(nextNo());

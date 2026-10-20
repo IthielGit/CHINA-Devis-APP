@@ -342,6 +342,34 @@ details[open]>.grid{margin-top:var(--s3)}
 /* Les champs ne doivent jamais être couverts par la barre du bas quand elle est visible. */
 html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
 
+/* ---------- Animations : entrées échelonnées, retours au toucher, ressort ---------- */
+:root{--spring:cubic-bezier(.34,1.3,.64,1)}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:none;opacity:1}}
+@keyframes sheetDown{to{transform:translateY(32px);opacity:0}}
+/* Listes : chaque ligne arrive avec un léger décalage */
+.rows>*,.offers>*,.list>*{animation:enter var(--t-slow) var(--ease) both}
+.rows>*:nth-child(2),.offers>*:nth-child(2),.list>*:nth-child(2){animation-delay:40ms}
+.rows>*:nth-child(3),.offers>*:nth-child(3),.list>*:nth-child(3){animation-delay:80ms}
+.rows>*:nth-child(4),.offers>*:nth-child(4),.list>*:nth-child(4){animation-delay:120ms}
+.rows>*:nth-child(5),.offers>*:nth-child(5),.list>*:nth-child(5){animation-delay:160ms}
+.rows>*:nth-child(n+6),.offers>*:nth-child(n+6),.list>*:nth-child(n+6){animation-delay:200ms}
+/* Dépliage : le contenu se glisse en place à l’ouverture */
+.fold[open]>:not(summary),details.adv[open]>.grid{animation:enter var(--t) var(--ease) both}
+/* Retours au toucher */
+.seg,.offer,.item,.stepper button,.glass-btn,.nav button{transition:transform var(--t-fast) var(--ease),background-color var(--t) var(--ease),color var(--t) var(--ease),border-color var(--t) var(--ease)}
+.seg:active,.offer:active,.glass-btn:active,.nav button:active{transform:scale(.94)}
+.item:active{background:var(--elevated)}
+/* Onglet actif : icône qui rebondit légèrement */
+.nav button[aria-current="page"] .i{animation:pop var(--t-slow) var(--spring) both}
+.nav button .i{transition:transform var(--t) var(--spring)}
+/* Ressort pour l’indicateur de l’onglet actif */
+.nav::before{transition:transform var(--t-slow) var(--spring),height var(--t) var(--ease)}
+/* Feuille : fermeture animée (voir closeSheet dans app.js) */
+.sheet.closing .scrim{animation:fadeOut var(--t) ease forwards}
+.sheet.closing .panel{animation:sheetDown var(--t) var(--ease) forwards}
+/* Montant du résultat : léger rebond quand il change */
+.big-amount.updated{animation:pop var(--t-slow) var(--spring) both}
+
 /* ---------- Mouvement réduit ---------- */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}

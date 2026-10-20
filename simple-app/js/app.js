@@ -8,7 +8,7 @@ const MODES=['Avion','Maritime','Express'];
 const MARGES=[0.3,0.5,1];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const systemDark=matchMedia('(prefers-color-scheme: dark)');
-let tab='devis', hSearch='', editT=-1, editC=-1, lastSig=null;
+let tab="devis", hSearch="", lastSig=null;
 const touched=new Set();   // champs déjà touchés : leurs erreurs peuvent s’afficher
 let showAll=false;         // vrai après une tentative d’enregistrement
 const shown={};   // dernière valeur affichée par chiffre animé
@@ -292,8 +292,23 @@ function renderSheet(R,d){
       <span class="price">${m(o.J)}<small>vente ${isNum(o.J)?ar(Math.ceil(o.J*(1+(d.marge??0))/100)*100):'—'}</small></span></button>`;
   }).join('')||'<p class="empty">Aucune offre compatible.</p>';
 }
+/* Feuille « Comparer les offres » (lecture) ou éditeur de tarif (saisie). */
 function openSheet(){sheet.hidden=false}
-function closeSheet(){sheet.hidden=true}
+function closeSheet(){
+  sheet.hidden=true;
+  editorSubmit=null;
+  sheetBody.classList.remove('editor-body');
+  sheetBody.innerHTML='';
+}
+function showCompare(){
+  const d=S.draft;
+  $('sheetTitle').textContent='Comparer les offres';
+  $('sheetHint').textContent='Triées par prix de revient. Choisir une offre la fixe pour ce produit.';
+  sheetBody.classList.remove('editor-body');
+  renderSheet(compute(d),d);
+  editorSubmit=null;
+  openSheet();
+}
 
 /* Validation : coche dessinée, discrète, avec retour haptique quand l’appareil le permet. */
 function celebrate(){
@@ -400,88 +415,192 @@ function delQuote(no){
   renderHisto();
 }
 
-/* ---------- Tarifs et calendrier ---------- */
-const field=(name,label,value='',type='text',extra='')=>`<label class="field"><span>${label}</span><input class="inp" name="${name}" type="${type}" value="${esc(val(value))}" ${extra}></label>`;
-const select=(name,label,opts,cur,blank=true)=>`<label class="field"><span>${label}</span><select class="inp" name="${name}">${(blank?['',...opts]:opts).map(o=>`<option value="${esc(o)}" ${o===(cur??'')?'selected':''}>${esc(o)||'—'}</option>`).join('')}</select></label>`;
+/* ---------- Tarifs : transitaires, leurs tarifs et leurs dates ---------- */
+/* Parcours simplifié : un transitaire = nom + mode + tarif + délai + catégories. Le reste est facultatif. */
+const MODE_DEFAULTS={Avion:[10,15],Maritime:[30,45],Express:[3,5]};
+const MODES_LIST=['Avion','Maritime','Express'];
+const DAY_OPTS=[['Aucun',''],...JOURS.map(j=>[j,j])];
+
+/* Regroupe les tarifs et les dates par transitaire. */
+function carriers(){
+  const map=new Map();
+  const get=k=>{if(!map.has(k))map.set(k,{tariffs:[],cal:[]});return map.get(k)};
+  S.tarifs.forEach((x,i)=>get(x.tr||'Sans nom').tariffs.push({x,i}));
+  S.cal.forEach((x,i)=>get(x.tr||'Sans nom').cal.push({x,i}));
+  return map;
+}
+const tariffLabel=x=>`${x.mode}${x.svc?' · '+x.svc:''}`;
 
 function viewTarifs(){
-  const t=editT>=0?S.tarifs[editT]:null, c=editC>=0?S.cal[editC]:null;
-  const trs=[...new Set(S.tarifs.map(x=>x.tr).filter(Boolean))];
-  const modes=[...new Set([...MODES,...S.tarifs.map(x=>x.mode).filter(Boolean)])];
-  const svcs=[...new Set(S.tarifs.map(x=>x.svc).filter(Boolean))];
-  const datalists=`<datalist id="dl-tr">${trs.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
-    <datalist id="dl-mode">${modes.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
-    <datalist id="dl-svc">${svcs.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`;
-  const tl=S.tarifs.map((x,i)=>`<div class="line"><span><b>${esc(x.tr)}</b> · ${esc(x.mode)}${x.svc?' · '+esc(x.svc):''}<small>${esc(x.cats||'')} · ${isNum(x.tarif)?esc(dec(x.tarif,2))+' '+esc(x.cur)+' / '+esc(x.unit):'—'}</small></span>
-    <span class="actions"><button class="btn" data-edit-t="${i}">Modifier</button><button class="btn danger" data-del-t="${i}">Supprimer</button></span></div>`).join('')||'<p class="empty">Aucun tarif.</p>';
-  const cl=[...S.cal].map((x,i)=>({x,i})).sort((a,b)=>String(a.x.date).localeCompare(String(b.x.date)))
-    .map(({x,i})=>`<div class="line"><span><b>${esc(fd(dayNum(x.date)))}</b> · ${esc(x.tr)} · ${esc(x.mode)}${x.svc?' · '+esc(x.svc):''}<small>${esc(x.note||'')}</small></span>
-    <span class="actions"><button class="btn" data-edit-c="${i}">Modifier</button><button class="btn danger" data-del-c="${i}">Supprimer</button></span></div>`).join('')||'<p class="empty">Aucune date de départ publiée.</p>';
-  app.innerHTML=`${datalists}
-  <form class="card" id="tform"><h2>${t?'Modifier le tarif':'Ajouter un tarif'}</h2>
-    <div class="grid">
-      ${field('tr','Transitaire',t?.tr,'text','list="dl-tr" required')}
-      ${field('mode','Mode (Avion, Maritime…)',t?.mode,'text','list="dl-mode" required')}
-      ${field('svc','Service (vide si maritime)',t?.svc,'text','list="dl-svc"')}
-      ${field('cats','Catégories acceptées (séparées par ;)',t?.cats,'text')}
-      ${field('tarif','Tarif',t?.tarif,'number','step="any" required')}
-      ${select('unit','Unité',['kg','pièce','m³'],t?.unit??'kg',false)}
-      ${select('cur','Devise',['Ar','USD'],t?.cur??'Ar',false)}
-      ${field('min','Minimum facturable',t?.min,'number','step="any"')}
-      ${field('dmin','Transit min (jours)',t?.dmin,'number')}
-      ${field('dmax','Transit max (jours)',t?.dmax,'number')}
-      ${select('d1','Jour de départ 1',JOURS,t?.d1??'')}
-      ${field('c1','Clôture 1 (jours avant départ)',t?.c1,'number')}
-      ${select('d2','Jour de départ 2',JOURS,t?.d2??'')}
-      ${field('c2','Clôture 2 (jours avant départ)',t?.c2,'number')}
-      ${field('h','Heure limite au dépôt (h)',t?.h,'number','min="0" max="23"')}
-      ${field('note','Note',t?.note,'text')}
-    </div>
-    <div class="actions"><button class="btn primary" type="submit">${t?'Enregistrer le tarif':'Ajouter le tarif'}</button>${t?'<button class="btn" type="button" id="cancel-t">Annuler</button>':''}</div>
-  </form>
-  <section class="card"><h2>Tarifs</h2>${tl}</section>
-  <form class="card" id="cform"><h2>${c?'Modifier une date de départ':'Ajouter une date de départ'}</h2>
-    <p class="muted">Pour les transitaires sans départ régulier. La date doit correspondre au transitaire, au mode et au service du tarif.</p>
-    <div class="grid">
-      ${field('tr','Transitaire',c?.tr,'text','list="dl-tr" required')}
-      ${field('mode','Mode',c?.mode,'text','list="dl-mode" required')}
-      ${field('svc','Service (vide si maritime)',c?.svc,'text','list="dl-svc"')}
-      ${field('date','Date de départ',c?.date,'date','required')}
-      ${field('note','Note',c?.note,'text')}
-    </div>
-    <div class="actions"><button class="btn primary" type="submit">${c?'Enregistrer la date':'Ajouter la date'}</button>${c?'<button class="btn" type="button" id="cancel-c">Annuler</button>':''}</div>
-  </form>
-  <section class="card"><h2>Dates de départ</h2>${cl}</section>`;
+  const map=carriers();
+  const names=[...new Set(S.tarifs.map(x=>x.tr).filter(Boolean))];
+  app.innerHTML=`<datalist id="dl-tr">${names.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+    <div class="toolbar"><button class="btn primary" data-new-carrier>+ Nouveau transitaire</button></div>
+    ${[...map].map(([name,g])=>carrierCard(name,g)).join('')||'<p class="empty">Aucun transitaire. Touchez « Nouveau transitaire » : il suffit du nom, du mode, du tarif et du délai.</p>'}`;
 }
 
-function saveTariff(data){
-  const mode=strOf(data,'mode');
-  const old=editT>=0?S.tarifs[editT]:{palier:null,tarif2:null,base:null};
-  const t={...old,tr:strOf(data,'tr'),mode,svc:mode==='Maritime'?'':strOf(data,'svc'),cats:strOf(data,'cats'),
-    tarif:numOf(data,'tarif'),unit:strOf(data,'unit'),cur:strOf(data,'cur'),min:numOf(data,'min'),dmin:numOf(data,'dmin'),dmax:numOf(data,'dmax'),
-    d1:strOf(data,'d1')||null,c1:numOf(data,'c1'),d2:strOf(data,'d2')||null,c2:numOf(data,'c2'),h:numOf(data,'h'),note:strOf(data,'note')};
-  if(!t.tr||!mode||!isNum(t.tarif)){toast('Transitaire, mode et tarif sont obligatoires.',{sticky:true});return}
-  if(editT>=0)S.tarifs[editT]=t;else S.tarifs.push(t);
-  editT=-1;persist();toast('Tarif enregistré.');viewTarifs();
+function carrierCard(name,g){
+  const tariffs=g.tariffs.map(({x,i})=>`<div class="line">
+      <span><b>${esc(tariffLabel(x))}</b><small>${isNum(x.tarif)?esc(dec(x.tarif,2))+' '+esc(x.cur)+' / '+esc(x.unit):'Tarif manquant'} · ${esc(x.cats||'aucune catégorie')}${isNum(x.dmin)&&isNum(x.dmax)?' · '+x.dmin+' à '+x.dmax+' j':''}</small></span>
+      <span class="actions"><button class="btn small" data-edit-t="${i}">Modifier</button><button class="btn small" data-dup-t="${i}">Dupliquer</button><button class="btn small danger" data-del-t="${i}" aria-label="Supprimer ce tarif">Supprimer</button></span></div>`).join('')
+    ||'<p class="muted">Aucun tarif.</p>';
+  const dates=[...g.cal].sort((a,b)=>String(a.x.date).localeCompare(String(b.x.date)))
+    .map(({x,i})=>`<div class="line"><span><b>${esc(fd(dayNum(x.date)))}</b><small>${esc(x.mode)}${x.svc?' · '+esc(x.svc):''}${x.note?' · '+esc(x.note):''}</small></span>
+      <span class="actions"><button class="btn small danger" data-del-c="${i}" aria-label="Supprimer la date du ${esc(x.date)}">Supprimer</button></span></div>`).join('');
+  const opts=[...new Map(g.tariffs.map(({x})=>[x.mode+'|'+(x.svc||''),x])).values()];
+  const quick=opts.length?`<form class="quick-date" data-quick-date="${esc(name)}">
+      <input class="inp" type="date" name="date" required aria-label="Date de départ">
+      <select class="inp" name="svc" aria-label="Mode et service">${opts.map(x=>`<option value="${esc(x.mode)}|${esc(x.svc||'')}">${esc(tariffLabel(x))}</option>`).join('')}</select>
+      <button class="btn small primary" type="submit">Ajouter</button></form>`:'';
+  return `<section class="card carrier" data-carrier="${esc(name)}">
+    <header class="carrier-head"><div><h2>${esc(name)}</h2><small class="muted">${g.tariffs.length} tarif(s) · ${g.cal.length} date(s)</small></div>
+      <div class="actions tight"><button class="btn small" data-add-tariff="${esc(name)}">+ Tarif</button><button class="btn small danger" data-del-carrier="${esc(name)}" aria-label="Supprimer le transitaire ${esc(name)}">Supprimer</button></div></header>
+    <div class="subhead">Tarifs</div>${tariffs}
+    <div class="subhead">Dates de départ</div>
+    ${dates||'<p class="muted">Aucune date. Si ce transitaire part à jour fixe, indiquez son jour dans le tarif ; sinon ajoutez les dates ici.</p>'}
+    ${quick}
+  </section>`;
+}
+
+/* ----- Éditeur de tarif (feuille) ----- */
+function chipGroup(name,options,current,multi=false){
+  const cur=multi?current:[current];
+  const value=multi?current.join(';'):(current??'');
+  return `<div class="chips-field" ${multi?'data-multi':''}><input type="hidden" name="${name}" value="${esc(value)}">
+    ${options.map(([label,v])=>`<button type="button" class="seg" data-chip="${name}" data-value="${esc(v)}" aria-pressed="${cur.includes(v)}">${esc(label)}</button>`).join('')}</div>`;
+}
+function editorHtml(t,{isNew,carrier}){
+  const c=t||{};
+  const mode=c.mode||'Avion';
+  const def=MODE_DEFAULTS[mode]||[7,14];
+  const selCats=catList(c.cats||'');
+  const cats=S.params.cats.map(x=>[x,x]);
+  return `<form id="editorForm" class="editor" data-new="${isNew?1:0}">
+    <label class="field"><span>Nom du transitaire</span><input class="inp" name="tr" list="dl-tr" required autocomplete="off" placeholder="Ex. E-SOA" value="${esc(c.tr||carrier||'')}"></label>
+    <div class="field"><span>Mode de transport</span>${chipGroup('mode',MODES_LIST.map(m=>[m,m]),mode)}</div>
+    <label class="field svc-field"><span>Service <small class="muted">facultatif</small></span><input class="inp" name="svc" placeholder="Ex. Standard, Express" value="${esc(c.svc||'')}"></label>
+    <div class="grid">
+      <label class="field"><span>Tarif</span><input class="inp" name="tarif" type="number" step="any" inputmode="decimal" required value="${val(c.tarif)}"></label>
+      <div class="field"><span>Unité</span>${chipGroup('unit',[['kg','kg'],['Pièce','pièce'],['m³','m³']],c.unit||'kg')}</div>
+    </div>
+    <div class="field"><span>Devise</span>${chipGroup('cur',[['Ar','Ar'],['USD','USD']],c.cur||'Ar')}</div>
+    <div class="field"><span>Catégories acceptées</span>${chipGroup('cats',cats,selCats.length?selCats:[],true)}
+      <button type="button" class="link" data-all-cats>Tout sélectionner</button></div>
+    <div class="grid">
+      <label class="field"><span>Délai de transit min (jours)</span><input class="inp" name="dmin" type="number" inputmode="numeric" value="${val(c.dmin??def[0])}"></label>
+      <label class="field"><span>Délai de transit max (jours)</span><input class="inp" name="dmax" type="number" inputmode="numeric" value="${val(c.dmax??def[1])}"></label>
+    </div>
+    <details class="adv"><summary>Départ à jour fixe, heure limite, note</summary>
+      <div class="grid">
+        <div class="field wide"><span>Jour de départ habituel</span>${chipGroup('d1',DAY_OPTS,c.d1||'')}</div>
+        <label class="field"><span>Clôture (jours avant le départ)</span><input class="inp" name="c1" type="number" inputmode="numeric" value="${val(c.c1??1)}"></label>
+        <label class="field"><span>Heure limite au dépôt (h)</span><input class="inp" name="h" type="number" min="0" max="23" inputmode="numeric" value="${val(c.h??12)}"></label>
+        <label class="field wide"><span>Note</span><input class="inp" name="note" value="${esc(c.note||'')}"></label>
+      </div>
+    </details>
+    <p class="form-error" id="editorErr" role="alert"></p>
+    <div class="actions"><button class="btn primary block" type="submit">${isNew?'Ajouter ce tarif':'Enregistrer'}</button></div>
+  </form>`;
+}
+
+/* Lit le formulaire et renvoie { tariff, errors }. */
+function readEditor(form,old){
+  const g=n=>form.querySelector(`[name="${n}"]`)?.value??'';
+  const num=n=>{const v=String(g(n)).trim().replace(',','.');return v===''?null:Number(v)};
+  const mode=g('mode')||'Avion';
+  const t={...(old||{palier:null,tarif2:null,base:null,min:null,d2:null,c2:null}),
+    tr:g('tr').trim(), mode, svc:mode==='Maritime'?'':g('svc').trim(), cats:g('cats'),
+    tarif:num('tarif'), unit:g('unit')||'kg', cur:g('cur')||'Ar',
+    dmin:num('dmin'), dmax:num('dmax'), d1:g('d1')||null, c1:num('c1'), h:num('h'), note:g('note').trim()};
+  if(t.d1&&t.c1==null)t.c1=1;
+  if(t.h==null)t.h=12;
+  const errors=[];
+  if(!t.tr)errors.push('Donnez le nom du transitaire.');
+  if(!(t.tarif>0))errors.push('Saisissez le tarif.');
+  if(!catList(t.cats).length)errors.push('Choisissez au moins une catégorie.');
+  if(t.dmin==null||t.dmax==null)errors.push('Indiquez le délai de transit minimum et maximum.');
+  else if(t.dmax<t.dmin)errors.push('Le délai maximum doit être supérieur ou égal au minimum.');
+  return {tariff:t,errors};
+}
+
+/* Ouvre l’éditeur dans la feuille. `done(form)` est appelé à l’envoi. */
+let editorSubmit=null;
+function openEditor(title,html,done,hint=''){
+  $('sheetTitle').textContent=title;
+  $('sheetHint').textContent=hint;
+  sheetBody.innerHTML=html;
+  sheetBody.classList.add('editor-body');
+  editorSubmit=done;
+  sheet.hidden=false;
+  setEnterKeys();
+  setTimeout(()=>sheetBody.querySelector('input:not([type=hidden])')?.focus(),260);
+}
+function applyModeToForm(form,{setDefaults}){
+  const mode=form.querySelector('[name="mode"]').value;
+  form.querySelector('.svc-field').hidden=mode==='Maritime';
+  if(setDefaults){
+    const d=MODE_DEFAULTS[mode]||[7,14];
+    form.querySelector('[name="dmin"]').value=d[0];
+    form.querySelector('[name="dmax"]').value=d[1];
+  }
+}
+
+function openNewCarrier(){
+  openEditor('Nouveau transitaire',editorHtml(null,{isNew:true}),form=>submitTariff(form,null),'Le transitaire et son tarif. Les dates de départ s’ajoutent ensuite dans sa fiche.');
+}
+function openAddTariff(carrier){
+  openEditor('Nouveau tarif',editorHtml({tr:carrier},{isNew:true,carrier}),form=>submitTariff(form,null),`Tarif pour ${carrier}.`);
+}
+function openEditTariff(i){
+  const x=S.tarifs[i];
+  if(!x)return;
+  openEditor('Modifier le tarif',editorHtml(x,{isNew:false}),form=>submitTariff(form,i),`${x.tr} · ${tariffLabel(x)}`);
+}
+function openDuplicateTariff(i){
+  const x=S.tarifs[i];
+  if(!x)return;
+  openEditor('Dupliquer le tarif',editorHtml({...x,svc:'',mode:x.mode},{isNew:true}),form=>submitTariff(form,null),'Copie modifiable : changez le mode, le service ou le tarif.');
+}
+function submitTariff(form,index){
+  const old=index!=null&&index>=0?S.tarifs[index]:null;
+  const {tariff,errors}=readEditor(form,old);
+  const err=form.querySelector('#editorErr');
+  if(errors.length){err.textContent=errors.join(' ');return false}
+  if(index!=null&&index>=0)S.tarifs[index]=tariff;else S.tarifs.push(tariff);
+  persist();
+  closeSheet();
+  toast(index!=null&&index>=0?'Tarif modifié.':`Tarif ajouté pour ${tariff.tr}.`);
+  viewTarifs();
+  return true;
 }
 function delTariff(i){
   const t=S.tarifs[i];
-  if(!t||!confirm(`Supprimer le tarif ${t.tr} · ${t.mode}${t.svc?' · '+t.svc:''} ?`))return;
-  S.tarifs.splice(i,1);editT=-1;persist();viewTarifs();
+  if(!t||!confirm(`Supprimer le tarif ${t.tr} · ${tariffLabel(t)} ?`))return;
+  S.tarifs.splice(i,1);persist();viewTarifs();
 }
-function saveCal(data){
-  const mode=strOf(data,'mode');
-  const old=editC>=0?S.cal[editC]:{};
-  const c={...old,tr:strOf(data,'tr'),mode,svc:mode==='Maritime'?'':strOf(data,'svc'),date:strOf(data,'date'),note:strOf(data,'note')};
-  if(!c.tr||!mode||!/^\d{4}-\d{2}-\d{2}$/.test(c.date)){toast('Transitaire, mode et date sont obligatoires.',{sticky:true});return}
-  if(editC>=0)S.cal[editC]=c;else S.cal.push(c);
-  editC=-1;persist();toast('Date enregistrée.');viewTarifs();
+function delCarrier(name){
+  const tariffs=S.tarifs.filter(x=>(x.tr||'Sans nom')===name).length;
+  const dates=S.cal.filter(x=>(x.tr||'Sans nom')===name).length;
+  if(!confirm(`Supprimer « ${name} » ? Cela efface ${tariffs} tarif(s) et ${dates} date(s).`))return;
+  S.tarifs=S.tarifs.filter(x=>(x.tr||'Sans nom')!==name);
+  S.cal=S.cal.filter(x=>(x.tr||'Sans nom')!==name);
+  persist();viewTarifs();toast(`« ${name} » supprimé.`);
+}
+/* Date de départ : saisie en une ligne, sous le transitaire. */
+function addDate(carrier,date,mode,svc){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast('Choisissez une date.',{sticky:true});return}
+  S.cal.push({tr:carrier,mode,svc:mode==='Maritime'?'':svc,date,note:''});
+  persist();toast('Date ajoutée.');viewTarifs();
 }
 function delCal(i){
   const c=S.cal[i];
   if(!c||!confirm(`Supprimer la date du ${c.date} (${c.tr}) ?`))return;
-  S.cal.splice(i,1);editC=-1;persist();viewTarifs();
+  S.cal.splice(i,1);persist();viewTarifs();
 }
+
+
+/* Champs de formulaire pour les Réglages. */
+const field=(name,label,value="",type="text",extra="")=>`<label class="field"><span>${label}</span><input class="inp" name="${name}" type="${type}" value="${esc(val(value))}" ${extra}></label>`;
 
 /* ---------- Réglages et sauvegarde ---------- */
 function viewReglages(){
@@ -553,7 +672,29 @@ document.querySelector('.side').addEventListener('click',e=>{
 sheet.addEventListener('click',e=>{
   if(e.target.closest('[data-close]')){closeSheet();return}
   const o=e.target.closest('[data-pick]');
-  if(o){S.draft.mode='manuel';S.draft.offer=o.dataset.pick;persist();closeSheet();renderResult()}
+  if(o){S.draft.mode='manuel';S.draft.offer=o.dataset.pick;persist();closeSheet();renderResult();return}
+  const all=e.target.closest('[data-all-cats]');
+  if(all){const f=all.closest('form');const inp=f.querySelector('[name="cats"]');inp.value=S.params.cats.join(';');f.querySelectorAll('[data-chip="cats"]').forEach(c=>c.setAttribute('aria-pressed','true'));return}
+  const chip=e.target.closest('[data-chip]');
+  if(chip){
+    const group=chip.dataset.chip, wrap=chip.closest('.chips-field'), inp=wrap.querySelector(`input[name="${group}"]`);
+    if(wrap.hasAttribute('data-multi')){
+      const set=new Set(inp.value?inp.value.split(';'):[]);
+      const v=chip.dataset.value;
+      set.has(v)?set.delete(v):set.add(v);
+      inp.value=[...set].join(';');
+      chip.setAttribute('aria-pressed',String(set.has(v)));
+    }else{
+      inp.value=chip.dataset.value;
+      wrap.querySelectorAll('[data-chip]').forEach(c=>c.setAttribute('aria-pressed',String(c===chip)));
+      if(group==='mode')applyModeToForm(chip.closest('form'),{setDefaults:true});
+    }
+  }
+});
+/* Envoi de l’éditeur de tarif (feuille). */
+sheet.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(editorSubmit)editorSubmit(e.target);
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)closeSheet()});
 app.addEventListener('click',e=>{
@@ -565,16 +706,17 @@ app.addEventListener('click',e=>{
   if(t.id==='back-best'){S.draft.mode='prix';persist();renderResult();return}
   if(t.id==='save'){saveDraft();return}
   if(t.id==='new'){newDraft();return}
-  if(t.id==='compare'){openSheet();return}
+  if(t.id==='compare'){showCompare();return}
+  if(t.id==='new-carrier'||ds.newCarrier!==undefined){openNewCarrier();return}
+  if(ds.addTariff!==undefined){openAddTariff(ds.addTariff);return}
+  if(ds.editT!==undefined){openEditTariff(+ds.editT);return}
+  if(ds.dupT!==undefined){openDuplicateTariff(+ds.dupT);return}
+  if(ds.delCarrier!==undefined){delCarrier(ds.delCarrier);return}
   if(ds.open){openQuote(ds.open);return}
   if(ds.dup){dupQuote(ds.dup);return}
   if(ds.del){delQuote(ds.del);return}
-  if(ds.editT!==undefined){editT=+ds.editT;viewTarifs();window.scrollTo(0,0);return}
   if(ds.delT!==undefined){delTariff(+ds.delT);return}
-  if(ds.editC!==undefined){editC=+ds.editC;viewTarifs();window.scrollTo(0,0);return}
   if(ds.delC!==undefined){delCal(+ds.delC);return}
-  if(t.id==='cancel-t'){editT=-1;viewTarifs();return}
-  if(t.id==='cancel-c'){editC=-1;viewTarifs();return}
   if(t.id==='export'){exportData();return}
 });
 /* Dimensions : trois champs, reconstitués en « L x l x H » pour le moteur de calcul. */
@@ -600,8 +742,11 @@ app.addEventListener('change',e=>{
 app.addEventListener('submit',e=>{
   e.preventDefault();
   const f=e.target, data=new FormData(f);
-  if(f.id==='tform')saveTariff(data);
-  else if(f.id==='cform')saveCal(data);
+  if(f.dataset.quickDate!==undefined){
+    // La valeur du service est « mode|service » (le service peut être vide).
+    const [mode,...svc]=strOf(data,'svc').split('|');
+    addDate(f.dataset.quickDate,strOf(data,'date'),mode,svc.join('|'));
+  }
   else if(f.id==='pform')saveParams(data);
 });
 
@@ -621,7 +766,8 @@ window.addEventListener('scroll',()=>{
 /* Champs de saisie visibles, dans l’ordre de l’écran. */
 /* Un champ dans une section repliée n’est pas affiché : il ne doit pas recevoir le focus. */
 const isShown=x=>{const d=x.closest('details');return x.getClientRects().length>0&&!(d&&!d.open)};
-const fieldsInOrder=()=>[...app.querySelectorAll('input,select,textarea')].filter(x=>x.type!=='hidden'&&!x.disabled&&isShown(x));
+/* Dans la feuille ouverte (éditeur), l’ordre se lit dans la feuille ; sinon dans l’écran. */
+const fieldsInOrder=()=>{const root=sheet.hidden?app:sheetBody;return [...root.querySelectorAll('input,select,textarea')].filter(x=>x.type!=='hidden'&&!x.disabled&&isShown(x))};
 /* Touche « Suivant » du clavier : champ suivant partout ; « OK » sur le dernier, qui referme le clavier. */
 function setEnterKeys(){
   const list=fieldsInOrder();
@@ -629,14 +775,16 @@ function setEnterKeys(){
 }
 /* Une section repliée qui s’ouvre ajoute des champs : on recalcule la touche « Suivant ». */
 app.addEventListener('toggle',setEnterKeys,true);
-app.addEventListener('keydown',e=>{
+const onNextKey=e=>{
   if(e.key!=='Enter'||e.target.tagName!=='INPUT'||['file','checkbox','radio','button','submit'].includes(e.target.type))return;
   e.preventDefault();
   const list=fieldsInOrder(), i=list.indexOf(e.target);
   if(i<0)return;
   const next=list[i+1];
   if(next){next.focus();if(next.select&&next.type!=='date')next.select()}else e.target.blur();
-});
+};
+app.addEventListener('keydown',onNextKey);
+sheetBody.addEventListener('keydown',onNextKey);
 
 /* Clavier à l’écran (téléphone) : la zone visible se réduit. On garde le champ actif visible,
    on masque la barre d’onglets pendant la saisie, et on laisse la fin de la page accessible. */

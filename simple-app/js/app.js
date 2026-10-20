@@ -71,6 +71,7 @@ function render(){
   $('pageSub').textContent=PAGES[tab][1];
   renderRates();
   ({devis:viewDevis,histo:viewHisto,tarifs:viewTarifs,reglages:viewReglages})[tab]();
+  $('fabNew').hidden=tab!=='devis';
   setEnterKeys();
 }
 function placeIndicator(){
@@ -110,6 +111,22 @@ function checksFor(d,R){
   if(d.pay){const old=Math.floor(Date.now()/864e5)-dayNum(d.pay)>30;out.push({key:'pay',label:'Date de paiement',state:old?'warn':'ok',txt:old?'ancienne':''})}
   return out;
 }
+/* Carte d’accueil de l’onglet Devis : prix de revient du devis en cours et chiffres tirés des données existantes. */
+function heroHtml(d){
+  const R=compute(d);
+  const last=[...S.quotes].sort((a,b)=>String(b.modified||'').localeCompare(String(a.modified||'')))[0];
+  const carriers=new Set(S.tarifs.map(x=>x.tr||'Sans nom')).size;
+  return `<section class="home-hero" aria-label="Aperçu">
+    <p class="home-kicker">Prix de revient · devis en cours</p>
+    <p class="home-amount" id="heroAmount">${m(R.costP)}</p>
+    <p class="home-sub">${esc(d.name||'Nouveau produit')}</p>
+    <div class="home-stats">
+      <div><b>${S.quotes.length}</b><span>Devis</span></div>
+      <div><b>${carriers}</b><span>Transitaires</span></div>
+      <div><b>${last?esc(last.no):'—'}</b><span>${last?esc(last.inputs?.name||'Sans nom'):'Aucun devis'}</span></div>
+    </div>
+  </section>`;
+}
 function viewDevis(){
   const d=S.draft, cats=[...S.params.cats];
   if(d.cat&&!cats.includes(d.cat))cats.unshift(d.cat);
@@ -117,6 +134,7 @@ function viewDevis(){
   const inp=(k,label,type='text',attrs='',suffix='')=>`<label class="field"><span>${label}</span><span class="input-wrap"><input class="inp" data-k="${k}" type="${type}" ${attrs} value="${esc(val(d[k]))}">${suffix?`<span class="suffix">${suffix}</span>`:''}</span></label>`;
   const names=[...new Map(S.quotes.map(q=>[String(q.inputs?.name||'').trim().toLowerCase(),q.inputs?.name]).filter(([k])=>k)).values()];
   app.innerHTML=`
+  ${heroHtml(d)}
   <datalist id="names">${names.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
   <section class="card">
     <h2>Produit</h2>
@@ -234,6 +252,7 @@ function renderResult(){
   const el=$('result');
   if(!el)return;
   const d=S.draft, R=compute(d), s=R.sel, manual=d.mode==='manuel';
+  const heroAmt=$('heroAmount');if(heroAmt)heroAmt.textContent=m(R.costP);
   const checks=checksFor(d,R);
   const blocking=checks.filter(c=>c.state==='bad');
   const chk=$('checks');
@@ -758,6 +777,7 @@ function importData(file){
 }
 
 /* ---------- événements ---------- */
+$('fabNew').addEventListener('click',newDraft);
 document.querySelector('.side').addEventListener('click',e=>{
   const b=e.target.closest('[data-go]');if(b)go(b.dataset.go);
 });

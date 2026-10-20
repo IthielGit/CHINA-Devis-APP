@@ -388,7 +388,6 @@ function newDraft(){
   S.draft={...blankDraft(nextNo()),...keep(S.draft)};
   touched.clear();showAll=false;
   persist();
-  viewDevis();
 }
 
 /* ---------- Historique ---------- */
@@ -785,6 +784,7 @@ function importData(file){
 
 /* ---------- événements ---------- */
 document.querySelector('.side').addEventListener('click',e=>{
+  if(e.target.closest('#newProduct')){newDraft();go('devis');return}
   const b=e.target.closest('[data-go]');if(b)go(b.dataset.go);
 });
 sheet.addEventListener('click',e=>{
@@ -825,7 +825,7 @@ app.addEventListener('click',e=>{
   if(ds.appearance){setAppearance(ds.appearance);viewReglages();return}
   if(t.id==='back-best'){S.draft.mode='prix';persist();renderResult();return}
   if(t.id==='save'){saveDraft();return}
-  if(t.id==='new'){newDraft();return}
+  if(t.id==='new'){newDraft();viewDevis();return}
   if(t.id==='compare'){showCompare();return}
   if(t.id==='new-carrier'||ds.newCarrier!==undefined){openNewCarrier();return}
   if(ds.addTariff!==undefined){openAddTariff(ds.addTariff);return}

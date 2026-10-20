@@ -9,6 +9,8 @@ const MARGES=[0.3,0.5,1];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const systemDark=matchMedia('(prefers-color-scheme: dark)');
 let tab='devis', hSearch='', editT=-1, editC=-1, lastSig=null;
+const touched=new Set();   // champs déjà touchés : leurs erreurs peuvent s’afficher
+let showAll=false;         // vrai après une tentative d’enregistrement
 const shown={};   // dernière valeur affichée par chiffre animé
 
 const nowIso=()=>new Date().toISOString();
@@ -17,8 +19,6 @@ const m=x=>isNum(x)?ar(x):'—';
 const pct=x=>isNum(x)?(Math.round(x*1000)/10)+' %':'—';
 const numOf=(data,k)=>{const v=data.get(k);return v===null||String(v).trim()===''?null:Number(String(v).replace(',','.'))};
 const strOf=(data,k)=>String(data.get(k)??'').trim();
-const hueOf=s=>{let h=0;for(const c of String(s||'Hygo'))h=(h*31+c.charCodeAt(0))>>>0;return h%360};
-const coverOf=s=>{const h=hueOf(s);return `linear-gradient(135deg,hsl(${h} 86% 64%),hsl(${(h+52)%360} 82% 50%))`};
 const initials=s=>(String(s||'?').trim()[0]||'?').toUpperCase();
 const $=id=>document.getElementById(id);
 
@@ -35,23 +35,29 @@ function syncTheme(){
   let tc=document.querySelector('meta[name="theme-color"]:not([media])');
   if(document.documentElement.dataset.theme){
     if(!tc){tc=document.createElement('meta');tc.name='theme-color';document.head.appendChild(tc)}
-    tc.content=eff==='dark'?'#0a0e1a':'#eef1f8';
+    tc.content=eff==='dark'?'#11111B':'#F6F5FA';
   }else if(tc)tc.remove();
 }
 systemDark.addEventListener?.('change',syncTheme);
-$('themeToggle').addEventListener('click',()=>{
-  const next=effectiveTheme()==='dark'?'light':'dark';
-  document.documentElement.dataset.theme=next;
-  try{localStorage.setItem('hygo-theme',next)}catch(e){}
+/* Apparence : 'system', 'light' ou 'dark'. */
+function appearance(){const t=document.documentElement.dataset.theme;return t==='dark'||t==='light'?t:'system'}
+function setAppearance(v){
+  if(v==='light'||v==='dark')document.documentElement.dataset.theme=v;
+  else delete document.documentElement.dataset.theme;
+  try{localStorage.setItem('hygo-theme',v)}catch(e){}
   syncTheme();
+}
+$('themeToggle').addEventListener('click',()=>{
+  setAppearance(effectiveTheme()==='dark'?'light':'dark');
+  if(tab==='reglages')viewReglages();
 });
 
 /* ---------- navigation ---------- */
 const PAGES={
-  devis:['Devis d’importation','Renseignez votre produit. Le reste se calcule.'],
+  devis:['Devis','Chine → Madagascar · saisissez le produit, le reste se calcule.'],
   histo:['Historique','Produits enregistrés sur cet appareil.'],
-  tarifs:['Tarifs et calendrier','Transitaires, tarifs et dates de départ.'],
-  reglages:['Paramètres','Taux de change, délais et sauvegarde.']
+  tarifs:['Tarifs','Transitaires, tarifs et dates de départ.'],
+  reglages:['Réglages','Apparence, taux de change et sauvegarde.']
 };
 function go(t){
   const apply=()=>{tab=t;closeSheet();render()};
@@ -122,12 +128,12 @@ function viewDevis(){
       <label class="field wide"><span>Dimensions (cm, L × l × H)</span><input class="inp" data-k="dims" placeholder="14 x 6 x 6" inputmode="decimal" value="${esc(val(d.dims))}"><span class="hint" id="hint-dims"></span></label>
       <label class="field"><span>Poids d’un produit emballé</span><span class="input-wrap"><input class="inp" data-k="wt" type="number" step="any" inputmode="decimal" value="${esc(val(d.wt))}"><span class="suffix">kg</span></span><span class="hint" id="hint-wt"></span></label>
       <div class="field"><span>Marge</span>
-        <div class="chips" id="margeChips">
-          ${MARGES.map(v=>`<button type="button" class="chip-btn" data-marge="${v}" aria-pressed="false">${Math.round(v*100)} %</button>`).join('')}
+        <div class="segments" id="margeChips" role="group" aria-label="Marge">
+          ${MARGES.map(v=>`<button type="button" class="seg" data-marge="${v}" aria-pressed="false">${Math.round(v*100)} %</button>`).join('')}
           <input class="inp mini" data-k="marge" type="number" step="1" inputmode="numeric" aria-label="Marge personnalisée en pourcentage" value="${Math.round((d.marge??0)*1000)/10}">
         </div></div>
     </div>
-    <div class="chk-title">Contrôles automatiques</div>
+    <div class="section-label">Contrôles automatiques</div>
     <div class="checks" id="checks"></div>
     <details class="adv"><summary>Catégorie, dates et frais <small>automatique, modifiable</small></summary>
       <div class="grid">
@@ -160,6 +166,7 @@ function onDraftField(el){
   if(k==='marge')v=v===''?0:Number(v)/100;
   else if(NUM.includes(k))v=v===''?null:Number(v);
   S.draft[k]=v;
+  touched.add(k);
   if(k==='cat')S.draft.catManual=true;
   if(k==='name'&&!S.draft.catManual){
     const g=guessCat(v);
@@ -187,24 +194,32 @@ function countUp(key,el,to){
   const from=isNum(shown[key])?shown[key]:0;
   shown[key]=to;
   if(reduce||from===to)return;
-  const t0=performance.now(),D=700;
+  const t0=performance.now(),D=300;
   const step=now=>{const k=Math.min(1,(now-t0)/D),e=1-Math.pow(1-k,4);el.textContent=ar(from+(to-from)*e);if(k<1)requestAnimationFrame(step)};
   requestAnimationFrame(step);
 }
 
+/* Une erreur ne s’affiche sous un champ qu’après l’avoir touché, ou après une tentative d’enregistrement.
+   Avant, le champ montre seulement une indication neutre. */
 function updateHints(d,R,checks){
   const dims=dimsOf(d), prod=dims[0]*dims[1]*dims[2];
-  const set=(id,txt,cls='')=>{const el=$(id);if(el){el.textContent=txt;el.className='hint '+cls}};
-  const nm=checks.find(c=>c.key==='name'), pr=checks.find(c=>c.key==='price'), dm=checks.find(c=>c.key==='dims'), wt=checks.find(c=>c.key==='wt');
-  set('hint-price',isNum(R.achat)?`≈ ${ar(R.achat)} par pièce`:(pr?.state==='bad'?'Saisissez le prix en yuans':''),pr?.state==='bad'?'bad':'');
-  set('hint-dims',dm?.state==='bad'?'Format attendu : 14 x 6 x 6':(prod?`Volume ${dec(prod,0)} cm³ · poids volumétrique ${dec(prod/S.params.div,2)} kg`:''),dm?.state==='bad'?'bad':'');
-  set('hint-wt',wt?.state==='bad'?'Poids d’un produit emballé':(wt?.state==='warn'?'Poids élevé, vérifiez le transport':''),wt?.state==='bad'?'bad':wt?.state==='warn'?'bad':'');
-  set('hint-name',d.repris?`Repris de ${d.repris} : vérifiez le prix.`:(nm?.state==='bad'?'Donnez un nom au produit':'Un nom déjà enregistré remplit le reste.'),nm?.state==='bad'?'bad':'');
+  const show=k=>showAll||touched.has(k);
+  const by=k=>checks.find(c=>c.key===k);
+  const set=(id,k,okTxt,guide,badTxt,warnTxt='')=>{
+    const el=$(id);if(!el)return;
+    const c=by(k), bad=c?.state==='bad'&&show(k), warn=c?.state==='warn';
+    el.textContent=bad?badTxt:warn&&warnTxt?warnTxt:(c?.state==='ok'&&okTxt?okTxt:guide);
+    el.className='hint'+(bad||warn&&warnTxt?' bad':'');
+  };
+  set('hint-name','name',d.repris?`Repris de ${d.repris} : vérifiez le prix.`:'','Un nom déjà enregistré remplit le reste.','Donnez un nom au produit.');
+  set('hint-price','price',isNum(R.achat)?`≈ ${ar(R.achat)} par pièce`:'','En yuans, pour une pièce.','Saisissez le prix d’achat en yuans.');
+  set('hint-dims','dims',prod?`Volume ${dec(prod,0)} cm³ · poids volumétrique ${dec(prod/S.params.div,2)} kg`:'','Trois mesures en cm, par exemple 14 x 6 x 6.','Format attendu : 14 x 6 x 6.');
+  set('hint-wt','wt','','Produit emballé, en kg.','Saisissez le poids d’un produit emballé.','Poids élevé : vérifiez que le transitaire l’accepte.');
   const out=$('qty-out');if(out)out.textContent=d.qty||1;
   document.querySelectorAll('.inp[data-k]').forEach(el=>{
-    const k=el.dataset.k, c={name:nm,price:pr,dims:dm,wt}[k];
-    el.classList.toggle('is-bad',!!c&&c.state==='bad');
-    el.classList.toggle('is-ok',!!c&&c.state==='ok'&&!!el.value);
+    const k=el.dataset.k, c=by(k);
+    el.classList.toggle('is-bad',!!c&&c.state==='bad'&&show(k));
+    el.setAttribute('aria-invalid',String(!!c&&c.state==='bad'&&show(k)));
   });
 }
 
@@ -217,33 +232,35 @@ function renderResult(){
   const chk=$('checks');
   if(chk)chk.innerHTML=checks.map(c=>`<span class="chk ${c.state==='ok'?'':c.state}" title="${esc(c.txt)}"><b>${c.state==='ok'?'✓':c.state==='warn'?'!':'✕'}</b>${esc(c.label)}${c.txt&&c.state!=='ok'?' · '+esc(c.txt):''}</span>`).join('');
   updateHints(d,R,checks);
-  const kpi=(tone,lab,value,sub='',text=false)=>`<div class="kpi ${tone}${text?' text':''}"><span>${lab}</span><b>${value}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+  const row=(lab,value,sub='')=>`<div class="row"><span>${lab}</span><span class="val">${value}${sub?`<small>${sub}</small>`:''}</span></div>`;
   const num=(key,v)=>isNum(v)?` data-num="${v}" data-key="${key}"`:'';
   let body;
   if(!s){
-    body=`<p class="warn-box">${manual?'L’offre choisie n’est pas compatible avec ce produit. Revenez au meilleur prix.':`Aucun transitaire ne prend la catégorie « ${esc(d.cat)} ». Changez la catégorie dans « Catégorie, dates et frais ».`}</p>`;
+    body=`<p class="warn-box"><span aria-hidden="true">⚠︎</span><span>${manual?'L’offre choisie n’est pas compatible avec ce produit. Revenez au meilleur prix.':`Aucun transitaire ne prend la catégorie « ${esc(d.cat)} ». Changez la catégorie dans « Catégorie, dates et frais ».`}</span></p>`;
   } else {
     const notes=[...(s.t.note?[s.t.note]:[]),...calendarFeedback(s)];
-    body=`<div class="kpis">
-      ${kpi('t2','Transitaire',esc(s.t.tr),esc(s.t.mode+(s.t.svc?' · '+s.t.svc:'')),true)}
-      ${kpi('t2','Arrivée estimée',isNum(s.I)?fd(Math.floor(s.I)):'—',isNum(s.F)?'Départ '+fd(Math.floor(s.F)):'',true)}
-      ${kpi('t1','Prix de revient',`<span${num('cost',R.costP)}>${m(R.costP)}</span>`,`Total ${m(R.costLot)} · ${R.qty} pièce(s)`)}
+    body=`<div class="rows">
+      ${row('Transitaire',esc(s.t.tr),esc(s.t.mode+(s.t.svc?' · '+s.t.svc:'')))}
+      ${row('Arrivée estimée',isNum(s.I)?fd(Math.floor(s.I)):'—',isNum(s.F)?'Départ '+fd(Math.floor(s.F)):'')}
+      ${row('Prix de revient',`<span class="amount"${num('cost',R.costP)}>${m(R.costP)}</span>`,`Total ${m(R.costLot)} · ${R.qty} pièce(s)`)}
     </div>
     ${notes.map(n=>`<p class="note">${esc(n)}</p>`).join('')}`;
   }
-  const hero=`<div class="hero" style="--cover:${coverOf(d.name)}">
-    <div class="hero-top"><span class="chip">${esc(d.cat||'Sans catégorie')}</span><span class="res-tag ${manual?'manual':''}">${manual?'Offre choisie':'Meilleur prix'}</span></div>
-    <div class="hero-name">${esc(d.name||'Nouveau produit')}</div>
-    <div class="hero-price"><small>Prix de vente conseillé / pièce</small><b${num('pv',R.pv)}>${m(R.pv)}</b><small>Total ${m(R.revenueLot)} · marge ${m(R.margeP)} (${pct(R.margeRate)})</small></div>
-  </div>`;
+  // La marge s’affiche avec son signe et sa couleur : la couleur n’est jamais la seule information.
+  const marge=isNum(R.margeP)?`<span class="${R.margeP>=0?'pos':'neg'}">Marge ${R.margeP>0?'+':''}${m(R.margeP)} (${pct(R.margeRate)})</span>`:'<span>Marge —</span>';
+  const hero=`<div class="summary-head"><span class="tag neutral">${esc(d.cat||'Sans catégorie')}</span><span class="tag">${manual?'Offre choisie':'✓ Meilleur prix'}</span></div>
+    <div class="product-name">${esc(d.name||'Nouveau produit')}</div>
+    <div class="big-label">Prix de vente conseillé, par pièce</div>
+    <div class="big-amount amount"${num('pv',R.pv)}>${m(R.pv)}</div>
+    <div class="sub-amounts"><span>Total ${m(R.revenueLot)}</span>${marge}</div>`;
   const canSave=blocking.length===0;
-  const why=canSave?'':`À corriger : ${blocking.map(c=>c.label.toLowerCase()).join(', ')}.`;
+  const why=canSave?'':`${showAll?'À corriger':'Il reste à compléter'} : ${blocking.map(c=>c.label.toLowerCase()).join(', ')}.`;
   const actions=`<div class="actions">
-    <button class="btn primary" id="save" ${canSave?'':'disabled'}>Enregistrer dans l’historique</button>
+    <button class="btn primary" id="save" aria-describedby="saveWhy">Enregistrer dans l’historique</button>
     <button class="btn" id="compare" ${R.comp.length?'':'disabled'}>Comparer les offres (${R.comp.length})</button>
     <button class="btn" id="new">Nouveau produit</button>
     ${manual?'<button class="link" id="back-best">Revenir au meilleur prix</button>':''}
-  </div>${why?`<p class="hint bad" style="margin-top:10px">${esc(why)}</p>`:''}`;
+  </div><p class="hint${showAll&&why?' bad':''}" id="saveWhy" style="margin-top:10px">${esc(why)}</p>`;
   const sig=[s?.label,R.costP,R.pv,s?.I,manual].join('|');
   const bump=sig!==lastSig;
   lastSig=sig;
@@ -259,34 +276,41 @@ function renderSheet(R,d){
   const offers=[...R.comp].sort((a,b)=>(isNum(a.J)?a.J:Infinity)-(isNum(b.J)?b.J:Infinity));
   sheetBody.innerHTML=offers.map(o=>{
     const on=s&&o.label===s.label;
-    return `<button class="offer ${on?'is-on':''}" data-pick="${esc(o.label)}">
+    return `<button class="offer ${on?'is-on':''}" data-pick="${esc(o.label)}" aria-pressed="${on?'true':'false'}">
       <span class="radio" aria-hidden="true"></span>
       <span class="body">
         <b>${esc(o.t.tr)} · ${esc(o.t.mode)}${o.t.svc?' · '+esc(o.t.svc):''}</b>
-        <small>Revient ${m(o.J)} · Vente ${isNum(o.J)?ar(Math.ceil(o.J*(1+(d.marge??0))/100)*100):'—'}</small>
         <small>${isNum(o.I)?'Arrivée '+fd(Math.floor(o.I)):'Date non connue'}${o.calendarNotice?' · '+esc(o.calendarNotice):''}</small>
-      </span></button>`;
+      </span>
+      <span class="price">${m(o.J)}<small>vente ${isNum(o.J)?ar(Math.ceil(o.J*(1+(d.marge??0))/100)*100):'—'}</small></span></button>`;
   }).join('')||'<p class="empty">Aucune offre compatible.</p>';
 }
 function openSheet(){sheet.hidden=false}
 function closeSheet(){sheet.hidden=true}
 
-/* Validation : pastille animée et confettis. */
-const taille=()=>reduce?0:26;
+/* Validation : coche dessinée, discrète, avec retour haptique quand l’appareil le permet. */
 function celebrate(){
   const b=document.createElement('div');
-  b.className='burst';
-  const bits=Array.from({length:taille()},(_,i)=>`<i style="--a:${i*(360/taille())}deg;--d:${70+((i*37)%70)}px;--c:hsl(${(i*53)%360} 85% 60%);--delay:${(i%4)*.03}s"></i>`).join('');
-  b.innerHTML=`<div class="burst-core"><svg viewBox="0 0 52 52" pathLength="1"><circle cx="26" cy="26" r="23" pathLength="1"/><path d="M15 27l8 8 14-16" pathLength="1"/></svg><p>Produit enregistré</p><small>Retrouvez-le dans l’historique</small></div>${bits}`;
+  b.className='done';
+  b.setAttribute('role','status');
+  b.innerHTML=`<div class="done-core"><svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="23" pathLength="1"/><path d="M15 27l8 8 14-16" pathLength="1"/></svg><p>Produit enregistré</p></div>`;
   document.body.appendChild(b);
-  setTimeout(()=>b.classList.add('out'),1500);
-  setTimeout(()=>b.remove(),1900);
+  try{navigator.vibrate?.(12)}catch(e){}
+  setTimeout(()=>b.classList.add('out'),900);
+  setTimeout(()=>b.remove(),1150);
 }
 
 function saveDraft(){
   const d=S.draft, R=compute(d);
   const bad=checksFor(d,R).filter(c=>c.state==='bad');
-  if(bad.length){toast(`À corriger : ${bad.map(c=>c.label.toLowerCase()).join(', ')}.`,{sticky:true});return}
+  if(bad.length){
+    // Affiche toutes les erreurs et place le curseur sur le premier champ à corriger.
+    showAll=true;renderResult();
+    const first=bad.map(c=>app.querySelector(`[data-k="${c.key}"]`)).find(Boolean);
+    if(first)first.focus();
+    toast(`À corriger : ${bad.map(c=>c.label.toLowerCase()).join(', ')}.`);
+    return;
+  }
   const now=nowIso(), i=S.quotes.findIndex(q=>q.no===d.no), existing=i>=0?S.quotes[i]:null;
   if(existing&&existing.status&&existing.status!==STATUS.DRAFT){toast('Ce produit est déjà confirmé : modifiez-le depuis la version bureau.',{sticky:true});return}
   const {status,destination,repris,...inputFields}=copyData(d);
@@ -304,6 +328,7 @@ function saveDraft(){
 function newDraft(){
   const keep=({marge,delai,heure,trans,base,pay})=>({marge,delai,heure,trans,base,pay});
   S.draft={...blankDraft(nextNo()),...keep(S.draft)};
+  touched.clear();showAll=false;
   persist();
   viewDevis();
 }
@@ -322,22 +347,28 @@ function renderHisto(){
   const rows=[...S.quotes]
     .sort((a,b)=>String(b.modified||'').localeCompare(String(a.modified||'')))
     .filter(x=>!q||String(x.inputs?.name||'').toLowerCase().includes(q)||String(x.no).toLowerCase().includes(q));
-  el.innerHTML=rows.length?rows.map(histCard).join(''):`<p class="empty">${q?'Aucun résultat.':'Aucun produit enregistré. Préparez un devis puis cliquez sur « Enregistrer dans l’historique ».'}</p>`;
+  if(!rows.length){el.innerHTML=`<p class="empty">${q?'Aucun résultat pour cette recherche.':'Aucun produit enregistré. Préparez un devis puis touchez « Enregistrer dans l’historique ».'}</p>`;return}
+  // Regroupement par jour de modification, comme une liste de transactions.
+  const dayKey=iso=>String(iso||'').slice(0,10);
+  const today=dayStr(Math.floor(Date.now()/864e5)), yesterday=dayStr(Math.floor(Date.now()/864e5)-1);
+  const dayLabel=k=>k===today?'Aujourd’hui':k===yesterday?'Hier':(k?new Date(k+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'Sans date');
+  const groups=new Map();
+  rows.forEach(x=>{const k=dayKey(x.modified);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(x)});
+  el.innerHTML=[...groups].map(([k,list])=>`<h3 class="day">${esc(dayLabel(k))}</h3><div class="list">${list.map(histItem).join('')}</div>`).join('');
 }
-function histCard(q){
+function histItem(q){
   const r=q.res||{}, name=q.inputs?.name||'Sans nom';
-  return `<article class="hcard">
-    <div class="thumb" style="--cover:${coverOf(name)}">${esc(initials(name))}</div>
-    <div class="hbody">
-      <div class="hhead"><b>${esc(name)}</b><small class="muted">${esc(q.no)} · ${esc(fdt(q.modified))}</small></div>
-      <div class="hnums"><span>Revient <b>${m(r.costP)}</b></span><span>Vente <b>${m(r.pv)}</b></span>${isNum(r.dateClient)?`<span>Arrivée ${fd(Math.floor(r.dateClient))}</span>`:''}</div>
-      <small class="muted">${esc([r.tr,r.svc].filter(Boolean).join(' · '))}</small>
-      <div class="actions">
-        <button class="btn" data-open="${esc(q.no)}">Ouvrir</button>
-        <button class="btn" data-dup="${esc(q.no)}">Dupliquer</button>
-        <button class="btn danger" data-del="${esc(q.no)}">Supprimer</button>
-      </div>
-    </div></article>`;
+  const meta=[q.no,r.tr,isNum(r.dateClient)?'arrivée '+fd(Math.floor(r.dateClient)):''].filter(Boolean).join(' · ');
+  return `<div class="item-wrap">
+    <button class="item" data-open="${esc(q.no)}" aria-label="Ouvrir ${esc(name)}">
+      <span class="avatar" aria-hidden="true">${esc(initials(name))}</span>
+      <span class="main"><b>${esc(name)}</b><small>${esc(meta)}</small></span>
+      <span class="trail"><b>${m(r.pv)}</b><small>revient ${m(r.costP)}</small></span>
+    </button>
+    <div class="item-actions">
+      <button class="btn small" data-dup="${esc(q.no)}">Dupliquer</button>
+      <button class="btn small danger" data-del="${esc(q.no)}">Supprimer</button>
+    </div></div>`;
 }
 function openQuote(no){
   const q=S.quotes.find(x=>x.no===no);
@@ -449,7 +480,14 @@ function delCal(i){
 function viewReglages(){
   const p=S.params;
   const sel=(name,label,opts,cur)=>`<label class="field"><span>${label}</span><select class="inp" name="${name}">${opts.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}</select></label>`;
+  const ap=appearance();
   app.innerHTML=`
+  <section class="card"><h2>Apparence</h2>
+    <div class="segments" role="group" aria-label="Apparence">
+      ${[['system','Système'],['light','Clair'],['dark','Sombre']].map(([v,l])=>`<button type="button" class="seg" data-appearance="${v}" aria-pressed="${ap===v}">${l}</button>`).join('')}
+    </div>
+    <p class="hint" style="margin-top:8px">« Système » suit le mode clair ou sombre de l’appareil.</p>
+  </section>
   <form class="card" id="pform"><h2>Taux et paramètres</h2>
     <div class="grid">
       ${field('usd','Taux du dollar (Ar pour 1 USD)',p.usd,'number','step="any" required')}
@@ -515,7 +553,8 @@ app.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   const ds=t.dataset;
   if(ds.step){S.draft.qty=Math.max(1,(Number(S.draft.qty)||1)+Number(ds.step));persist();renderResult();return}
-  if(ds.marge){S.draft.marge=Number(ds.marge);syncMarge();persist();renderResult();return}
+  if(ds.marge){S.draft.marge=Number(ds.marge);syncMarge();const mi=app.querySelector('[data-k="marge"]');if(mi)mi.value=Math.round(S.draft.marge*100);persist();renderResult();return}
+  if(ds.appearance){setAppearance(ds.appearance);viewReglages();return}
   if(t.id==='back-best'){S.draft.mode='prix';persist();renderResult();return}
   if(t.id==='save'){saveDraft();return}
   if(t.id==='new'){newDraft();return}
@@ -553,6 +592,26 @@ app.addEventListener('submit',e=>{
 /* Au premier lancement, le moteur met un exemple de la version bureau : on repart d’un formulaire vide. */
 if(!S.quotes.length&&S.draft.name==='Spray anti-pluie 50 ml')S.draft=blankDraft(nextNo());
 S.draft.marge=S.draft.marge??0.5;
+
+/* Téléphone : la barre d’onglets se compacte quand on descend, revient quand on remonte. */
+let lastY=window.scrollY;
+window.addEventListener('scroll',()=>{
+  const y=window.scrollY, side=$('side');
+  if(y>lastY+8&&y>80)side.classList.add('compact');
+  else if(y<lastY-8||y<40)side.classList.remove('compact');
+  lastY=y;
+  requestAnimationFrame(placeIndicator);
+},{passive:true});
+/* Quitter un champ le marque comme « touché » : son erreur éventuelle s’affiche. */
+app.addEventListener('focusout',e=>{
+  const k=e.target.dataset?.k;
+  // Mise à jour des indications seulement : reconstruire les boutons ici ferait perdre le clic en cours.
+  if(k&&!touched.has(k)&&tab==='devis'){touched.add(k);const R=compute(S.draft);updateHints(S.draft,R,checksFor(S.draft,R))}
+});
+/* Clavier : le champ actif reste visible au-dessus du clavier. */
+app.addEventListener('focusin',e=>{
+  if(e.target.matches('.inp')&&window.innerWidth<861)setTimeout(()=>e.target.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'}),280);
+});
 
 syncTheme();
 render();

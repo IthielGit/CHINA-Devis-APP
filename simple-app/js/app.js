@@ -71,6 +71,7 @@ function render(){
   $('pageSub').textContent=PAGES[tab][1];
   renderRates();
   ({devis:viewDevis,histo:viewHisto,tarifs:viewTarifs,reglages:viewReglages})[tab]();
+  setEnterKeys();
 }
 function placeIndicator(){
   const nav=$('nav');
@@ -617,13 +618,51 @@ window.addEventListener('scroll',()=>{
   lastY=y;
   requestAnimationFrame(placeIndicator);
 },{passive:true});
-/* Touche « Suivant » : passe au champ de dimension suivant, « OK » sur le dernier. */
+/* Champs de saisie visibles, dans l’ordre de l’écran. */
+/* Un champ dans une section repliée n’est pas affiché : il ne doit pas recevoir le focus. */
+const isShown=x=>{const d=x.closest('details');return x.getClientRects().length>0&&!(d&&!d.open)};
+const fieldsInOrder=()=>[...app.querySelectorAll('input,select,textarea')].filter(x=>x.type!=='hidden'&&!x.disabled&&isShown(x));
+/* Touche « Suivant » du clavier : champ suivant partout ; « OK » sur le dernier, qui referme le clavier. */
+function setEnterKeys(){
+  const list=fieldsInOrder();
+  list.forEach((el,i)=>{el.setAttribute('enterkeyhint',i<list.length-1?'next':'done')});
+}
+/* Une section repliée qui s’ouvre ajoute des champs : on recalcule la touche « Suivant ». */
+app.addEventListener('toggle',setEnterKeys,true);
 app.addEventListener('keydown',e=>{
-  if(e.key!=='Enter'||e.target.dataset.dim===undefined)return;
+  if(e.key!=='Enter'||e.target.tagName!=='INPUT'||['file','checkbox','radio','button','submit'].includes(e.target.type))return;
   e.preventDefault();
-  const i=+e.target.dataset.dim;
-  const next=app.querySelector(`[data-dim="${i+1}"]`);
-  if(next)next.focus();else e.target.blur();
+  const list=fieldsInOrder(), i=list.indexOf(e.target);
+  if(i<0)return;
+  const next=list[i+1];
+  if(next){next.focus();if(next.select&&next.type!=='date')next.select()}else e.target.blur();
+});
+
+/* Clavier à l’écran (téléphone) : la zone visible se réduit. On garde le champ actif visible,
+   on masque la barre d’onglets pendant la saisie, et on laisse la fin de la page accessible. */
+const vv=window.visualViewport;
+function layoutForKeyboard(){
+  if(!vv)return;
+  const kb=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+  document.documentElement.style.setProperty('--kb',kb+'px');
+  document.body.classList.toggle('kbd-open',kb>120&&window.innerWidth<861);
+  const el=document.activeElement;
+  if(kb>120&&el&&el.matches&&el.matches('input,select,textarea'))keepVisible(el);
+}
+/* Fait défiler pour que le champ soit au centre de la zone encore visible. */
+function keepVisible(el){
+  const top=vv.offsetTop+16, bottom=vv.offsetTop+vv.height-16;
+  const r=el.getBoundingClientRect();
+  if(r.top<top||r.bottom>bottom){
+    const y=window.scrollY+r.top-(top+(bottom-top)/2)+r.height/2;
+    window.scrollTo({top:Math.max(0,y),behavior:reduce?'auto':'smooth'});
+  }
+}
+if(vv){vv.addEventListener('resize',layoutForKeyboard);vv.addEventListener('scroll',layoutForKeyboard)}
+app.addEventListener('focusin',e=>{
+  if(!e.target.matches('input,select,textarea'))return;
+  // Le clavier met un peu de temps à monter : on recadre après son animation.
+  setTimeout(()=>{if(vv&&document.activeElement===e.target)keepVisible(e.target)},320);
 });
 /* Quitter un champ le marque comme « touché » : son erreur éventuelle s’affiche. */
 app.addEventListener('focusout',e=>{
@@ -631,10 +670,6 @@ app.addEventListener('focusout',e=>{
   const k=e.target.dataset?.k;
   // Mise à jour des indications seulement : reconstruire les boutons ici ferait perdre le clic en cours.
   if(k&&!touched.has(k)&&tab==='devis'){touched.add(k);const R=compute(S.draft);updateHints(S.draft,R,checksFor(S.draft,R))}
-});
-/* Clavier : le champ actif reste visible au-dessus du clavier. */
-app.addEventListener('focusin',e=>{
-  if(e.target.matches('.inp')&&window.innerWidth<861)setTimeout(()=>e.target.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'}),280);
 });
 
 syncTheme();

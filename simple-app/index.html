@@ -301,6 +301,17 @@ details[open]>.grid{margin-top:var(--s3)}
 }
 @media (max-width:380px){:root{--fs-amount:1.95rem;--fs-title:1.6rem}}
 
+/* ---------- Clavier à l’écran (téléphone) ----------
+   Pendant la saisie, la barre d’onglets disparaît pour libérer la place et éviter qu’elle
+   chevauche le clavier. La page reste défilable au-dessus du clavier (--kb, mesuré par app.js). */
+@media (max-width:860px){
+  body.kbd-open .side{transform:translateY(calc(100% + 40px));opacity:0;pointer-events:none;transition:transform var(--t) var(--ease),opacity var(--t) var(--ease)}
+  body.kbd-open .shell{padding-bottom:calc(var(--kb,0px) + var(--s6))}
+  .side{transition:transform var(--t) var(--ease),opacity var(--t) var(--ease)}
+}
+/* Les champs ne doivent jamais être couverts par la barre du bas quand elle est visible. */
+html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
+
 /* ---------- Mouvement réduit ---------- */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}

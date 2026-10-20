@@ -455,10 +455,15 @@ function carrierCard(name,g){
   return `<section class="card carrier" data-carrier="${esc(name)}">
     <header class="carrier-head"><div><h2>${esc(name)}</h2><small class="muted">${g.tariffs.length} tarif(s) · ${g.cal.length} date(s)</small></div>
       <div class="actions tight"><button class="btn small" data-add-tariff="${esc(name)}">+ Tarif</button><button class="btn small danger" data-del-carrier="${esc(name)}" aria-label="Supprimer le transitaire ${esc(name)}">Supprimer</button></div></header>
-    <div class="subhead">Tarifs</div>${tariffs}
-    <div class="subhead">Dates de départ</div>
-    ${dates||'<p class="muted">Aucune date. Si ce transitaire part à jour fixe, indiquez son jour dans le tarif ; sinon ajoutez les dates ici.</p>'}
-    ${quick}
+    <details class="fold">
+      <summary>Tarifs <small class="muted">${g.tariffs.length}</small></summary>
+      ${tariffs}
+    </details>
+    <details class="fold">
+      <summary>Dates de départ <small class="muted">${g.cal.length}</small></summary>
+      ${dates||'<p class="muted">Aucune date. Si ce transitaire part à jour fixe, indiquez son jour dans le tarif ; sinon ajoutez les dates ici.</p>'}
+      ${quick}
+    </details>
   </section>`;
 }
 

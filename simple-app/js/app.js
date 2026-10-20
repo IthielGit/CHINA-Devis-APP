@@ -255,11 +255,11 @@ function renderResult(){
     <div class="sub-amounts"><span>Total ${m(R.revenueLot)}</span>${marge}</div>`;
   const canSave=blocking.length===0;
   const why=canSave?'':`${showAll?'À corriger':'Il reste à compléter'} : ${blocking.map(c=>c.label.toLowerCase()).join(', ')}.`;
-  const actions=`<div class="actions">
-    <button class="btn primary" id="save" aria-describedby="saveWhy">Enregistrer dans l’historique</button>
-    <button class="btn" id="compare" ${R.comp.length?'':'disabled'}>Comparer les offres (${R.comp.length})</button>
+  const actions=`<div class="result-actions">
+    <button class="btn primary wide" id="save" aria-describedby="saveWhy" ${canSave?'':'disabled'}>Enregistrer dans l’historique</button>
+    <button class="btn" id="compare" ${R.comp.length?'':'disabled'}>Comparer (${R.comp.length})</button>
     <button class="btn" id="new">Nouveau produit</button>
-    ${manual?'<button class="link" id="back-best">Revenir au meilleur prix</button>':''}
+    ${manual?'<button class="link wide" id="back-best">Revenir au meilleur prix</button>':''}
   </div><p class="hint${showAll&&why?' bad':''}" id="saveWhy" style="margin-top:10px">${esc(why)}</p>`;
   const sig=[s?.label,R.costP,R.pv,s?.I,manual].join('|');
   const bump=sig!==lastSig;

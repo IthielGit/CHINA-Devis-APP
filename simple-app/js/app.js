@@ -3,7 +3,7 @@
 const app=document.getElementById('app');
 const NUM=['price','qty','wt','delai','heure','trans','livCh','exclus','livFin','pvRetenu'];
 const MODES=['Avion','Maritime','Express'];
-let tab='devis', hSearch='', editT=-1, editC=-1, compOpen=false;
+let tab='devis', hSearch='', editT=-1, editC=-1, compOpen=false, lastSig=null;
 
 const nowIso=()=>new Date().toISOString();
 const val=x=>x==null?'':String(x);
@@ -14,10 +14,38 @@ const strOf=(data,k)=>String(data.get(k)??'').trim();
 
 /* ---------- navigation ---------- */
 function go(t){tab=t;compOpen=false;render();window.scrollTo(0,0)}
+const PAGES={
+  devis:['Devis d’importation','Renseignez votre produit. Comparez le transport. Fixez votre prix.'],
+  histo:['Historique','Produits enregistrés sur cet appareil.'],
+  tarifs:['Tarifs et calendrier','Transitaires, tarifs et dates de départ.'],
+  reglages:['Paramètres','Taux de change, délais et sauvegarde.']
+};
 function render(){
-  document.querySelectorAll('nav.tabs [data-go]').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
+  document.querySelectorAll('.nav [data-go]').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
+  document.getElementById('pageTitle').textContent=PAGES[tab][0];
+  document.getElementById('pageSub').textContent=PAGES[tab][1];
+  renderRates();
   ({devis:viewDevis,histo:viewHisto,tarifs:viewTarifs,reglages:viewReglages})[tab]();
 }
+function renderRates(){
+  const p=S.params;
+  document.getElementById('rates').innerHTML=`<small>Taux de change</small>
+    <p>1 ¥ = <b>${dec(yuanRate(p),2)} Ar</b></p>
+    <p>1 USD = <b>${dec(p.usd,0)} Ar</b></p>`;
+}
+
+/* ---------- Thème clair / sombre ---------- */
+function setTheme(theme){
+  document.documentElement.dataset.theme=theme;
+  const btn=document.getElementById('themeToggle');
+  const next=theme==='dark'?'Activer le thème clair':'Activer le thème sombre';
+  btn.setAttribute('aria-label',next);
+  btn.title=next;
+  try{localStorage.setItem('hygo-theme',theme)}catch(e){}
+}
+document.getElementById('themeToggle').addEventListener('click',()=>{
+  setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+});
 
 /* ---------- Devis ---------- */
 function viewDevis(){
@@ -74,22 +102,26 @@ function renderResult(){
   const el=document.getElementById('result');
   if(!el)return;
   const d=S.draft, R=compute(d), s=R.sel, manual=d.mode==='manuel';
-  const kpi=(lab,value,sub='')=>`<div class="kpi"><span>${lab}</span><b>${value}</b>${sub?`<small>${sub}</small>`:''}</div>`;
-  const head=`<div class="res-head"><span class="kicker">${manual?'Offre choisie':'Meilleur prix'}</span>${manual?'<button class="link" id="back-best">Revenir au meilleur prix</button>':''}</div>`;
+  const kpi=(tone,lab,value,sub='',text=false)=>`<div class="kpi ${tone}${text?' text':''}"><span>${lab}</span><b>${value}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+  const head=`<div class="res-head"><span class="res-tag ${manual?'manual':''}">${manual?'Offre choisie':'Meilleur prix'}</span>${manual?'<button class="link" id="back-best">Revenir au meilleur prix</button>':''}</div>`;
   let body;
   if(!s){
     body=`<p class="warn">${manual?'L’offre choisie n’est pas compatible avec ce produit. Revenez au meilleur prix.':`Aucune offre pour la catégorie « ${esc(d.cat)} ». Vérifiez la catégorie ou l’onglet Tarifs.`}</p>`;
   } else {
     const notes=[...(s.t.note?[s.t.note]:[]),...calendarFeedback(s)];
     body=`<div class="kpis">
-      ${kpi('Transitaire',esc(s.t.tr),esc(s.t.mode+(s.t.svc?' · '+s.t.svc:'')))}
-      ${kpi('Arrivée estimée',isNum(s.I)?fd(Math.floor(s.I)):'—',isNum(s.F)?'Départ '+fd(Math.floor(s.F)):'')}
-      ${kpi('Prix de revient',m(R.costP),`Total ${m(R.costLot)} · ${R.qty} pièce(s)`)}
-      ${kpi('Prix de vente conseillé',m(R.pv),`Total ${m(R.revenueLot)} · marge ${m(R.margeP)} (${pct(R.margeRate)})`)}
+      ${kpi('t2','Transitaire',esc(s.t.tr),esc(s.t.mode+(s.t.svc?' · '+s.t.svc:'')),true)}
+      ${kpi('t2','Arrivée estimée',isNum(s.I)?fd(Math.floor(s.I)):'—',isNum(s.F)?'Départ '+fd(Math.floor(s.F)):'',true)}
+      ${kpi('t1','Prix de revient',m(R.costP),`Total ${m(R.costLot)} · ${R.qty} pièce(s)`)}
+      ${kpi('t3','Prix de vente conseillé',m(R.pv),`Total ${m(R.revenueLot)} · marge ${m(R.margeP)} (${pct(R.margeRate)})`)}
     </div>
     ${notes.map(n=>`<p class="note">${esc(n)}</p>`).join('')}`;
     if(!isNum(R.costP))body+=`<p class="warn">Complétez le prix d’achat et le poids ou les dimensions pour obtenir le prix de revient.</p>`;
   }
+  // Animation seulement quand les chiffres changent vraiment (pas à chaque frappe).
+  const sig=[s?.label,R.costP,R.pv,s?.I,manual].join('|');
+  const bump=sig!==lastSig;
+  lastSig=sig;
   const offers=[...R.comp].sort((a,b)=>(isNum(a.J)?a.J:Infinity)-(isNum(b.J)?b.J:Infinity));
   const cmp=`<details class="cmp" id="cmp" ${compOpen?'open':''}>
     <summary>Comparer les ${offers.length} offre(s) compatibles</summary>
@@ -101,6 +133,7 @@ function renderResult(){
   </details>`;
   const actions=`<div class="actions"><button class="btn primary" id="save">Enregistrer dans l’historique</button><button class="btn" id="new">Nouveau produit</button></div>`;
   el.innerHTML=head+body+cmp+actions;
+  el.classList.toggle('bump',bump);
 }
 
 function saveDraft(){
@@ -296,7 +329,7 @@ function saveParams(data){
     dispo:numOf(data,'dispo'),mAvion:numOf(data,'mAvion'),mMar:numOf(data,'mMar'),dimanche:strOf(data,'dimanche'),
     calendarClosePolicy:strOf(data,'calendarClosePolicy'),cats:strOf(data,'cats').split(',').map(s=>s.trim()).filter(Boolean)};
   if(!(p.usd>0)||!(p.cnyUsd>0)||!(p.div>0)){toast('Taux et diviseur doivent être supérieurs à 0.',{sticky:true});return}
-  S.params=p;persist();toast('Paramètres enregistrés.');viewReglages();
+  S.params=p;persist();toast('Paramètres enregistrés.');renderRates();viewReglages();
 }
 function exportData(){
   const txt=JSON.stringify(S,null,1), name='hygo-'+dayStr(Math.floor(Date.now()/864e5))+'.json';
@@ -319,7 +352,7 @@ function importData(file){
 }
 
 /* ---------- événements (délégation sur #app et la barre de navigation) ---------- */
-document.querySelector('header').addEventListener('click',e=>{
+document.querySelector('.side').addEventListener('click',e=>{
   const b=e.target.closest('[data-go]');if(b)go(b.dataset.go);
 });
 app.addEventListener('click',e=>{

@@ -125,7 +125,11 @@ function viewDevis(){
       <div class="field"><span>Quantité</span>
         <div class="stepper"><button type="button" data-step="-1" aria-label="Retirer une pièce">−</button><output id="qty-out">${d.qty||1}</output><button type="button" data-step="1" aria-label="Ajouter une pièce">+</button></div>
         <span class="hint">Pièces identiques</span></div>
-      <label class="field wide"><span>Dimensions (cm, L × l × H)</span><input class="inp" data-k="dims" placeholder="14 x 6 x 6" inputmode="decimal" value="${esc(val(d.dims))}"><span class="hint" id="hint-dims"></span></label>
+      <div class="field wide"><span>Dimensions (cm)</span>
+        <div class="dims3" role="group" aria-label="Dimensions en centimètres">
+          ${['Longueur','Largeur','Hauteur'].map((lab,i)=>`<label class="dim"><input class="inp" data-dim="${i}" type="text" inputmode="decimal" enterkeyhint="${i<2?'next':'done'}" placeholder="${"LlH"[i]}" aria-label="${lab} en cm" value="${esc(dimsOf(d)[i]||'')}"></label>`).join('')}
+        </div>
+        <span class="hint" id="hint-dims"></span></div>
       <label class="field"><span>Poids d’un produit emballé</span><span class="input-wrap"><input class="inp" data-k="wt" type="number" step="any" inputmode="decimal" value="${esc(val(d.wt))}"><span class="suffix">kg</span></span><span class="hint" id="hint-wt"></span></label>
       <div class="field"><span>Marge</span>
         <div class="segments" id="margeChips" role="group" aria-label="Marge">
@@ -221,6 +225,8 @@ function updateHints(d,R,checks){
     el.classList.toggle('is-bad',!!c&&c.state==='bad'&&show(k));
     el.setAttribute('aria-invalid',String(!!c&&c.state==='bad'&&show(k)));
   });
+  const dc=by('dims'), dimBad=!!dc&&dc.state==='bad'&&show('dims');
+  document.querySelectorAll('[data-dim]').forEach(el=>{el.classList.toggle('is-bad',dimBad);el.setAttribute('aria-invalid',String(dimBad))});
 }
 
 function renderResult(){
@@ -256,7 +262,7 @@ function renderResult(){
   const canSave=blocking.length===0;
   const why=canSave?'':`${showAll?'À corriger':'Il reste à compléter'} : ${blocking.map(c=>c.label.toLowerCase()).join(', ')}.`;
   const actions=`<div class="result-actions">
-    <button class="btn primary wide" id="save" aria-describedby="saveWhy" ${canSave?'':'disabled'}>Enregistrer dans l’historique</button>
+    <button class="btn primary wide" id="save" aria-describedby="saveWhy" ${canSave?'':'aria-disabled=true'}>Enregistrer dans l’historique</button>
     <button class="btn" id="compare" ${R.comp.length?'':'disabled'}>Comparer (${R.comp.length})</button>
     <button class="btn" id="new">Nouveau produit</button>
     ${manual?'<button class="link wide" id="back-best">Revenir au meilleur prix</button>':''}
@@ -570,8 +576,17 @@ app.addEventListener('click',e=>{
   if(t.id==='cancel-c'){editC=-1;viewTarifs();return}
   if(t.id==='export'){exportData();return}
 });
+/* Dimensions : trois champs, reconstitués en « L x l x H » pour le moteur de calcul. */
+function onDimField(){
+  const parts=[...app.querySelectorAll('[data-dim]')].map(x=>x.value.trim().replace(',','.'));
+  S.draft.dims=parts.every(x=>x==='')?'':parts.map(x=>x||'0').join(' x ');
+  touched.add('dims');
+  persist();
+  renderResult();
+}
 app.addEventListener('input',e=>{
   const el=e.target;
+  if(el.dataset.dim!==undefined){onDimField();return}
   if(el.dataset.k){if(el.tagName==='INPUT')onDraftField(el);return}
   if(el.id==='hsearch'){hSearch=el.value;renderHisto()}
 });
@@ -602,8 +617,17 @@ window.addEventListener('scroll',()=>{
   lastY=y;
   requestAnimationFrame(placeIndicator);
 },{passive:true});
+/* Touche « Suivant » : passe au champ de dimension suivant, « OK » sur le dernier. */
+app.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||e.target.dataset.dim===undefined)return;
+  e.preventDefault();
+  const i=+e.target.dataset.dim;
+  const next=app.querySelector(`[data-dim="${i+1}"]`);
+  if(next)next.focus();else e.target.blur();
+});
 /* Quitter un champ le marque comme « touché » : son erreur éventuelle s’affiche. */
 app.addEventListener('focusout',e=>{
+  if(e.target.dataset?.dim!==undefined){if(!touched.has('dims')){touched.add('dims');renderResult()}return}
   const k=e.target.dataset?.k;
   // Mise à jour des indications seulement : reconstruire les boutons ici ferait perdre le clic en cours.
   if(k&&!touched.has(k)&&tab==='devis'){touched.add(k);const R=compute(S.draft);updateHints(S.draft,R,checksFor(S.draft,R))}

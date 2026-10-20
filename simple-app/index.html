@@ -103,6 +103,10 @@ svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .nav button{position:relative;z-index:1;display:flex;align-items:center;gap:var(--s3);width:100%;min-height:48px;border:0;border-radius:14px;padding:var(--s2) var(--s3);color:var(--muted);background:none;text-align:left;font-weight:500;cursor:pointer;transition:color var(--t) var(--ease)}
 .nav button:hover{color:var(--ink)}
 .nav button[aria-current="page"]{color:var(--accent);font-weight:600}
+/* Nouveau produit : action principale, en couleur d’accent (au centre de la barre sur mobile) */
+.nav .nav-add{justify-content:center;background:var(--accent-button);color:var(--accent-ink);font-weight:600;box-shadow:0 6px 16px rgba(108,92,231,.3)}
+.nav .nav-add:hover{background:var(--accent-pressed);color:var(--accent-ink)}
+.nav .nav-add .i{stroke-width:2.2}
 
 .rate-card{margin-top:auto;border-top:1px solid var(--divider);padding:var(--s4) var(--s2) 0}
 .rate-card small{display:block;font-size:var(--fs-meta);color:var(--muted);margin-bottom:var(--s1)}
@@ -422,6 +426,11 @@ details[open]>.grid{margin-top:var(--s3)}
   .side.compact{padding:3px}
   .side.compact .nav button{min-height:44px}
   .side.compact .nav button span{display:none}
+  /* Sur mobile, « + » est un bouton rond qui dépasse de la barre, sans libellé */
+  .nav .nav-add{width:58px;flex:0 0 58px;min-height:58px;margin:-18px 6px 0;padding:0;border-radius:50%;box-shadow:0 8px 20px rgba(108,92,231,.4)}
+  .nav .nav-add span{display:none}
+  .nav .nav-add .i{width:26px;height:26px}
+  .side.compact .nav .nav-add{width:50px;flex-basis:50px;min-height:50px;margin-top:-10px}
   .top{margin:var(--s2) 0 var(--s5)}
   .toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 }
@@ -480,7 +489,7 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
     <nav class="nav" id="nav">
       <button type="button" data-go="devis"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg><span>Devis</span></button>
       <button type="button" data-go="histo"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Historique</span></button>
-      <button type="button" id="newProduct" aria-label="Nouveau produit" title="Nouveau produit"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button type="button" class="nav-add" id="newProduct" aria-label="Nouveau produit" title="Nouveau produit"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Nouveau produit</span></button>
       <button type="button" data-go="tarifs"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span>Tarifs</span></button>
       <button type="button" data-go="reglages"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Réglages</span></button>
     </nav>

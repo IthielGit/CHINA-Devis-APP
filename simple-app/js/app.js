@@ -783,8 +783,8 @@ function importData(file){
 }
 
 /* ---------- événements ---------- */
+$('newProduct').addEventListener('click',()=>{newDraft();go('devis')});
 document.querySelector('.side').addEventListener('click',e=>{
-  if(e.target.closest('#newProduct')){newDraft();go('devis');return}
   const b=e.target.closest('[data-go]');if(b)go(b.dataset.go);
 });
 sheet.addEventListener('click',e=>{

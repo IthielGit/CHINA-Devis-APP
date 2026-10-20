@@ -446,7 +446,7 @@ function load(){
   return normAll({params:defaultParams(),tarifs:JSON.parse(JSON.stringify(SEED.T)),cal:JSON.parse(JSON.stringify(SEED.C)),quotes:[],draft:exampleDraft('DEV-0001'),editing:null,tab:'devis'});
 }
 let saveT;
-function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}},150)}
+function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(window.hygoSync)hygoSync()},150)}
 function nextNo(){const m=S.quotes.reduce((a,q)=>Math.max(a,parseInt(q.no.replace(/\D/g,''))||0),0);return 'DEV-'+String(m+1).padStart(4,'0')}
 /* Message bref (disparaît seul) ; une erreur reste affichée jusqu’à ce que l’utilisateur la ferme. */
 function toast(msg,{sticky=false}={}){

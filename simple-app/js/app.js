@@ -261,13 +261,16 @@ function renderResult(){
     <div class="big-amount amount"${num('pv',R.pv)}>${m(R.pv)}</div>
     <div class="sub-amounts"><span>Total ${m(R.revenueLot)}</span>${marge}</div>`;
   const canSave=blocking.length===0;
-  const why=canSave?'':`${showAll?'À corriger':'Il reste à compléter'} : ${blocking.map(c=>c.label.toLowerCase()).join(', ')}.`;
+  // Devis déjà confirmé (il se modifie depuis la version bureau), ou rien de changé depuis le dernier enregistrement : rien à enregistrer.
+  const confirmed=isConfirmed(d);
+  const unchanged=!confirmed&&canSave&&savedUnchanged(d,R);
+  const why=confirmed?'Ce produit est déjà confirmé : modifiez-le depuis la version bureau.':unchanged?'Aucune modification depuis le dernier enregistrement.':canSave?'':`${showAll?'À corriger':'Il reste à compléter'} : ${blocking.map(c=>c.label.toLowerCase()).join(', ')}.`;
   const actions=`<div class="result-actions">
-    <button class="btn primary wide" id="save" aria-describedby="saveWhy" ${canSave?'':'aria-disabled=true'}>Enregistrer dans l’historique</button>
+    <button class="btn primary wide" id="save" aria-describedby="saveWhy" ${confirmed||unchanged?'disabled':canSave?'':'aria-disabled=true'}>Enregistrer dans l’historique</button>
     <button class="btn" id="compare" ${R.comp.length?'':'disabled'}>Comparer (${R.comp.length})</button>
     <button class="btn" id="new">Nouveau produit</button>
     ${manual?'<button class="link wide" id="back-best">Revenir au meilleur prix</button>':''}
-  </div><p class="hint${showAll&&why?' bad':''}" id="saveWhy" style="margin-top:10px">${esc(why)}</p>`;
+  </div><p class="hint${showAll&&!canSave&&!confirmed?' bad':''}" id="saveWhy" style="margin-top:10px">${esc(why)}</p>`;
   const sig=[s?.label,R.costP,R.pv,s?.I,manual].join('|');
   const bump=sig!==lastSig;
   lastSig=sig;
@@ -332,6 +335,30 @@ function celebrate(){
   setTimeout(()=>b.remove(),1150);
 }
 
+/* Ce qui est enregistré pour le brouillon courant (même forme que dans l’historique). */
+function draftRecord(d,R){
+  const {status,destination,repris,...inputFields}=copyData(d);
+  return copyData({inputs:{...inputFields,mode:'manuel',offer:R.sel.label},res:snapshot(d,R),offer:R.sel.label});
+}
+/* Comparaison insensible à l’ordre des clés : le serveur (jsonb) ne les garde pas dans le même ordre. */
+function sameData(a,b){
+  if(a===b)return true;
+  if(!a||!b||typeof a!=='object'||typeof b!=='object')return false;
+  const keys=Object.keys(a);
+  return keys.length===Object.keys(b).length&&keys.every(k=>sameData(a[k],b[k]));
+}
+/* Vrai si le produit est déjà enregistré en brouillon avec exactement les mêmes données. */
+function isConfirmed(d){
+  const existing=S.quotes.find(q=>q.no===d.no);
+  return!!existing&&!!existing.status&&existing.status!==STATUS.DRAFT;
+}
+function savedUnchanged(d,R){
+  const existing=S.quotes.find(q=>q.no===d.no);
+  if(!existing||isConfirmed(d))return false;
+  const {inputs,res,offer}=draftRecord(d,R);
+  return sameData({inputs,res,offer},{inputs:existing.inputs,res:existing.res,offer:existing.offer});
+}
+
 function saveDraft(){
   const d=S.draft, R=compute(d);
   const bad=checksFor(d,R).filter(c=>c.state==='bad');
@@ -345,10 +372,9 @@ function saveDraft(){
   }
   const now=nowIso(), i=S.quotes.findIndex(q=>q.no===d.no), existing=i>=0?S.quotes[i]:null;
   if(existing&&existing.status&&existing.status!==STATUS.DRAFT){toast('Ce produit est déjà confirmé : modifiez-le depuis la version bureau.',{sticky:true});return}
-  const {status,destination,repris,...inputFields}=copyData(d);
-  const inputs={...inputFields,mode:'manuel',offer:R.sel.label};
+  const {inputs,res,offer}=draftRecord(d,R);
   const base=existing??normalizeQuoteWorkflow({no:d.no,created:now,status:STATUS.DRAFT,statusHistory:[{from:null,to:STATUS.DRAFT,at:now,comment:'Création'}]});
-  const rec={...base,modified:now,inputs,res:snapshot(d,R),offer:R.sel.label,destination:''};
+  const rec={...base,modified:now,inputs,res,offer,destination:''};
   const quotes=[...S.quotes];
   if(i>=0)quotes[i]=rec;else quotes.push(rec);
   S.quotes=quotes;

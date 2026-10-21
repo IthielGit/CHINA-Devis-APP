@@ -465,7 +465,7 @@ function delQuote(no){
 /* ---------- Tarifs : transitaires, leurs tarifs et leurs dates ---------- */
 /* Parcours simplifié : un transitaire = nom + mode + tarif + délai + catégories. Le reste est facultatif. */
 const MODE_DEFAULTS={Avion:[10,15],Maritime:[30,45],Express:[3,5]};
-const MODES_LIST=['Avion','Maritime','Express'];
+const MODES_LIST=['Avion','Maritime'];
 const DAY_OPTS=[['Aucun',''],...JOURS.map(j=>[j,j])];
 
 /* Regroupe les tarifs et les dates par transitaire. */
@@ -521,16 +521,29 @@ function chipGroup(name,options,current,multi=false){
   return `<div class="chips-field" ${multi?'data-multi':''}><input type="hidden" name="${name}" value="${esc(value)}">
     ${options.map(([label,v])=>`<button type="button" class="seg" data-chip="${name}" data-value="${esc(v)}" aria-pressed="${cur.includes(v)}">${esc(label)}</button>`).join('')}</div>`;
 }
+/* Services déjà utilisés pour l’avion (le maritime n’en a pas) : c’est la liste proposée à la saisie. */
+function serviceOptions(current){
+  const list=[...new Set(S.tarifs.filter(x=>x.mode==='Avion'&&x.svc).map(x=>x.svc.trim()))].sort((a,b)=>a.localeCompare(b,'fr'));
+  if(current&&!list.some(s=>serviceKey(s)===serviceKey(current)))list.push(current);
+  return list;
+}
 function editorHtml(t,{isNew,carrier}){
   const c=t||{};
-  const mode=c.mode||'Avion';
+  const mode=MODES_LIST.includes(c.mode)?c.mode:'Avion';
   const def=MODE_DEFAULTS[mode]||[7,14];
   const selCats=catList(c.cats||'');
   const cats=S.params.cats.map(x=>[x,x]);
+  const svc=c.svc||'';
   return `<form id="editorForm" class="editor" data-new="${isNew?1:0}">
     <label class="field"><span>Nom du transitaire</span><input class="inp" name="tr" list="dl-tr" required autocomplete="off" placeholder="Ex. E-SOA" value="${esc(c.tr||carrier||'')}"></label>
     <div class="field"><span>Mode de transport</span>${chipGroup('mode',MODES_LIST.map(m=>[m,m]),mode)}</div>
-    <label class="field svc-field"><span>Service <small class="muted">facultatif</small></span><input class="inp" name="svc" placeholder="Ex. Standard, Express" value="${esc(c.svc||'')}"></label>
+    <label class="field svc-field"><span>Service</span>
+      <select class="inp" name="svc" aria-label="Service">
+        <option value="" ${svc?'':'selected'} disabled>Choisir un service</option>
+        ${serviceOptions(svc).map(s=>`<option value="${esc(s)}" ${svc&&serviceKey(s)===serviceKey(svc)?'selected':''}>${esc(s)}</option>`).join('')}
+        <option value="__new__">+ Nouveau service…</option>
+      </select>
+      <input class="inp" name="svcNew" placeholder="Ex. Standard, Express" autocomplete="off" hidden></label>
     <div class="grid">
       <label class="field"><span>Tarif</span><input class="inp" name="tarif" type="number" step="any" inputmode="decimal" required value="${val(c.tarif)}"></label>
       <div class="field"><span>Unité</span>${chipGroup('unit',[['kg','kg'],['Pièce','pièce'],['m³','m³']],c.unit||'kg')}</div>
@@ -560,14 +573,19 @@ function readEditor(form,old){
   const g=n=>form.querySelector(`[name="${n}"]`)?.value??'';
   const num=n=>{const v=String(g(n)).trim().replace(',','.');return v===''?null:Number(v)};
   const mode=g('mode')||'Avion';
+  // Service choisi dans la liste, ou saisi (« + Nouveau service… ») ; un nom déjà connu garde son orthographe.
+  const picked=g('svc')==='__new__'?g('svcNew').trim():g('svc').trim();
+  const known=serviceOptions().find(s=>serviceKey(s)===serviceKey(picked));
+  const svc=mode==='Maritime'?'':(known||picked);
   const t={...(old||{palier:null,tarif2:null,base:null,min:null,d2:null,c2:null}),
-    tr:g('tr').trim(), mode, svc:mode==='Maritime'?'':g('svc').trim(), cats:g('cats'),
+    tr:g('tr').trim(), mode, svc, cats:g('cats'),
     tarif:num('tarif'), unit:g('unit')||'kg', cur:g('cur')||'Ar',
     dmin:num('dmin'), dmax:num('dmax'), d1:g('d1')||null, c1:num('c1'), h:num('h'), note:g('note').trim()};
   if(t.d1&&t.c1==null)t.c1=1;
   if(t.h==null)t.h=12;
   const errors=[];
   if(!t.tr)errors.push('Donnez le nom du transitaire.');
+  if(mode!=='Maritime'&&!t.svc)errors.push('Choisissez un service ou ajoutez-en un nouveau.');
   if(!(t.tarif>0))errors.push('Saisissez le tarif.');
   if(!catList(t.cats).length)errors.push('Choisissez au moins une catégorie.');
   if(t.dmin==null||t.dmax==null)errors.push('Indiquez le délai de transit minimum et maximum.');
@@ -920,6 +938,13 @@ const onNextKey=e=>{
 };
 app.addEventListener('keydown',onNextKey);
 sheetBody.addEventListener('keydown',onNextKey);
+// « + Nouveau service… » affiche le champ de saisie ; les autres listes « service » (date) n’ont pas ce champ.
+sheetBody.addEventListener('change',e=>{
+  const input=e.target.form?.querySelector('[name="svcNew"]');
+  if(e.target.name!=='svc'||!input)return;
+  input.hidden=e.target.value!=='__new__';
+  if(!input.hidden)input.focus();
+});
 
 /* Clavier à l’écran (téléphone) : la zone visible se réduit. On garde le champ actif visible,
    on masque la barre d’onglets pendant la saisie, et on laisse la fin de la page accessible. */

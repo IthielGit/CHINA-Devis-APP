@@ -226,6 +226,8 @@ function start(sessionId,target,userRole){
   // Scripts téléchargés en parallèle, exécutés dans l’ordre (async=false dans load).
   const scripts=['js/engine.js','js/app.js',...(userRole==='super_admin'?['js/admin.js']:[])];
   Promise.all(scripts.map(load)).then(()=>pushState());
+  // Message de bienvenue : une fois par ouverture de l’app (js/welcome.js ignore les appels suivants).
+  window.hygoWelcome();
 }
 function load(src){
   return new Promise((ok,ko)=>{

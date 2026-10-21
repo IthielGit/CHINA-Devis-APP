@@ -373,7 +373,9 @@ details[open]>.grid{margin-top:var(--s3)}
 /* Poignée : zone tactile de 44 px ; la barre visible reste la même. touch-action:none pour glisser sans faire défiler */
 .grab{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;padding:0;border:0;background:none;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
 .grab::after{content:"";width:36px;height:5px;border-radius:99px;background:var(--divider)}
-.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s3)}
+/* En-tête fixe en haut de la feuille : le ✕ reste visible pendant le défilement (même verre que la feuille) */
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);position:sticky;top:0;z-index:2;margin:calc(var(--s2) * -1) calc(var(--s5) * -1) 0;padding:var(--s2) var(--s5);background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+.sheet-head .btn.icon{box-shadow:var(--glass-shadow)}
 .sheet-head h3{font-size:var(--fs-section)}
 .panel>p{margin:var(--s1) 0 var(--s3);color:var(--muted);font-size:calc(.92rem * var(--fs-k))}
 .offers{display:grid;gap:var(--s2)}

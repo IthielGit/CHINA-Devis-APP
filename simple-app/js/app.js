@@ -954,8 +954,8 @@ function layoutForKeyboard(){
   const kb=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
   document.documentElement.style.setProperty('--kb',kb+'px');
   document.body.classList.toggle('kbd-open',kb>120&&window.innerWidth<861);
-  const el=document.activeElement;
-  if(kb>120&&el&&el.matches&&el.matches('input,select,textarea'))keepVisible(el);
+  // Pas de défilement ici : la zone visible change pendant la frappe, et recadrer à chaque fois fait bouger l’écran.
+  // Le recadrage se fait une seule fois, à l’ouverture du champ (focusin).
 }
 /* Fait défiler pour que le champ soit au centre de la zone encore visible. */
 function keepVisible(el){

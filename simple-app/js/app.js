@@ -514,10 +514,53 @@ function shareQuote(info){
   editorSubmit=null;
   openSheet();
 }
+/* Contenu détaillé du PDF : uniquement ce qui concerne le client (ni prix de revient, ni marge, ni transitaire). */
+const QUOTE_VALID_DAYS=7;
+const fullDate=n=>isNum(n)?new Date(Math.floor(n+1e-9)*864e5).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}):'';
+const weightTxt=kg=>kg<1?`${dec(kg*1000,0)} g`:`${dec(kg,2)} kg`;
+function pdfInfo(info){
+  const i=info.inputs||{}, qty=Math.max(1,Number(info.qty)||1);
+  const dm=dimsOf(i), hasDims=dm.every(x=>x>0), wt=Number(i.wt)||0;
+  const today=Math.floor(Date.now()/864e5);
+  const plane=info.mode!=='Maritime';
+  const colis=[
+    hasDims&&['Dimensions par pièce',`${dm.map(x=>dec(x,1)).join(' × ')} cm`],
+    wt>0&&['Poids par pièce',weightTxt(wt)+' (emballé)'],
+    wt>0&&qty>1&&['Poids total',weightTxt(wt*qty)],
+    hasDims&&['Volume total',(v=>`${dec(v,v<0.01?4:3)} m³`)(dm[0]*dm[1]*dm[2]*qty/1e6)]
+  ].filter(Boolean);
+  const days=isNum(info.arrival)?Math.max(0,Math.round(info.arrival-today)):null;
+  const livraison=[
+    info.mode&&['Transport',plane?'Aérien (avion)':'Maritime (bateau)'],
+    isNum(info.depart)&&['Départ de Chine',fullDate(info.depart)],
+    isNum(info.arrival)&&['Arrivée estimée',fullDate(info.arrival)],
+    days!=null&&['Délai estimé',`environ ${days} jour${days>1?'s':''}`]
+  ].filter(Boolean);
+  // Ce que couvre le prix, d’après les frais réellement saisis dans le devis.
+  const included=['L’achat du produit auprès du fournisseur en Chine',
+    Number(i.trans)>0&&'Les frais de paiement vers la Chine',
+    Number(i.livCh)>0&&'La livraison du fournisseur jusqu’au dépôt en Chine',
+    `Le transport ${plane?'aérien':'maritime'} de la Chine jusqu’à Madagascar`,
+    Number(i.exclus)>0&&'Les frais spécifiques à ce produit',
+    Number(i.livFin)>0&&'La livraison finale à Madagascar'].filter(Boolean);
+  const excluded=Number(i.livFin)>0?[]:['La livraison finale jusqu’à votre adresse à Madagascar'];
+  const valid=new Date(Date.now()+QUOTE_VALID_DAYS*864e5).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  const totalValue=isNum(info.total)?info.total:info.pv*qty;
+  const acc=window.hygoAccount||{};
+  return {
+    transport:info.mode?(plane?'Avion':'Bateau'):'', totalValue, issuer:{name:acc.name||'',email:acc.email||''},
+    no:info.no, date:new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}), validUntil:valid,
+    route:'Chine – Madagascar', name:info.name,
+    details:[i.cat&&i.cat!=='Général'?'Catégorie : '+i.cat:'',hasDims?`${dm.map(x=>dec(x,1)).join(' × ')} cm`:'',wt>0?weightTxt(wt)+' par pièce':''].filter(Boolean).join(' · '),
+    qty, unitPrice:ar(info.pv), total:ar(totalValue),
+    colis, livraison, included, excluded,
+    conditions:[`Prix valable jusqu’au ${valid}, sous réserve de l’évolution du taux de change.`,
+      'Les dates de départ et d’arrivée sont des estimations : elles dépendent des départs du transporteur et des formalités à l’arrivée.',
+      'Prix exprimés en ariary (Ar).']
+  };
+}
 async function sharePdf(info){
-  const blob=devisPdf({no:info.no,name:info.name,qty:info.qty,price:ar(info.pv),total:info.qty>1?ar(info.total):'',
-    mode:info.mode?(info.mode==='Maritime'?'Bateau':'Avion')+' depuis la Chine':'',arrival:isNum(info.arrival)?longDate(info.arrival):'',
-    date:new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})});
+  const blob=devisPdf(pdfInfo(info));
   const name=`Devis ${info.no} - ${String(info.name).replace(/[\\/:*?"<>|]+/g,' ').slice(0,40).trim()}.pdf`;
   const file=new File([blob],name,{type:'application/pdf'});
   try{
@@ -540,13 +583,13 @@ async function shareTextOnly(info){
 function shareDraft(){
   const d=S.draft, R=compute(d), s=R.sel;
   if(!s||!isNum(R.pv))return;
-  shareQuote({no:d.no,name:d.name||'Produit',qty:R.qty,pv:R.pv,total:R.revenueLot,mode:s.t.mode,arrival:s.I});
+  shareQuote({no:d.no,name:d.name||'Produit',qty:R.qty,pv:R.pv,total:R.revenueLot,mode:s.t.mode,arrival:s.I,depart:s.F,inputs:d});
 }
 function shareSaved(no){
   const q=S.quotes.find(x=>x.no===no);
   if(!q)return;
   const r=q.res||{};
-  shareQuote({no:q.no,name:q.inputs?.name||'Produit',qty:r.qty||q.inputs?.qty||1,pv:r.pv,total:r.revenueLot,mode:transportOf(q.offer||q.inputs?.offer||r.svc),arrival:r.dateClient});
+  shareQuote({no:q.no,name:q.inputs?.name||'Produit',qty:r.qty||q.inputs?.qty||1,pv:r.pv,total:r.revenueLot,mode:transportOf(q.offer||q.inputs?.offer||r.svc),arrival:r.dateClient,depart:r.depart,inputs:q.inputs||{}});
 }
 function openQuote(no){
   const q=S.quotes.find(x=>x.no===no);

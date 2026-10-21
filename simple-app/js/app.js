@@ -309,6 +309,29 @@ function renderSheet(R,d){
 }
 /* Feuille « Comparer les offres » (lecture) ou éditeur de tarif (saisie). */
 let closeTimer=0;
+/* Poignée de la feuille : un tap la ferme ; un glissement vers le bas la ferme aussi au-delà de 80 px,
+   sinon la feuille revient à sa place. Le capture de pointeur garde le suivi si le doigt sort de la poignée. */
+const grab=sheet.querySelector('.grab'), panel=sheet.querySelector('.panel');
+let grabY=null, grabMoved=false;
+grab.addEventListener('pointerdown',e=>{grab.setPointerCapture(e.pointerId);grabY=e.clientY;grabMoved=false;panel.style.transition='none'});
+grab.addEventListener('pointermove',e=>{
+  if(grabY==null)return;
+  const d=Math.max(0,e.clientY-grabY);
+  if(d>6)grabMoved=true;
+  panel.style.transform=`translateY(${d}px)`;
+});
+function endGrab(e){
+  if(grabY==null)return;
+  const d=Math.max(0,e.clientY-grabY);
+  grabY=null;
+  panel.style.transition='';
+  panel.style.transform='';
+  if(d>80)closeSheet();
+}
+grab.addEventListener('pointerup',endGrab);
+grab.addEventListener('pointercancel',endGrab);
+// Après un glissement, le clic qui suit ne doit pas refermer une seconde fois.
+grab.addEventListener('click',()=>{if(grabMoved){grabMoved=false;return}closeSheet()});
 function openSheet(){
   clearTimeout(closeTimer);
   sheet.classList.remove('closing');

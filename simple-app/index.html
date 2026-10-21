@@ -370,7 +370,9 @@ details[open]>.grid{margin-top:var(--s3)}
 .scrim{position:absolute;inset:0;background:var(--scrim);animation:fade var(--t) ease both}
 .panel{position:relative;width:min(560px,100%);max-height:86vh;overflow:auto;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);border-bottom:0;border-radius:28px 28px 0 0;padding:var(--s2) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom,0px));box-shadow:var(--glass-shadow);animation:sheetUp var(--t-slow) var(--ease) both}
 @media (min-width:861px){.sheet{align-items:center}.panel{border-radius:28px;border-bottom:1px solid var(--glass-edge)}}
-.grab{width:36px;height:5px;border-radius:99px;background:var(--divider);margin:0 auto var(--s3)}
+/* Poignée : zone tactile de 44 px ; la barre visible reste la même. touch-action:none pour glisser sans faire défiler */
+.grab{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;padding:0;border:0;background:none;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
+.grab::after{content:"";width:36px;height:5px;border-radius:99px;background:var(--divider)}
 .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s3)}
 .sheet-head h3{font-size:var(--fs-section)}
 .panel>p{margin:var(--s1) 0 var(--s3);color:var(--muted);font-size:calc(.92rem * var(--fs-k))}
@@ -576,7 +578,7 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
 <div class="sheet" id="sheet" hidden>
   <div class="scrim" data-close></div>
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-    <div class="grab" aria-hidden="true"></div>
+    <button type="button" class="grab" aria-label="Fermer la fenêtre"></button>
     <header class="sheet-head"><h3 id="sheetTitle">Comparer les offres</h3><button type="button" class="btn icon" data-close aria-label="Fermer">✕</button></header>
     <p id="sheetHint">Triées par prix de revient. Choisir une offre la fixe pour ce produit.</p>
     <div class="offers" id="sheetBody"></div>

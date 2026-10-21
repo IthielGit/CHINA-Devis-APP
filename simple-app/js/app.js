@@ -63,13 +63,21 @@ const PAGES={
   tarifs:['Tarifs','Transitaires, tarifs et dates de départ.'],
   reglages:['Réglages','Apparence, taux de change et sauvegarde.']
 };
-function go(t){
+const trail=[];  // onglets déjà ouverts : le bouton Retour revient au dernier
+function go(t,back){
+  if(!back&&t!==tab)trail.push(tab);
   const apply=()=>{tab=t;closeSheet();render()};
   if(document.startViewTransition&&!reduce)document.startViewTransition(apply);else apply();
   window.scrollTo(0,0);
 }
+function goBack(){
+  const prev=trail.pop();
+  if(prev)go(prev,true);
+}
+$('backBtn').addEventListener('click',goBack);
 function render(){
   document.querySelectorAll('.nav [data-go]').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
+  $('backBtn').hidden=!trail.length;
   placeIndicator();
   $('pageTitle').textContent=PAGES[tab][0];
   $('pageSub').textContent=PAGES[tab][1];

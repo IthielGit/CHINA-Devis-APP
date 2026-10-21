@@ -120,6 +120,8 @@ svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s4);margin:var(--s2) 0 var(--s6)}
 .top h1{font-size:var(--fs-title);font-weight:700;letter-spacing:-.02em}
 .top p{margin:var(--s1) 0 0;color:var(--muted)}
+.back-btn{margin-top:var(--s2);min-height:44px;padding:0 var(--s4)}
+.back-btn[hidden]{display:none}
 /* Contrôle flottant : verre */
 .glass-btn{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--glass-edge);background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:var(--glass-shadow);transition:transform var(--t-fast) var(--ease)}
 .glass-btn:active{transform:scale(.94)}
@@ -505,6 +507,7 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
       <span>Mode consultation : vous voyez les données d’un autre compte.</span>
       <button type="button" class="btn small" id="viewAsExit">Revenir à mes données</button>
     </div>
+    <button type="button" class="btn small back-btn" id="backBtn" aria-label="Retour à l’écran précédent" hidden><span aria-hidden="true">←</span> Retour</button>
     <header class="top">
       <div>
         <h1 id="pageTitle">Devis</h1>

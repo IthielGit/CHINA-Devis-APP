@@ -479,15 +479,6 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
 /* Montant du résultat : léger rebond quand il change */
 .big-amount.updated{animation:pop var(--t-slow) var(--spring) both}
 
-/* Message de bienvenue : carte centrée, adaptée au viewport mobile (safe areas, barre Safari) */
-.welcome{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);background:var(--scrim);min-height:100vh;min-height:100dvh;overflow:hidden}
-.welcome[hidden]{display:none}
-.welcome-card{width:calc(100% - 32px);max-width:400px;max-height:100%;overflow:auto;display:grid;justify-items:center;gap:var(--s4);padding:var(--s6) var(--s5);text-align:center;box-shadow:var(--glass-shadow);animation:welcomeIn var(--t-slow) var(--ease) both}
-.welcome-card h2{margin:0;font-size:clamp(1.5rem,6.5vw,1.75rem);line-height:1.2;overflow-wrap:anywhere}
-.welcome-msg{margin:0;font-size:clamp(1.15rem,5vw,1.35rem);line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
-.welcome-btn{width:100%;min-height:52px;font-size:1.02rem}
-@keyframes welcomeIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
-
 /* ---------- Mouvement réduit ---------- */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
@@ -572,17 +563,8 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
   </section>
 </div>
 
-<div class="welcome" id="welcome" hidden>
-  <section class="card welcome-card" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle" aria-describedby="welcomeMsg">
-    <h2 id="welcomeTitle">Hello Beauty</h2>
-    <p class="welcome-msg" id="welcomeMsg">Ito za ito akaikinao io fa tsy hitanao!</p>
-    <button type="button" class="btn primary welcome-btn" id="welcomeBtn">Ask in whatsapp 🙄</button>
-  </section>
-</div>
-
 <script src="js/vendor/supabase.umd.min.js"></script>
 <script src="js/config.js"></script>
-<script src="js/welcome.js"></script>
 <script src="js/auth.js"></script>
 </body>
 </html>

@@ -385,7 +385,6 @@ function saveDraft(){
   persist();
   celebrate();
   renderResult();
-  window.hygoWelcome?.(true);
 }
 
 function newDraft(){

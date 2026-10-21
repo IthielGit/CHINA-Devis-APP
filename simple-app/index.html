@@ -370,9 +370,6 @@ details[open]>.grid{margin-top:var(--s3)}
 .scrim{position:absolute;inset:0;background:var(--scrim);animation:fade var(--t) ease both}
 .panel{position:relative;width:min(560px,100%);max-height:86vh;overflow:auto;background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);border-bottom:0;border-radius:28px 28px 0 0;padding:var(--s2) var(--s6) calc(var(--s6) + env(safe-area-inset-bottom,0px));box-shadow:var(--glass-shadow);animation:sheetUp var(--t-slow) var(--ease) both}
 @media (min-width:861px){.sheet{align-items:center}.panel{border-radius:28px;border-bottom:1px solid var(--glass-edge)}}
-/* Poignée : zone tactile de 44 px ; la barre visible reste la même. touch-action:none pour glisser sans faire défiler */
-.grab{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;padding:0;border:0;background:none;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
-.grab::after{content:"";width:36px;height:4px;border-radius:99px;background:light-dark(rgba(25,24,39,.22),rgba(255,255,255,.22))}
 /* Seul le ✕ reste visible pendant le défilement : il est collé en haut de la feuille, sur la ligne du titre.
    Le titre, lui, défile normalement. La marge négative le ramène sur la même ligne que le titre. */
 .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);padding-right:60px}
@@ -583,7 +580,6 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
 <div class="sheet" id="sheet" hidden>
   <div class="scrim" data-close></div>
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-    <button type="button" class="grab" aria-label="Fermer la fenêtre"></button>
     <button type="button" class="btn icon sheet-close" data-close aria-label="Fermer">✕</button>
     <header class="sheet-head"><h3 id="sheetTitle">Comparer les offres</h3></header>
     <p id="sheetHint">Triées par prix de revient. Choisir une offre la fixe pour ce produit.</p>

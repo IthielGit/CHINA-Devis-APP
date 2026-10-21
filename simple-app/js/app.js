@@ -872,12 +872,14 @@ app.addEventListener('click',e=>{
   if(t.id==='export'){exportData();return}
 });
 /* Dimensions : trois champs, reconstitués en « L x l x H » pour le moteur de calcul. */
+/* Le groupe L/l/H : on n’affiche pas son erreur tant que le focus reste dedans. */
+const dimsGroup=()=>app.querySelector('.dims3');
+function dimsFocused(){const g=dimsGroup();return!!g&&g.contains(document.activeElement)}
 function onDimField(){
   const parts=[...app.querySelectorAll('[data-dim]')].map(x=>x.value.trim().replace(',','.'));
   S.draft.dims=parts.every(x=>x==='')?'':parts.map(x=>x||'0').join(' x ');
-  touched.add('dims');
   persist();
-  renderResult();
+  if(!dimsFocused())renderResult();
 }
 app.addEventListener('input',e=>{
   const el=e.target;
@@ -959,7 +961,8 @@ function layoutForKeyboard(){
 }
 /* Fait défiler pour que le champ soit au centre de la zone encore visible. */
 function keepVisible(el){
-  const top=vv.offsetTop+16, bottom=vv.offsetTop+vv.height-16;
+  // 56 px : marge pour la barre d’état (en haut) et la barre d’outils du clavier iOS (en bas, non supprimable).
+  const top=vv.offsetTop+56, bottom=vv.offsetTop+vv.height-56;
   const r=el.getBoundingClientRect();
   if(r.top<top||r.bottom>bottom){
     const y=window.scrollY+r.top-(top+(bottom-top)/2)+r.height/2;
@@ -968,13 +971,21 @@ function keepVisible(el){
 }
 if(vv){vv.addEventListener('resize',layoutForKeyboard);vv.addEventListener('scroll',layoutForKeyboard)}
 app.addEventListener('focusin',e=>{
-  if(!e.target.matches('input,select,textarea'))return;
+  const el=e.target;
+  if(!el.matches('input,select,textarea'))return;
+  // Champ numérique déjà rempli (ex. prix « 39 ») : on sélectionne tout, la première touche remplace la valeur.
+  // iOS place le curseur au toucher, après le focus : d’où le petit délai.
+  if(el.matches('input[inputmode="decimal"],input[inputmode="numeric"]')&&el.value)setTimeout(()=>el.select(),60);
   // Le clavier met un peu de temps à monter : on recadre après son animation.
-  setTimeout(()=>{if(vv&&document.activeElement===e.target)keepVisible(e.target)},320);
+  setTimeout(()=>{if(vv&&document.activeElement===el)keepVisible(el)},320);
 });
 /* Quitter un champ le marque comme « touché » : son erreur éventuelle s’affiche. */
 app.addEventListener('focusout',e=>{
-  if(e.target.dataset?.dim!==undefined){if(!touched.has('dims')){touched.add('dims');renderResult()}return}
+  // Passer d’un champ L/l/H à l’autre ne compte pas : l’erreur n’apparaît qu’en quittant le groupe.
+  if(e.target.dataset?.dim!==undefined){
+    if(e.relatedTarget&&e.target.closest('.dims3')?.contains(e.relatedTarget))return;
+    touched.add('dims');renderResult();
+    return}
   const k=e.target.dataset?.k;
   // Mise à jour des indications seulement : reconstruire les boutons ici ferait perdre le clic en cours.
   if(k&&!touched.has(k)&&tab==='devis'){touched.add(k);const R=compute(S.draft);updateHints(S.draft,R,checksFor(S.draft,R))}

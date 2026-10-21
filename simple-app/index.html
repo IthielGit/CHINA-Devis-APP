@@ -238,7 +238,8 @@ textarea.inp{min-height:0;resize:vertical}
 .dims3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
 .dim{display:block;min-width:0}
 
-.dim .inp{text-align:center;font-variant-numeric:tabular-nums;font-size:calc(1.1rem * var(--fs-k))}
+/* 16 px minimum : iOS zoome sur les champs plus petits */
+.dim .inp{text-align:center;font-variant-numeric:tabular-nums;font-size:16px}
 .result-actions{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin-top:var(--s5)}
 .result-actions .wide{grid-column:1/-1}
 .result-actions .btn{width:100%;padding:0 var(--s3);font-size:calc(.95rem * var(--fs-k));text-align:center;line-height:1.2}

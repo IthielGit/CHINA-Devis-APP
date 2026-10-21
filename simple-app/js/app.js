@@ -59,7 +59,7 @@ $('themeToggle').addEventListener('click',()=>{
 /* ---------- navigation ---------- */
 const PAGES={
   devis:['Devis','Chine → Madagascar · saisissez le produit, le reste se calcule.'],
-  histo:['Historique','Produits enregistrés sur cet appareil.'],
+  histo:['Historique','Vos devis enregistrés et le bilan du mois.'],
   tarifs:['Tarifs','Transitaires, tarifs et dates de départ.'],
   reglages:['Réglages','Apparence, taux de change et sauvegarde.']
 };
@@ -113,11 +113,13 @@ function checksFor(d,R){
   out.push({key:'price',label:'Prix d’achat',state:d.price>0?'ok':'bad',txt:d.price>0?'':'en yuans'});
   const dimsOk=dims.every(x=>x>0);
   out.push({key:'dims',label:'Dimensions',state:dimsOk?'ok':'bad',txt:dimsOk?'':'L x l x H'});
-  const wtState=!(d.wt>0)?'bad':d.wt>30?'warn':'ok';
-  out.push({key:'wt',label:'Poids',state:wtState,txt:wtState==='bad'?'à saisir':wtState==='warn'?'élevé, vérifiez':''});
+  // Poids : la limite du transitaire choisi si elle est connue, sinon le seuil des Réglages.
+  const maxWt=wtLimit(R.sel?.t);
+  const wtState=!(d.wt>0)?'bad':d.wt>(maxWt??wtWarnOf())?'warn':'ok';
+  out.push({key:'wt',label:'Poids',state:wtState,txt:wtState==='bad'?'à saisir':wtState==='warn'?(maxWt!=null?`max ${dec(maxWt,1)} kg chez ${R.sel.t.tr}`:'élevé, vérifiez'):''});
   out.push({key:'offer',label:'Transport',state:R.sel?'ok':'bad',txt:R.sel?'':'aucune offre'});
   if(d.pvRetenu!=null&&isNum(R.costP))out.push({key:'pv',label:'Prix imposé',state:d.pvRetenu<R.costP?'bad':'ok',txt:d.pvRetenu<R.costP?'sous le revient':''});
-  const margeState=(d.marge??0)<0?'bad':(d.marge??0)<0.1?'warn':'ok';
+  const margeState=(d.marge??0)<0?'bad':(d.marge??0)<margeMinOf()?'warn':'ok';
   out.push({key:'marge',label:'Marge',state:margeState,txt:margeState==='warn'?'faible':margeState==='bad'?'négative':''});
   if(d.pay){const old=Math.floor(Date.now()/864e5)-dayNum(d.pay)>30;out.push({key:'pay',label:'Date de paiement',state:old?'warn':'ok',txt:old?'ancienne':''})}
   return out;
@@ -231,7 +233,8 @@ function updateHints(d,R,checks){
   set('hint-name','name',d.repris?`Repris de ${d.repris} : vérifiez le prix.`:'','Un nom déjà enregistré remplit le reste.','Donnez un nom au produit.');
   set('hint-price','price',isNum(R.achat)?`≈ ${ar(R.achat)} par pièce`:'','En yuans, pour une pièce.','Saisissez le prix d’achat en yuans.');
   set('hint-dims','dims',prod?`Volume ${dec(prod,0)} cm³ · poids volumétrique ${dec(prod/S.params.div,2)} kg`:'','Trois mesures en cm, par exemple 14 x 6 x 6.','Format attendu : 14 x 6 x 6.');
-  set('hint-wt','wt','','Produit emballé, en kg.','Saisissez le poids d’un produit emballé.','Poids élevé : vérifiez que le transitaire l’accepte.');
+  const maxWt=wtLimit(R.sel?.t);
+  set('hint-wt','wt','','Produit emballé, en kg.','Saisissez le poids d’un produit emballé.',maxWt!=null?`Au-delà de la limite de ${R.sel.t.tr} (${dec(maxWt,1)} kg par pièce) : choisissez une autre offre.`:'Poids élevé : vérifiez que le transitaire l’accepte.');
   const out=$('qty-out');if(out)out.textContent=d.qty||1;
   document.querySelectorAll('.inp[data-k]').forEach(el=>{
     const k=el.dataset.k, c=by(k);
@@ -255,7 +258,11 @@ function renderResult(){
   const num=(key,v)=>isNum(v)?` data-num="${v}" data-key="${key}"`:'';
   let body;
   if(!s){
-    body=`<p class="warn-box"><span aria-hidden="true">⚠︎</span><span>${manual?'L’offre choisie n’est pas compatible avec ce produit. Revenez au meilleur prix.':`Aucun transitaire ne prend la catégorie « ${esc(d.cat)} ». Changez la catégorie dans « Catégorie, dates et frais ».`}</span></p>`;
+    // La correction se fait ici même : seules les catégories prises par au moins un transitaire sont proposées.
+    const accepted=[...new Set(S.tarifs.flatMap(t=>catList(t.cats)))].filter(c=>c!==d.cat).sort((a,b)=>a.localeCompare(b,'fr'));
+    const fix=!manual&&accepted.length?`<label class="field fix-cat"><span>Choisir une catégorie acceptée</span>
+      <select class="inp" data-fixcat><option value="" selected disabled>Catégorie…</option>${accepted.map(c=>`<option>${esc(c)}</option>`).join('')}</select></label>`:'';
+    body=`<p class="warn-box"><span aria-hidden="true">⚠︎</span><span>${manual?'L’offre choisie n’est pas compatible avec ce produit. Revenez au meilleur prix.':accepted.length?`Aucun transitaire ne prend la catégorie « ${esc(d.cat)} ».`:`Aucun transitaire ne prend la catégorie « ${esc(d.cat)} ». Ajoutez-la à un tarif dans Tarifs.`}</span></p>${fix}`;
   } else {
     const notes=[...(s.t.note?[s.t.note]:[]),...calendarFeedback(s)];
     body=`<div class="rows">
@@ -279,8 +286,9 @@ function renderResult(){
   const why=confirmed?'Ce produit est déjà confirmé : modifiez-le depuis la version bureau.':unchanged?'Aucune modification depuis le dernier enregistrement.':canSave?'':`${showAll?'À corriger':'Il reste à compléter'} : ${blocking.map(c=>c.label.toLowerCase()).join(', ')}.`;
   const actions=`<div class="result-actions">
     <button class="btn primary wide" id="save" aria-describedby="saveWhy" ${confirmed||unchanged?'disabled':canSave?'':'aria-disabled=true'}>Enregistrer dans l’historique</button>
+    <button class="btn" id="share" ${s&&canSave?'':'disabled'}>Partager au client</button>
     <button class="btn" id="compare" ${R.comp.length?'':'disabled'}>Comparer (${R.comp.length})</button>
-    <button class="btn" id="new">Nouveau produit</button>
+    <button class="btn wide" id="new">Nouveau produit</button>
     ${manual?'<button class="link wide" id="back-best">Revenir au meilleur prix</button>':''}
   </div><p class="hint${showAll&&!canSave&&!confirmed?' bad':''}" id="saveWhy" style="margin-top:10px">${esc(why)}</p>`;
   const sig=[s?.label,R.costP,R.pv,s?.I,manual].join('|');
@@ -302,7 +310,7 @@ function renderSheet(R,d){
       <span class="radio" aria-hidden="true"></span>
       <span class="body">
         <b>${esc(o.t.tr)} · ${esc(o.t.mode)}${o.t.svc?' · '+esc(o.t.svc):''}</b>
-        <small>${isNum(o.I)?'Arrivée '+fd(Math.floor(o.I)):'Date non connue'}${o.calendarNotice?' · '+esc(o.calendarNotice):''}</small>
+        <small>${isNum(o.I)?'Arrivée '+fd(Math.floor(o.I)):'Date non connue'}${wtLimit(o.t)!=null&&d.wt>wtLimit(o.t)?` · ⚠︎ poids max ${esc(dec(wtLimit(o.t),1))} kg dépassé`:''}${o.calendarNotice?' · '+esc(o.calendarNotice):''}</small>
       </span>
       <span class="price">${m(o.J)}<small>vente ${isNum(o.J)?ar(Math.ceil(o.J*(1+(d.marge??0))/100)*100):'—'}</small></span></button>`;
   }).join('')||'<p class="empty">Aucune offre compatible.</p>';
@@ -403,8 +411,31 @@ function newDraft(){
 }
 
 /* ---------- Historique ---------- */
+/* Le mois en cours, en un coup d’œil : nombre de devis, valeur, marge moyenne et transitaire le plus utilisé. */
+function statsHtml(){
+  if(!S.quotes.length)return '';
+  const month=iso=>String(iso||'').slice(0,7);
+  const now=new Date(), cur=now.toISOString().slice(0,7);
+  const prev=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()-1,1)).toISOString().slice(0,7);
+  const when=q=>month(q.created||q.modified);
+  const list=S.quotes.filter(q=>when(q)===cur);
+  const before=S.quotes.filter(q=>when(q)===prev).length;
+  const rates=list.map(q=>q.res).filter(r=>r&&isNum(r.margeP)&&r.costP>0).map(r=>r.margeP/r.costP);
+  const value=list.reduce((a,q)=>a+(isNum(q.res?.revenueLot)?q.res.revenueLot:0),0);
+  const byTr=new Map();list.forEach(q=>{const t=q.res?.tr;if(t)byTr.set(t,(byTr.get(t)||0)+1)});
+  const top=[...byTr].sort((a,b)=>b[1]-a[1])[0];
+  const tile=(label,value,ctx)=>`<div class="stat"><span class="stat-label">${label}</span><b class="stat-value">${value}</b><small>${ctx}</small></div>`;
+  const monthName=now.toLocaleDateString('fr-FR',{month:'long'});
+  return `<section class="card"><h2>Ce mois-ci <small class="muted">${esc(monthName)}</small></h2>
+    <div class="stats">
+      ${tile('Devis',list.length,before?`${before} le mois dernier`:'aucun le mois dernier')}
+      ${tile('Valeur des devis',list.length?m(value):'—','prix de vente × quantité')}
+      ${tile('Marge moyenne',rates.length?pct(rates.reduce((a,x)=>a+x,0)/rates.length):'—',rates.length?`sur ${rates.length} devis`:'pas encore de devis')}
+      ${tile('Transitaire le plus utilisé',top?esc(top[0]):'—',top?`${top[1]} devis sur ${list.length}`:'pas encore de devis')}
+    </div></section>`;
+}
 function viewHisto(){
-  app.innerHTML=`<section class="card"><h2>Produits enregistrés</h2>
+  app.innerHTML=`${statsHtml()}<section class="card"><h2>Produits enregistrés</h2>
     <input class="inp search" id="hsearch" type="search" placeholder="Rechercher un produit ou un numéro" value="${esc(hSearch)}">
     <div id="hlist"></div></section>`;
   renderHisto();
@@ -434,10 +465,60 @@ function histItem(q){
       <span class="main"><b>${esc(name)}</b><small>${esc(meta)}</small></span>
       <span class="trail"><b>${m(r.pv)}</b><small>revient ${m(r.costP)}</small></span>
     </button>
-    <div class="item-actions">
-      <button class="btn small" data-dup="${esc(q.no)}">Dupliquer</button>
-      <button class="btn small danger" data-del="${esc(q.no)}">Supprimer</button>
-    </div></div>`;
+    <button class="item-more" data-more="${esc(q.no)}" aria-label="Actions pour ${esc(name)}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+    </div>`;
+}
+/* Actions d’un produit enregistré : dans la feuille, plutôt que deux boutons sur chaque ligne. */
+function openQuoteActions(no){
+  const q=S.quotes.find(x=>x.no===no);
+  if(!q)return;
+  $('sheetTitle').textContent=q.inputs?.name||'Sans nom';
+  $('sheetHint').textContent=[q.no,q.status&&q.status!==STATUS.DRAFT?q.status:'',m(q.res?.pv)].filter(Boolean).join(' · ');
+  sheetBody.classList.remove('editor-body');
+  sheetBody.innerHTML=`<div class="action-list">
+    <button class="action" data-act="open" data-no="${esc(no)}">Ouvrir</button>
+    <button class="action" data-act="share" data-no="${esc(no)}" ${isNum(q.res?.pv)?'':'disabled'}>Partager au client</button>
+    <button class="action" data-act="dup" data-no="${esc(no)}">Dupliquer</button>
+    <button class="action danger" data-act="del" data-no="${esc(no)}">Supprimer</button></div>`;
+  editorSubmit=null;
+  openSheet();
+}
+
+/* ---------- Partage au client ---------- */
+/* Texte simple, lisible dans WhatsApp ou un SMS : ni prix de revient, ni marge, ni nom du transitaire. */
+const longDate=n=>isNum(n)?new Date(Math.floor(n+1e-9)*864e5).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}):'';
+const transportOf=label=>/maritime/i.test(label)?'Maritime':/avion/i.test(label)?'Avion':'';
+function shareText({no,name,qty,pv,total,mode,arrival}){
+  return [
+    `Devis ${no}`,
+    name,
+    '',
+    `Prix : ${ar(pv)} par pièce`,
+    qty>1?`Quantité : ${qty} · Total : ${ar(total)}`:null,
+    mode?`Transport : ${mode==='Maritime'?'bateau':'avion'} depuis la Chine`:null,
+    isNum(arrival)?`Arrivée estimée : ${longDate(arrival)}`:null,
+    '',
+    'Prix valable à ce jour, sous réserve du taux de change.'
+  ].filter(l=>l!==null).join('\n');
+}
+async function shareQuote(info){
+  const text=shareText(info);
+  try{
+    if(navigator.share){await navigator.share({title:`Devis ${info.no}`,text});return}
+  }catch(e){if(e.name==='AbortError')return}
+  try{await navigator.clipboard.writeText(text);toast('Devis copié : collez-le dans WhatsApp ou un message.')}
+  catch(e){prompt('Copiez ce texte :',text)}
+}
+function shareDraft(){
+  const d=S.draft, R=compute(d), s=R.sel;
+  if(!s||!isNum(R.pv))return;
+  shareQuote({no:d.no,name:d.name||'Produit',qty:R.qty,pv:R.pv,total:R.revenueLot,mode:s.t.mode,arrival:s.I});
+}
+function shareSaved(no){
+  const q=S.quotes.find(x=>x.no===no);
+  if(!q)return;
+  const r=q.res||{};
+  shareQuote({no:q.no,name:q.inputs?.name||'Produit',qty:r.qty||q.inputs?.qty||1,pv:r.pv,total:r.revenueLot,mode:transportOf(q.offer||q.inputs?.offer||r.svc),arrival:r.dateClient});
 }
 function openQuote(no){
   const q=S.quotes.find(x=>x.no===no);
@@ -454,12 +535,20 @@ function dupQuote(no){
   toast('Copie prête : enregistrez-la pour la garder.');
   go('devis');
 }
+/* Suppression immédiate, avec « Annuler » pendant quelques secondes. */
 function delQuote(no){
-  const q=S.quotes.find(x=>x.no===no);
-  if(!q||!confirm(`Supprimer « ${q.inputs?.name||q.no} » de l’historique ?`))return;
+  const i=S.quotes.findIndex(x=>x.no===no);
+  if(i<0)return;
+  const q=S.quotes[i];
   S.quotes=S.quotes.filter(x=>x.no!==no);
   persist();
-  renderHisto();
+  if(tab==='histo')viewHisto();
+  toast(`« ${q.inputs?.name||q.no} » supprimé.`,{action:{label:'Annuler',run:()=>{
+    if(S.quotes.some(x=>x.no===no))return;
+    const quotes=[...S.quotes];quotes.splice(Math.min(i,quotes.length),0,q);S.quotes=quotes;
+    persist();
+    if(tab==='histo')viewHisto();
+  }}});
 }
 
 /* ---------- Tarifs : transitaires, leurs tarifs et leurs dates ---------- */
@@ -477,6 +566,8 @@ function carriers(){
   return map;
 }
 const tariffLabel=x=>`${x.mode}${x.svc?' · '+x.svc:''}`;
+/* Poids maximum accepté par pièce pour un tarif (null : pas de limite indiquée). */
+const wtLimit=t=>t&&isNum(t.maxWt)&&t.maxWt>0?t.maxWt:null;
 
 function viewTarifs(){
   const map=carriers();
@@ -488,7 +579,7 @@ function viewTarifs(){
 
 function carrierCard(name,g){
   const tariffs=g.tariffs.map(({x,i})=>`<div class="line">
-      <span><b>${esc(tariffLabel(x))}</b><small>${isNum(x.tarif)?esc(dec(x.tarif,2))+' '+esc(x.cur)+' / '+esc(x.unit):'Tarif manquant'} · ${esc(x.cats||'aucune catégorie')}${isNum(x.dmin)&&isNum(x.dmax)?' · '+x.dmin+' à '+x.dmax+' j':''}</small></span>
+      <span><b>${esc(tariffLabel(x))}</b><small>${isNum(x.tarif)?esc(dec(x.tarif,2))+' '+esc(x.cur)+' / '+esc(x.unit):'Tarif manquant'} · ${esc(x.cats||'aucune catégorie')}${isNum(x.dmin)&&isNum(x.dmax)?' · '+x.dmin+' à '+x.dmax+' j':''}${wtLimit(x)!=null?' · max '+esc(dec(x.maxWt,1))+' kg':''}</small></span>
       <span class="actions"><button class="btn small" data-edit-t="${i}">Modifier</button><button class="btn small" data-dup-t="${i}">Dupliquer</button><button class="btn small danger" data-del-t="${i}" aria-label="Supprimer ce tarif">Supprimer</button></span></div>`).join('')
     ||'<p class="muted">Aucun tarif.</p>';
   const dates=[...g.cal].sort((a,b)=>String(a.x.date).localeCompare(String(b.x.date)))
@@ -555,11 +646,12 @@ function editorHtml(t,{isNew,carrier}){
       <label class="field"><span>Délai de transit min (jours)</span><input class="inp" name="dmin" type="number" inputmode="numeric" value="${val(c.dmin??def[0])}"></label>
       <label class="field"><span>Délai de transit max (jours)</span><input class="inp" name="dmax" type="number" inputmode="numeric" value="${val(c.dmax??def[1])}"></label>
     </div>
-    <details class="adv"><summary>Départ à jour fixe, heure limite, note</summary>
+    <details class="adv"><summary>Départ à jour fixe, heure limite, poids max, note</summary>
       <div class="grid">
         <div class="field wide"><span>Jour de départ habituel</span>${chipGroup('d1',DAY_OPTS,c.d1||'')}</div>
         <label class="field"><span>Clôture (jours avant le départ)</span><input class="inp" name="c1" type="number" inputmode="numeric" value="${val(c.c1??1)}"></label>
         <label class="field"><span>Heure limite au dépôt (h)</span><input class="inp" name="h" type="number" min="0" max="23" inputmode="numeric" value="${val(c.h??12)}"></label>
+        <label class="field wide"><span>Poids max accepté par pièce (kg)</span><input class="inp" name="maxWt" type="number" step="any" inputmode="decimal" placeholder="Aucune limite" value="${val(c.maxWt)}"></label>
         <label class="field wide"><span>Note</span><input class="inp" name="note" value="${esc(c.note||'')}"></label>
       </div>
     </details>
@@ -580,7 +672,8 @@ function readEditor(form,old){
   const t={...(old||{palier:null,tarif2:null,base:null,min:null,d2:null,c2:null}),
     tr:g('tr').trim(), mode, svc, cats:g('cats'),
     tarif:num('tarif'), unit:g('unit')||'kg', cur:g('cur')||'Ar',
-    dmin:num('dmin'), dmax:num('dmax'), d1:g('d1')||null, c1:num('c1'), h:num('h'), note:g('note').trim()};
+    dmin:num('dmin'), dmax:num('dmax'), d1:g('d1')||null, c1:num('c1'), h:num('h'), maxWt:num('maxWt'), note:g('note').trim()};
+  if(!(t.maxWt>0))t.maxWt=null;
   if(t.d1&&t.c1==null)t.c1=1;
   if(t.h==null)t.h=12;
   const errors=[];
@@ -726,7 +819,7 @@ window.addEventListener('hygo-sync',e=>{const el=$('syncState');if(el)el.textCon
 function viewReglages(){
   const p=S.params;
   const sel=(name,label,opts,cur)=>`<label class="field"><span>${label}</span><select class="inp" name="${name}">${opts.map(([v,l])=>`<option value="${v}" ${v===cur?'selected':''}>${l}</option>`).join('')}</select></label>`;
-  const ap=appearance();
+  const ap=appearance(), restore=readRestore();
   app.innerHTML=`
   <section class="card"><h2>Apparence</h2>
     <div class="segments" role="group" aria-label="Apparence">
@@ -737,7 +830,8 @@ function viewReglages(){
   <section class="card"><h2>Synchronisation</h2>
     <p class="hint" id="syncState">${SYNC_LABEL[window.hygoSyncState?.()]||''}</p>
   </section>
-  <form class="card" id="pform"><h2>Taux et paramètres</h2>
+  <form class="card" id="pform" novalidate><h2>Taux et paramètres</h2>
+    <p class="hint" id="pformState" role="status" style="margin:-4px 0 12px">Chaque changement est enregistré automatiquement.</p>
     <div class="grid">
       ${field('usd','Taux du dollar (Ar pour 1 USD)',p.usd,'number','step="any" required')}
       ${field('cnyUsd','Yuans pour 1 USD',p.cnyUsd,'number','step="any" required')}
@@ -748,9 +842,11 @@ function viewReglages(){
       ${field('mMar','Délai client maritime (jours)',p.mMar,'number')}
       ${sel('dimanche','Disponibilité tombant un dimanche',[['Non','Décaler au lundi'],['Oui','Garder le dimanche']],p.dimanche)}
       ${sel('calendarClosePolicy','Départs après l’heure limite',[['exclude','Les écarter'],['keep','Les garder, avec un avertissement']],p.calendarClosePolicy)}
+      ${field('wtWarn','Alerte « poids élevé » au-delà de (kg par pièce)',wtWarnOf(),'number','step="any" inputmode="decimal"')}
+      ${field('margeMin','Alerte « marge faible » en dessous de (%)',Math.round(margeMinOf()*1000)/10,'number','step="any" inputmode="decimal"')}
       ${catsField(p.cats)}
     </div>
-    <div class="actions"><button class="btn primary" type="submit">Enregistrer les paramètres</button></div>
+    <p class="hint" style="margin-top:8px">Le poids maximum d’un transitaire, s’il est indiqué dans son tarif, remplace l’alerte générale.</p>
   </form>
   <section class="card"><h2>Sauvegarde</h2>
     <p class="muted">Vos données sont enregistrées sur votre compte et synchronisées dès que l’appareil est connecté à Internet. Une copie reste sur cet appareil pour travailler hors ligne. Exportez tout de même une sauvegarde régulièrement, et avant de changer de téléphone ou de désinstaller.</p>
@@ -758,6 +854,8 @@ function viewReglages(){
       <button class="btn" id="export">Exporter la sauvegarde (JSON)</button>
       <label class="btn">Importer une sauvegarde<input id="import" type="file" accept="application/json,.json" hidden></label>
     </div>
+    ${restore?.state?`<p class="hint" style="margin-top:12px">Un import a remplacé vos données le ${esc(new Date(restore.at).toLocaleString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}))}.</p>
+    <div class="actions"><button class="btn" id="restore">Restaurer les données d’avant l’import</button></div>`:''}
   </section>`;
 }
 
@@ -784,14 +882,30 @@ function addCat(){
   if(list.some(x=>x.toLowerCase()===v.toLowerCase())){toast('Cette catégorie existe déjà.',{sticky:true});inp.select();return}
   setCats(root,[...list,v]);
   inp.value='';inp.focus();
+  autosaveParams();
+}
+/* Réglages : enregistrés à chaque changement, comme le devis. Une valeur impossible est signalée sur son champ et n’est pas enregistrée. */
+function autosaveParams(){
+  const f=$('pform');
+  if(f)saveParams(new FormData(f));
 }
 function saveParams(data){
   const p={...S.params,usd:numOf(data,'usd'),cnyUsd:numOf(data,'cnyUsd'),marge:(numOf(data,'marge')??0)/100,div:numOf(data,'div'),
     dispo:numOf(data,'dispo'),mAvion:numOf(data,'mAvion'),mMar:numOf(data,'mMar'),dimanche:strOf(data,'dimanche'),
-    calendarClosePolicy:strOf(data,'calendarClosePolicy'),cats:strOf(data,'cats').split(';').map(s=>s.trim()).filter(Boolean)};
-  if(!(p.usd>0)||!(p.cnyUsd>0)||!(p.div>0)){toast('Taux et diviseur doivent être supérieurs à 0.',{sticky:true});return}
-  S.params=p;persist();toast('Paramètres enregistrés.');renderRates();viewReglages();
+    calendarClosePolicy:strOf(data,'calendarClosePolicy'),cats:strOf(data,'cats').split(';').map(s=>s.trim()).filter(Boolean),
+    wtWarn:numOf(data,'wtWarn'),margeMin:numOf(data,'margeMin')==null?null:numOf(data,'margeMin')/100};
+  const bad=['usd','cnyUsd','div'].filter(k=>!(p[k]>0));
+  app.querySelectorAll('#pform .inp[name]').forEach(el=>{el.classList.toggle('is-bad',bad.includes(el.name));el.setAttribute('aria-invalid',String(bad.includes(el.name)))});
+  const state=$('pformState');
+  if(bad.length){
+    if(state){state.textContent='Non enregistré : taux et diviseur doivent être supérieurs à 0.';state.className='hint bad'}
+    return;
+  }
+  S.params=p;persist();renderRates();
+  if(state){state.textContent='✓ Enregistré';state.className='hint'}
 }
+const wtWarnOf=()=>isNum(S.params.wtWarn)&&S.params.wtWarn>0?S.params.wtWarn:30;
+const margeMinOf=()=>isNum(S.params.margeMin)?S.params.margeMin:0.1;
 function exportData(){
   const txt=JSON.stringify(S,null,1), name='hygo-'+dayStr(Math.floor(Date.now()/864e5))+'.json';
   const url=URL.createObjectURL(new Blob([txt],{type:'application/json'}));
@@ -799,17 +913,34 @@ function exportData(){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   toast('Sauvegarde téléchargée.');
 }
+/* Importer remplace tout : on demande d’abord, et l’état actuel est gardé sur l’appareil pour pouvoir revenir en arrière. */
+const RESTORE_KEY='hygo-restore';
+const counts=s=>`${(s.quotes||[]).length} produit(s), ${(s.tarifs||[]).length} tarif(s), ${(s.cal||[]).length} date(s)`;
+function readRestore(){try{return JSON.parse(localStorage.getItem(RESTORE_KEY))}catch(e){return null}}
 function importData(file){
   if(!file)return;
   const reader=new FileReader();
   reader.onload=()=>{
+    let j;
     try{
-      const j=JSON.parse(reader.result);
+      j=JSON.parse(reader.result);
       if(!j||!j.params||!Array.isArray(j.tarifs))throw new Error('format');
-      S=normAll(j);persist();toast('Sauvegarde restaurée.');go('devis');
-    }catch(err){toast('Fichier invalide : ce n’est pas une sauvegarde Hygo ou Devis Transitaires.',{sticky:true})}
+    }catch(err){toast('Fichier invalide : ce n’est pas une sauvegarde Hygo ou Devis Transitaires.',{sticky:true});return}
+    if(!confirm(`Remplacer toutes vos données ?\n\nActuellement : ${counts(S)}.\nDans le fichier : ${counts(j)}.\n\nCela s’applique aussi à vos autres appareils. L’état actuel reste gardé : vous pourrez le restaurer depuis Réglages.`))return;
+    try{localStorage.setItem(RESTORE_KEY,JSON.stringify({at:nowIso(),state:S}))}
+    catch(e){if(!confirm('Impossible de garder une copie de l’état actuel sur cet appareil. Importer quand même ?'))return}
+    S=normAll(j);persist();toast('Sauvegarde importée.');go('devis');
   };
   reader.readAsText(file);
+}
+function restoreBeforeImport(){
+  const r=readRestore();
+  if(!r?.state)return;
+  const when=new Date(r.at).toLocaleString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+  if(!confirm(`Revenir aux données d’avant l’import du ${when} (${counts(r.state)}) ? Les données actuelles seront remplacées.`))return;
+  S=normAll(r.state);persist();
+  try{localStorage.removeItem(RESTORE_KEY)}catch(e){}
+  toast('Données d’avant l’import restaurées.');go('devis');
 }
 
 /* ---------- événements ---------- */
@@ -819,6 +950,13 @@ document.querySelector('.side').addEventListener('click',e=>{
 });
 sheet.addEventListener('click',e=>{
   if(e.target.closest('[data-close]')){closeSheet();return}
+  const act=e.target.closest('[data-act]');
+  if(act){
+    const no=act.dataset.no;
+    closeSheet();
+    ({open:openQuote,share:shareSaved,dup:dupQuote,del:delQuote})[act.dataset.act](no);
+    return;
+  }
   const o=e.target.closest('[data-pick]');
   if(o){S.draft.mode='manuel';S.draft.offer=o.dataset.pick;persist();closeSheet();renderResult();return}
   const all=e.target.closest('[data-all-cats]');
@@ -849,7 +987,7 @@ app.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
   const ds=t.dataset;
   if(ds.addCat!==undefined){addCat();return}
-  if(ds.rmCat!==undefined){setCats(t.closest('[data-cats]'),catsOf(t.closest('[data-cats]')).filter(x=>x!==ds.rmCat));return}
+  if(ds.rmCat!==undefined){setCats(t.closest('[data-cats]'),catsOf(t.closest('[data-cats]')).filter(x=>x!==ds.rmCat));autosaveParams();return}
   if(ds.step){S.draft.qty=Math.max(1,(Number(S.draft.qty)||1)+Number(ds.step));persist();renderResult();return}
   if(ds.marge){S.draft.marge=Number(ds.marge);syncMarge();const mi=app.querySelector('[data-k="marge"]');if(mi)mi.value=Math.round(S.draft.marge*100);persist();renderResult();return}
   if(ds.appearance){setAppearance(ds.appearance,viewReglages);return}
@@ -862,14 +1000,15 @@ app.addEventListener('click',e=>{
   if(ds.editT!==undefined){openEditTariff(+ds.editT);return}
   if(ds.dupT!==undefined){openDuplicateTariff(+ds.dupT);return}
   if(ds.delCarrier!==undefined){delCarrier(ds.delCarrier);return}
+  if(t.id==='share'){shareDraft();return}
   if(ds.open){openQuote(ds.open);return}
-  if(ds.dup){dupQuote(ds.dup);return}
-  if(ds.del){delQuote(ds.del);return}
+  if(ds.more){openQuoteActions(ds.more);return}
   if(ds.delT!==undefined){delTariff(+ds.delT);return}
   if(ds.delC!==undefined){delCal(+ds.delC);return}
   if(ds.editC!==undefined){openEditDate(+ds.editC);return}
   if(ds.dupC!==undefined){openDuplicateDate(+ds.dupC);return}
   if(t.id==='export'){exportData();return}
+  if(t.id==='restore'){restoreBeforeImport();return}
 });
 /* Dimensions : trois champs, reconstitués en « L x l x H » pour le moteur de calcul. */
 /* Le groupe L/l/H : on n’affiche pas son erreur tant que le focus reste dedans. */
@@ -891,7 +1030,12 @@ app.addEventListener('change',e=>{
   const el=e.target;
   if(el.dataset.k==='name'){S.draft.name=el.value;applyKnownName();return}
   if(el.dataset.k&&el.tagName==='SELECT')onDraftField(el);
-  if(el.id==='import')importData(el.files[0]);
+  if(el.dataset.fixcat!==undefined){
+    S.draft.cat=el.value;S.draft.catManual=true;
+    const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=el.value;
+    persist();renderResult();return}
+  if(el.id==='import'){importData(el.files[0]);el.value='';return}
+  if(el.closest('#pform')&&el.id!=='newCat')autosaveParams();
 });
 app.addEventListener('submit',e=>{
   e.preventDefault();
@@ -903,6 +1047,17 @@ app.addEventListener('submit',e=>{
   }
   else if(f.id==='pform')saveParams(data);
 });
+
+/* Données fusionnées avec un autre appareil (js/auth.js) : on les reprend sans perdre la saisie en cours. */
+window.hygoApplyState=state=>{
+  const draft=S.draft;
+  S=normAll(copyData(state));
+  if(S.draft.no===draft.no)S.draft=draft;
+  if(!sheet.hidden)return;  // feuille ouverte (éditeur) : l’écran sera à jour au prochain affichage
+  const typing=app.contains(document.activeElement)&&document.activeElement.matches('input,select,textarea');
+  if(typing){if(tab==='devis')renderResult()}else render();
+  toast('Données mises à jour depuis un autre appareil.');
+};
 
 /* Au premier lancement, le moteur met un exemple de la version bureau : on repart d’un formulaire vide. */
 if(!S.quotes.length&&S.draft.name==='Spray anti-pluie 50 ml')S.draft=blankDraft(nextNo());

@@ -449,12 +449,15 @@ let saveT;
 function persist(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(window.hygoSync)hygoSync()},150)}
 function nextNo(){const m=S.quotes.reduce((a,q)=>Math.max(a,parseInt(q.no.replace(/\D/g,''))||0),0);return 'DEV-'+String(m+1).padStart(4,'0')}
 /* Message bref (disparaît seul) ; une erreur reste affichée jusqu’à ce que l’utilisateur la ferme. */
-function toast(msg,{sticky=false}={}){
+/* `action` : { label, run } ajoute un bouton (ex. « Annuler ») ; le message reste alors un peu plus longtemps. */
+function toast(msg,{sticky=false,action=null}={}){
   if(sticky)document.querySelectorAll('.toast.is-error').forEach(old=>old.remove());
-  const t=document.createElement('div');t.className='toast'+(sticky?' is-error':'');t.setAttribute('role',sticky?'alert':'status');t.textContent=msg;
+  if(action)document.querySelectorAll('.toast.has-action').forEach(old=>old.remove());
+  const t=document.createElement('div');t.className='toast'+(sticky?' is-error':'')+(action?' has-action':'');t.setAttribute('role',sticky?'alert':'status');t.textContent=msg;
   if(sticky){const close=document.createElement('button');close.type='button';close.className='toast-close';close.textContent='OK';close.onclick=()=>t.remove();t.append(' ',close)}
+  if(action){const b=document.createElement('button');b.type='button';b.className='toast-close';b.textContent=action.label;b.onclick=()=>{t.remove();action.run()};t.append(' ',b)}
   document.body.appendChild(t);
-  if(!sticky)setTimeout(()=>t.remove(),3500);
+  if(!sticky)setTimeout(()=>t.remove(),action?6000:3500);
 }
 
 /* ---------- calculation engine (port of the workbook formulas) ---------- */

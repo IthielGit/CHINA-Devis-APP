@@ -8,6 +8,8 @@ const ROLE_KEY='hygo-role';   // rôle du compte connecté (pour l’affichage h
 const VIEW_KEY='hygo-view-as'; // sessionStorage : compte consulté par le super admin
 const EMAIL_KEY='hygo-email';  // email du compte connecté (avatar, hors ligne)
 const PROFILE_KEY='hygo-profile'; // nom et photo du compte (Google), hors ligne
+const BASE_KEY='hygo-base';   // dernier état commun avec le serveur (point de départ de la fusion)
+const BASE_AT_KEY='hygo-base-at'; // date serveur (ms) de cet état commun
 const MIN_PASSWORD=8;
 const cfg=window.HYGO_CONFIG;
 const client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
@@ -194,17 +196,101 @@ async function boot(){
   start(id,target,profile.role);
 }
 
-/* Serveur → cache. Si des modifications locales attendent encore d’être envoyées, elles l’emportent. */
+/* ---------- fusion de deux appareils ----------
+   Fusion à trois : on compare chaque côté au dernier état commun (base). Ce qu’un seul côté a changé est gardé ;
+   si les deux ont changé la même valeur, cet appareil l’emporte. Les listes se fusionnent élément par élément
+   (ajouts et suppressions des deux côtés), les devis par numéro. */
+const readJson=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
+const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
+// Clé stable : le serveur (jsonb) ne garde pas l’ordre des clés.
+function canon(x){
+  if(Array.isArray(x))return '['+x.map(canon).join(',')+']';
+  if(isObj(x))return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+canon(x[k])).join(',')+'}';
+  return JSON.stringify(x??null);
+}
+const same=(a,b)=>canon(a)===canon(b);
+function mergeList(b,l,r){
+  const keys=a=>new Set((a||[]).map(canon));
+  const kb=keys(b), kr=keys(r), kl=keys(l);
+  // Gardé sauf si l’autre appareil l’a supprimé ; puis les ajouts de l’autre appareil.
+  return [...l.filter(x=>kr.has(canon(x))||!kb.has(canon(x))),...r.filter(x=>!kl.has(canon(x))&&!kb.has(canon(x)))];
+}
+function mergeValue(b,l,r){
+  if(same(l,b))return r;
+  if(same(r,b)||r===undefined)return l;
+  if(Array.isArray(l)&&Array.isArray(r))return mergeList(Array.isArray(b)?b:[],l,r);
+  if(isObj(l)&&isObj(r)){
+    const out={};
+    for(const k of new Set([...Object.keys(l),...Object.keys(r)]))out[k]=mergeValue(isObj(b)?b[k]:undefined,l[k],r[k]);
+    return out;
+  }
+  return l;
+}
+const quoteNum=q=>parseInt(String(q.no).replace(/\D/g,''))||0;
+function mergeQuotes(b,l,r,draft){
+  const by=a=>new Map((a||[]).map(q=>[q.no,q]));
+  const mb=by(b), ml=by(l), mr=by(r), out=[], renumber=[];
+  for(const no of new Set([...ml.keys(),...mr.keys()])){
+    const bq=mb.get(no), lq=ml.get(no), rq=mr.get(no);
+    if(lq&&rq){
+      if(same(lq,rq)||same(rq,bq))out.push(lq);
+      else if(same(lq,bq))out.push(rq);
+      // Même numéro créé sur les deux appareils pour deux produits différents : on garde les deux.
+      else if(!bq&&lq.created!==rq.created){out.push(rq);renumber.push(lq)}
+      else out.push(String(lq.modified||'')>=String(rq.modified||'')?lq:rq);
+    }
+    // Présent d’un seul côté : supprimé par l’autre s’il était dans la base sans changement, sinon ajouté.
+    else if(lq){if(!(bq&&same(lq,bq)))out.push(lq)}
+    else if(!(bq&&same(rq,bq)))out.push(rq);
+  }
+  let max=out.reduce((a,q)=>Math.max(a,quoteNum(q)),0);
+  const next=()=>'DEV-'+String(++max).padStart(4,'0');
+  for(const q of renumber){
+    const no=next();
+    if(draft&&draft.no===q.no)draft.no=no;
+    out.push({...q,no});
+  }
+  // Brouillon pas encore enregistré dont le numéro est désormais pris : il passe au numéro suivant.
+  if(draft&&!ml.has(draft.no)&&out.some(q=>q.no===draft.no))draft.no=next();
+  return out;
+}
+function merge3(base,local,remote){
+  if(!isObj(remote))return local;
+  if(!isObj(local))return remote;
+  base=isObj(base)?base:{};
+  const draft=local.draft?JSON.parse(JSON.stringify(local.draft)):remote.draft;
+  const out={};
+  for(const k of new Set([...Object.keys(local),...Object.keys(remote)]))
+    if(k!=='quotes'&&k!=='draft')out[k]=mergeValue(base[k],local[k],remote[k]);
+  out.quotes=mergeQuotes(base.quotes,local.quotes,remote.quotes,draft);
+  out.draft=draft;  // le produit en cours de saisie reste celui de cet appareil
+  return out;
+}
+const sameAt=at=>Date.parse(at)===Number(localStorage.getItem(BASE_AT_KEY));
+function setBase(state,at){
+  try{localStorage.setItem(BASE_KEY,JSON.stringify(state));localStorage.setItem(BASE_AT_KEY,String(Date.parse(at)))}catch(e){}
+}
+/* Données fusionnées : cache local, puis l’écran ouvert (js/app.js) les reprend. */
+function applyMerged(state,before){
+  localStorage.setItem(DATA_KEY,JSON.stringify(state));
+  if(!same(state,before))window.hygoApplyState?.(state);
+}
+
+/* Serveur → cache. Des modifications locales pas encore envoyées sont fusionnées avec celles du serveur. */
 async function loadData(id){
   const cachedUid=localStorage.getItem(USER_KEY);
-  if(cachedUid&&cachedUid!==id)localStorage.removeItem(DATA_KEY);
-  if(!(cachedUid===id&&localStorage.getItem(DIRTY_KEY))){
-    const {data:row,error}=await client.from('app_data').select('state').eq('owner_id',id).maybeSingle();
-    if(error)throw error;
-    if(row?.state&&Object.keys(row.state).length)localStorage.setItem(DATA_KEY,JSON.stringify(row.state));
-    // Compte sans données sur le serveur : les données de cet appareil lui sont envoyées.
-    else if(localStorage.getItem(DATA_KEY))localStorage.setItem(DIRTY_KEY,'1');
+  if(cachedUid&&cachedUid!==id)[DATA_KEY,DIRTY_KEY,BASE_KEY,BASE_AT_KEY].forEach(k=>localStorage.removeItem(k));
+  const {data:row,error}=await client.from('app_data').select('state,updated_at').eq('owner_id',id).maybeSingle();
+  if(error)throw error;
+  const remote=row?.state&&Object.keys(row.state).length?row.state:null;
+  const local=readJson(DATA_KEY);
+  if(remote){
+    if(localStorage.getItem(DIRTY_KEY)&&local){if(!sameAt(row.updated_at))localStorage.setItem(DATA_KEY,JSON.stringify(merge3(readJson(BASE_KEY),local,remote)))}
+    else localStorage.setItem(DATA_KEY,JSON.stringify(remote));
+    setBase(remote,row.updated_at);
   }
+  // Compte sans données sur le serveur : les données de cet appareil lui sont envoyées.
+  else if(local)localStorage.setItem(DIRTY_KEY,'1');
   localStorage.setItem(USER_KEY,id);
 }
 
@@ -253,9 +339,23 @@ async function pushState(){
   try{
     while(localStorage.getItem(DIRTY_KEY)){
       localStorage.removeItem(DIRTY_KEY);
-      const state=JSON.parse(localStorage.getItem(DATA_KEY));
-      const {error}=await client.from('app_data').upsert({owner_id:owner,state,updated_at:new Date().toISOString()});
+      let state=readJson(DATA_KEY);
+      // Un autre appareil a enregistré depuis notre dernier échange : on fusionne avant d’envoyer, au lieu d’écraser.
+      const {data:row,error:e1}=await client.from('app_data').select('updated_at').eq('owner_id',owner).maybeSingle();
+      if(e1)throw e1;
+      if(row&&!sameAt(row.updated_at)){
+        const {data:full,error:e2}=await client.from('app_data').select('state').eq('owner_id',owner).maybeSingle();
+        if(e2)throw e2;
+        if(full?.state&&Object.keys(full.state).length){
+          const latest=readJson(DATA_KEY);
+          state=merge3(readJson(BASE_KEY),latest,full.state);
+          applyMerged(state,latest);
+        }
+      }
+      const at=new Date().toISOString();
+      const {error}=await client.from('app_data').upsert({owner_id:owner,state,updated_at:at});
       if(error)throw error;
+      setBase(state,at);
     }
     warned=false;
     setSync('synced');
@@ -267,7 +367,24 @@ async function pushState(){
     retryT=setTimeout(pushState,30000);
   }finally{syncing=false}
 }
-window.addEventListener('online',pushState);
+window.addEventListener('online',pullState);
+/* Retour sur l’app (ou sur le réseau) : on récupère ce qu’un autre appareil a enregistré entre-temps. */
+async function pullState(){
+  if(!owner||syncing)return;
+  if(localStorage.getItem(DIRTY_KEY))return pushState();
+  syncing=true;
+  try{
+    const {data:row,error}=await client.from('app_data').select('state,updated_at').eq('owner_id',owner).maybeSingle();
+    if(error||!row||sameAt(row.updated_at)||!row.state||!Object.keys(row.state).length)return;
+    // Une modification faite pendant le téléchargement : elle sera fusionnée à l’envoi.
+    if(localStorage.getItem(DIRTY_KEY))return;
+    const before=readJson(DATA_KEY);
+    applyMerged(row.state,before);
+    setBase(row.state,row.updated_at);
+  }catch(e){}
+  finally{syncing=false;if(localStorage.getItem(DIRTY_KEY))pushState()}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pullState()});
 
 /* Envoie les modifications en attente ; false si l’utilisateur refuse de les perdre. */
 async function flushOrConfirm(question){
@@ -279,6 +396,8 @@ function clearCache(){
   localStorage.removeItem(DATA_KEY);
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(DIRTY_KEY);
+  localStorage.removeItem(BASE_KEY);
+  localStorage.removeItem(BASE_AT_KEY);
   localStorage.removeItem(EMAIL_KEY);
   localStorage.removeItem(PROFILE_KEY);
 }

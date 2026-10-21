@@ -93,6 +93,11 @@ body::before{background:var(--accent);top:-30vmax;left:-25vmax}
 body::after{background:var(--lavender);bottom:-35vmax;right:-30vmax}
 h1,h2,h3{margin:0;font-weight:600;text-wrap:balance}
 button,input,select,textarea{font:inherit;color:inherit}
+/* Listes déroulantes natives : le menu (Android) suit le thème de l’app, sinon il reste clair sur fond sombre */
+select{color-scheme:light dark}
+html[data-theme="light"] select{color-scheme:light}
+html[data-theme="dark"] select{color-scheme:dark}
+select option{background-color:var(--surface);color:var(--ink)}
 svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .amount,[data-num]{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

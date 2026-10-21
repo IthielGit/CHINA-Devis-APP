@@ -415,6 +415,8 @@ details[open]>.grid{margin-top:var(--s3)}
 .action{min-height:52px;padding:0 var(--s4);border:0;background:none;color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
 .action+.action{border-top:var(--line-w) solid var(--divider)}
 .action:active,.action:hover{background:var(--elevated)}
+.action small{display:block;font-weight:400;font-size:var(--fs-meta);color:var(--muted);margin-top:2px}
+.action:has(small){padding-top:var(--s3);padding-bottom:var(--s3)}
 .action.danger{color:var(--negative-ink)}
 .action:disabled{color:var(--muted);cursor:default;background:none}
 /* Bilan du mois : quatre chiffres, deux par ligne sur téléphone */

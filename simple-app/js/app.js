@@ -501,7 +501,35 @@ function shareText({no,name,qty,pv,total,mode,arrival}){
     'Prix valable à ce jour, sous réserve du taux de change.'
   ].filter(l=>l!==null).join('\n');
 }
-async function shareQuote(info){
+/* « Partager au client » : le client reçoit un PDF (document propre) ou le texte (message rapide). */
+let pendingShare=null;
+function shareQuote(info){
+  pendingShare=info;
+  $('sheetTitle').textContent='Partager au client';
+  $('sheetHint').textContent=`${info.name} · ${ar(info.pv)} par pièce`;
+  sheetBody.classList.remove('editor-body');
+  sheetBody.innerHTML=`<div class="action-list">
+    <button class="action" data-share="pdf">Envoyer en PDF<small>Document A4, à joindre dans WhatsApp ou un email</small></button>
+    <button class="action" data-share="text">Envoyer en texte<small>Message court, à coller dans WhatsApp ou un SMS</small></button></div>`;
+  editorSubmit=null;
+  openSheet();
+}
+async function sharePdf(info){
+  const blob=devisPdf({no:info.no,name:info.name,qty:info.qty,price:ar(info.pv),total:info.qty>1?ar(info.total):'',
+    mode:info.mode?(info.mode==='Maritime'?'Bateau':'Avion')+' depuis la Chine':'',arrival:isNum(info.arrival)?longDate(info.arrival):'',
+    date:new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})});
+  const name=`Devis ${info.no} - ${String(info.name).replace(/[\\/:*?"<>|]+/g,' ').slice(0,40).trim()}.pdf`;
+  const file=new File([blob],name,{type:'application/pdf'});
+  try{
+    if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file],title:`Devis ${info.no}`});return}
+  }catch(e){if(e.name==='AbortError')return}
+  // Pas de partage de fichier (ordinateur) : le PDF est téléchargé.
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('PDF téléchargé.');
+}
+async function shareTextOnly(info){
   const text=shareText(info);
   try{
     if(navigator.share){await navigator.share({title:`Devis ${info.no}`,text});return}
@@ -950,6 +978,13 @@ document.querySelector('.side').addEventListener('click',e=>{
 });
 sheet.addEventListener('click',e=>{
   if(e.target.closest('[data-close]')){closeSheet();return}
+  const sh=e.target.closest('[data-share]');
+  if(sh){
+    const info=pendingShare;
+    closeSheet();
+    if(info)(sh.dataset.share==='pdf'?sharePdf:shareTextOnly)(info);
+    return;
+  }
   const act=e.target.closest('[data-act]');
   if(act){
     const no=act.dataset.no;

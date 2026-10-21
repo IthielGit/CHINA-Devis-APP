@@ -753,7 +753,7 @@ function viewReglages(){
     <div class="actions"><button class="btn primary" type="submit">Enregistrer les paramètres</button></div>
   </form>
   <section class="card"><h2>Sauvegarde</h2>
-    <p class="muted">Les données restent sur cet appareil. Exportez une sauvegarde régulièrement, et avant de changer de téléphone ou de désinstaller.</p>
+    <p class="muted">Vos données sont enregistrées sur votre compte et synchronisées dès que l’appareil est connecté à Internet. Une copie reste sur cet appareil pour travailler hors ligne. Exportez tout de même une sauvegarde régulièrement, et avant de changer de téléphone ou de désinstaller.</p>
     <div class="actions">
       <button class="btn" id="export">Exporter la sauvegarde (JSON)</button>
       <label class="btn">Importer une sauvegarde<input id="import" type="file" accept="application/json,.json" hidden></label>

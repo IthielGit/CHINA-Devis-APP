@@ -373,9 +373,10 @@ details[open]>.grid{margin-top:var(--s3)}
 /* Poignée : zone tactile de 44 px ; la barre visible reste la même. touch-action:none pour glisser sans faire défiler */
 .grab{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;padding:0;border:0;background:none;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
 .grab::after{content:"";width:36px;height:5px;border-radius:99px;background:var(--divider)}
-/* En-tête fixe en haut de la feuille : le ✕ reste visible pendant le défilement (même verre que la feuille) */
-.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);position:sticky;top:0;z-index:2;margin:calc(var(--s2) * -1) calc(var(--s5) * -1) 0;padding:var(--s2) var(--s5);background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
-.sheet-head .btn.icon{box-shadow:var(--glass-shadow)}
+/* Seul le ✕ reste visible pendant le défilement : il est collé en haut de la feuille, sur la ligne du titre.
+   Le titre, lui, défile normalement. La marge négative le ramène sur la même ligne que le titre. */
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);padding-right:calc(44px + var(--s3))}
+.sheet-close{display:flex;position:sticky;top:var(--s2);z-index:3;margin:0 0 -44px auto;box-shadow:var(--glass-shadow)}
 .sheet-head h3{font-size:var(--fs-section)}
 .panel>p{margin:var(--s1) 0 var(--s3);color:var(--muted);font-size:calc(.92rem * var(--fs-k))}
 .offers{display:grid;gap:var(--s2)}
@@ -581,7 +582,8 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
   <div class="scrim" data-close></div>
   <section class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <button type="button" class="grab" aria-label="Fermer la fenêtre"></button>
-    <header class="sheet-head"><h3 id="sheetTitle">Comparer les offres</h3><button type="button" class="btn icon" data-close aria-label="Fermer">✕</button></header>
+    <button type="button" class="btn icon sheet-close" data-close aria-label="Fermer">✕</button>
+    <header class="sheet-head"><h3 id="sheetTitle">Comparer les offres</h3></header>
     <p id="sheetHint">Triées par prix de revient. Choisir une offre la fixe pour ce produit.</p>
     <div class="offers" id="sheetBody"></div>
   </section>

@@ -135,12 +135,15 @@ main#app>*{animation:enter var(--t-slow) var(--ease) both}
 .section-label{font-size:var(--fs-meta);font-weight:600;color:var(--muted);margin:var(--s5) 0 var(--s2)}
 
 /* ---------- Champs ---------- */
-.grid{display:grid;grid-template-columns:1fr;gap:var(--s4)}
-@media (min-width:680px){.grid{grid-template-columns:1fr 1fr}}
+/* minmax(0,1fr) : une piste ne doit jamais s’élargir au-delà de la carte (ex. champ date iOS) */
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s4)}
+@media (min-width:680px){.grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .field{display:grid;gap:6px;min-width:0}
 .field>span:first-child,.field>label{font-size:.9rem;font-weight:500;color:var(--ink)}
 .field.wide{grid-column:1/-1}
-.inp{width:100%;min-height:var(--control);border:1px solid var(--divider);border-radius:var(--r-field);padding:var(--s3) var(--s4);font-size:1.0625rem;color:var(--ink);background:var(--elevated);min-width:0;transition:border-color var(--t) var(--ease),box-shadow var(--t) var(--ease)}
+.inp{width:100%;max-width:100%;min-height:var(--control);border:1px solid var(--divider);border-radius:var(--r-field);padding:var(--s3) var(--s4);font-size:1.0625rem;color:var(--ink);background:var(--elevated);min-width:0;box-sizing:border-box;transition:border-color var(--t) var(--ease),box-shadow var(--t) var(--ease)}
+/* Safari iOS : le champ date garde sa largeur intrinsèque sans ce reset */
+input.inp[type="date"]{-webkit-appearance:none;appearance:none;display:block;line-height:normal}
 .inp::placeholder{color:var(--muted);opacity:.8}
 .inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
 .inp.is-bad{border-color:var(--negative)}
@@ -417,7 +420,8 @@ details[open]>.grid{margin-top:var(--s3)}
 
 /* ---------- Téléphone : barre d’onglets flottante en verre ---------- */
 @media (max-width:860px){
-  .shell{grid-template-columns:minmax(0,1fr);gap:0;padding:var(--s3) var(--s5) calc(120px + env(safe-area-inset-bottom,0px))}
+  /* Barre d’état iPhone (black-translucent, mode app) : le contenu commence sous l’encoche */
+  .shell{grid-template-columns:minmax(0,1fr);gap:0;padding:calc(var(--s3) + env(safe-area-inset-top,0px)) var(--s5) calc(120px + env(safe-area-inset-bottom,0px))}
   .side{position:fixed;left:var(--s4);right:var(--s4);bottom:calc(var(--s3) + env(safe-area-inset-bottom,0px));top:auto;min-height:0;border-radius:30px;padding:6px;flex-direction:row;gap:0;z-index:10;
     background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);
     transition:transform var(--t-slow) var(--ease),padding var(--t) var(--ease)}
@@ -429,7 +433,8 @@ details[open]>.grid{margin-top:var(--s3)}
   .side.compact{padding:3px}
   .side.compact .nav button{min-height:44px}
   .side.compact .nav button span{display:none}
-  .nav .nav-add .i{width:22px;height:22px;padding:8px}
+  /* Le « + » est plus grand que les autres icônes : marge négative pour que son libellé reste aligné */
+  .nav .nav-add .i{width:22px;height:22px;padding:8px;margin-block:-8px}
   .top{margin:var(--s2) 0 var(--s5)}
   .toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 }

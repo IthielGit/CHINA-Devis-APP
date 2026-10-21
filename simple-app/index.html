@@ -427,13 +427,15 @@ details[open]>.grid{margin-top:var(--s3)}
 @media (max-width:860px){
   /* Barre d’état iPhone (black-translucent, mode app) : le contenu commence sous l’encoche */
   .shell{grid-template-columns:minmax(0,1fr);gap:0;padding:calc(var(--s3) + env(safe-area-inset-top,0px)) var(--s5) calc(120px + env(safe-area-inset-bottom,0px))}
-  .side{position:fixed;left:var(--s4);right:var(--s4);bottom:calc(var(--s3) + env(safe-area-inset-bottom,0px));top:auto;min-height:0;border-radius:30px;padding:6px;flex-direction:row;gap:0;z-index:10;
+  .side{position:fixed;left:var(--s3);right:var(--s3);bottom:calc(var(--s3) + env(safe-area-inset-bottom,0px));top:auto;min-height:0;border-radius:30px;padding:6px;flex-direction:row;gap:0;z-index:10;
     background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);
     transition:transform var(--t-slow) var(--ease),padding var(--t) var(--ease)}
   .brand,.rate-card{display:none}
   .nav{flex-direction:row;width:100%;gap:0}
   .nav::before{width:var(--ind-w,0px);height:100%;transform:translateX(var(--ind-x,0px));border-radius:24px}
-  .nav button{flex-direction:column;justify-content:center;gap:2px;font-size:.78rem;font-weight:600;min-height:56px;padding:var(--s1) 2px;text-align:center;border-radius:24px}
+  /* Cinq onglets de même largeur ; libellés sur une ligne, graisse et espacement normaux (pas de compression) */
+  .nav button{flex:1 1 0;min-width:0;width:auto;flex-direction:column;justify-content:center;gap:2px;font-size:.78rem;font-weight:500;letter-spacing:0;font-stretch:100%;min-height:56px;padding:var(--s1) 0;text-align:center;border-radius:24px}
+  .nav button span{display:block;white-space:nowrap;overflow:visible;max-width:100%}
   /* Défilement vers le bas : barre compactée (libellés masqués) */
   .side.compact{padding:3px}
   .side.compact .nav button{min-height:44px}

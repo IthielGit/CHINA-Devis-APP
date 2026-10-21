@@ -480,9 +480,9 @@ html{scroll-padding-bottom:calc(var(--kb,0px) + 130px)}
 .big-amount.updated{animation:pop var(--t-slow) var(--spring) both}
 
 /* Message de bienvenue : carte centrée, adaptée au viewport mobile (safe areas, barre Safari) */
-.welcome{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);background:var(--scrim);min-height:100vh;min-height:100dvh;overflow:hidden}
+.welcome{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);background:var(--scrim);min-height:100vh;min-height:100dvh;overflow:hidden}
 .welcome[hidden]{display:none}
-.welcome-card{width:calc(100% - 32px);max-width:400px;max-height:100%;overflow:auto;display:grid;justify-items:center;gap:var(--s4);padding:var(--s6) var(--s5);text-align:center;box-shadow:var(--glass-shadow);animation:welcomeIn var(--t-slow) var(--ease) both}
+.welcome-card{width:calc(100% - 32px);max-width:400px;min-width:0;max-height:100%;overflow:auto;display:grid;justify-items:center;gap:var(--s4);padding:var(--s6) var(--s5);text-align:center;box-shadow:var(--glass-shadow);animation:welcomeIn var(--t-slow) var(--ease) both}
 .welcome-card h2{margin:0;font-size:clamp(1.5rem,6.5vw,1.75rem);line-height:1.2;overflow-wrap:anywhere}
 .welcome-msg{margin:0;font-size:clamp(1.15rem,5vw,1.35rem);line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
 .welcome-btn{width:100%;min-height:52px;font-size:1.02rem}

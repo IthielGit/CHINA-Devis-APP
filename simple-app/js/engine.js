@@ -110,12 +110,46 @@ function normalizeLegacyMaritimeOffer(d,tarifs){
   const tariff=tarifs.find(t=>t.tr===match[1]&&t.mode==='Maritime'&&t.cats===match[2]);
   if(tariff)d.offer=`${tariff.tr} | Maritime | ${tariff.cats||''}`;
 }
-function guessCat(n){n=(n||'').toLowerCase();
-  const R=[['Batterie brute',/batterie seule|cellule|18650|21700/],['Batterie',/batterie|power ?bank|piles?\b|lithium/],['Téléphone',/t[ée]l[ée]phone|smartphone|iphone|phone/],
-  ['Ordinateur/tablette',/ordinateur|laptop|tablette|tablet|pc portable|macbook/],['Aimant',/aimant|magn[ée]t/],
-  ['Poudre/liquide',/spray|liquide|poudre|cr[èe]me|parfum|huile|gel\b|shampo|savon|cosm[ée]tique|vernis|colle|encre|s[ée]rum|lotion/],
-  ['Électronique',/led\b|c[âa]ble|chargeur|[ée]couteur|casque|montre|usb|capteur|lampe|enceinte|[ée]lectr|camera|cam[ée]ra|souris|clavier/]];
-  for(const [c,r] of R)if(r.test(n))return c;return null}
+/* ---------- Catégorie suggérée à partir du nom ----------
+   Mots entiers, sans accents ni majuscules. Chaque mot-clé vaut de 1 à 3 points ; la catégorie au score le plus haut gagne.
+   À égalité, CAT_PRIORITY (le plus restrictif au transport d’abord). Les devis déjà enregistrés ajoutent un point
+   par mot commun à une catégorie choisie, plafonné à 3. « Aimant » ne se devine pas du nom : il dépend du poids. */
+const normCat=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+const CAT_PRIORITY=['Danger','Batterie','Batterie brute','Poudre/liquide','Téléphone','Ordinateur/tablette','Électronique'];
+const CAT_KEYWORDS={
+  'Danger':[['gaz',3],['aerosol',3],['inflammable',3],['butane',3],['corrosif',3],['acide',2]],
+  'Batterie':[['batterie',2],['batteries',2],['power bank',3],['powerbank',3],['pile',2],['piles',2],['lipo',2],['lithium',1]],
+  'Batterie brute':[['cellule',3],['cellules',3],['18650',3],['21700',3],['32140',3],['lifepo4',2]],
+  'Poudre/liquide':[['spray',3],['liquide',3],['poudre',3],['creme',3],['parfum',3],['huile',3],['gel',2],['shampoing',3],['savon',3],['cosmetique',2],['vernis',3],['colle',3],['encre',3],['serum',3],['lotion',3]],
+  'Téléphone':[['telephone',2],['smartphone',3],['iphone',3],['phone',1]],
+  'Ordinateur/tablette':[['ordinateur',3],['laptop',3],['notebook',3],['tablette',3],['tablet',3],['macbook',3]],
+  'Électronique':[['led',3],['cable',2],['chargeur',3],['charger',3],['usb',2],['casque',2],['ecouteurs',2],['earbuds',2],['souris',3],['clavier',3],['lampe',2],['montre',2],['camera',2],['capteur',2]],
+};
+const CAT_KEYWORDS_N=Object.fromEntries(Object.entries(CAT_KEYWORDS).map(([c,l])=>[c,l.map(([k,w])=>[normCat(k),w])]));
+const STOP_WORDS=new Set(['pour','avec','sans','dans','tous','cette','plus','sur','fait','produit','pouces']);
+const catWords=s=>normCat(s).replace(/[^a-z0-9]+/g,' ').trim();
+function historyBonus(words){
+  const now=new Set(words.split(' ').filter(t=>t.length>=4&&!STOP_WORDS.has(t)));
+  const out={};
+  for(const q of S.quotes){
+    const cat=q.inputs?.cat, name=q.inputs?.name;
+    if(!cat||!name)continue;
+    const past=catWords(name).split(' ').filter(t=>t.length>=4&&!STOP_WORDS.has(t));
+    if(past.some(t=>now.has(t)))out[cat]=Math.min(3,(out[cat]||0)+1);
+  }
+  return out;
+}
+function rankCats(name){
+  const words=catWords(name), padded=` ${words} `, score={};
+  for(const cat of CAT_PRIORITY){
+    let s=0;for(const [k,w] of CAT_KEYWORDS_N[cat])if(padded.includes(` ${k} `))s+=w;
+    if(s)score[cat]=s;
+  }
+  for(const [cat,b] of Object.entries(historyBonus(words)))score[cat]=(score[cat]||0)+b;
+  const rank=c=>CAT_PRIORITY.includes(c)?CAT_PRIORITY.indexOf(c):CAT_PRIORITY.length;
+  return Object.keys(score).sort((a,b)=>score[b]-score[a]||rank(a)-rank(b)).map(c=>({cat:c,score:score[c]}));
+}
+function guessCat(n){const r=rankCats(n);return r.length?r[0].cat:null}
 function categoryRecommendation(d){
   let category,reason;
   if(d.dangerous==='yes'){category='Danger';reason='Vous indiquez que le produit peut être dangereux.'}

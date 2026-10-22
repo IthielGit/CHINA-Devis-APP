@@ -139,6 +139,7 @@ function viewDevis(){
     <h2>Produit</h2>
     <div class="grid">
       <label class="field wide"><span>Nom du produit</span><input class="inp" data-k="name" list="names" autocomplete="off" placeholder="Ex. Spray anti-pluie 50 ml" value="${esc(val(d.name))}"><span class="hint" id="hint-name">${esc(d.repris?'Repris de '+d.repris+' : vérifiez le prix.':'Un nom déjà enregistré remplit le reste.')}</span></label>
+      <div class="cat-suggest wide" id="catSuggest"></div>
       <label class="field"><span>Prix d’achat</span><span class="input-wrap"><input class="inp" data-k="price" type="number" step="any" inputmode="decimal" value="${esc(val(d.price))}"><span class="suffix">¥</span></span><span class="hint" id="hint-price"></span></label>
       <div class="field"><span>Quantité</span>
         <div class="stepper"><button type="button" data-step="-1" aria-label="Retirer une pièce">−</button><output id="qty-out">${d.qty||1}</output><button type="button" data-step="1" aria-label="Ajouter une pièce">+</button></div>
@@ -177,6 +178,7 @@ function viewDevis(){
   <section class="card" id="result"></section>`;
   syncMarge();
   renderResult();
+  renderSuggestions();
 }
 
 function syncMarge(){
@@ -192,6 +194,26 @@ function placePill(root){
   if(on)root.style.setProperty('--pill-x',on.offsetLeft+'px');
 }
 
+/* Catégories acceptées par au moins un transitaire (Tarifs). Sans transitaire, aucune restriction. */
+function acceptedCats(){return new Set(S.tarifs.flatMap(t=>catList(t.cats)))}
+function usableSuggestions(name){
+  const acc=acceptedCats();
+  return rankCats(name).filter(x=>S.params.cats.includes(x.cat)&&x.cat!=='Aimant'&&(!acc.size||acc.has(x.cat)));
+}
+/* Deux suggestions en pastilles, un tap pour les choisir. Un avertissement si le nom suggère une catégorie restrictive. */
+const RESTRICTED_CATS=['Danger','Batterie','Batterie brute','Poudre/liquide'];
+function renderSuggestions(){
+  const box=$('catSuggest');
+  if(!box)return;
+  const name=S.draft.name||'';
+  if(!name.trim()){box.innerHTML='';return}
+  const cur=S.draft.cat, all=rankCats(name).filter(x=>x.cat!=='Aimant'), usable=usableSuggestions(name).slice(0,2);
+  let html='';
+  if(usable.length)html+=`<span class="hint">Suggéré</span>`+usable.map(x=>`<button type="button" class="seg" data-suggest="${esc(x.cat)}" aria-pressed="${x.cat===cur}">${esc(x.cat)}</button>`).join('');
+  if(all[0]&&RESTRICTED_CATS.includes(all[0].cat)&&all[0].cat!==cur)html+=`<p class="hint bad">Le nom suggère « ${esc(all[0].cat)} » : vérifiez la catégorie.</p>`;
+  if(all.length&&!usable.length)html+=`<p class="hint bad">Aucun transitaire n’accepte « ${esc(all[0].cat)} ». Ajoutez-la à un tarif dans Tarifs.</p>`;
+  box.innerHTML=html;
+}
 /* Le poids des aimants décide de la catégorie Aimant ; le nom ne suffit pas. */
 function applyMagnetRule(){
   const d=S.draft, sel=app.querySelector('[data-k="cat"]');
@@ -212,13 +234,13 @@ function onDraftField(el){
   touched.add(k);
   if(k==='cat')S.draft.catManual=true;
   if(k==='name'&&!S.draft.catManual){
-    const g=guessCat(v);
-    // « Aimant » ne se devine pas à partir du nom : il faut le poids des aimants.
-    if(g&&g!=='Aimant'&&S.params.cats.includes(g)){S.draft.cat=g;const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=g}
+    const g=usableSuggestions(v)[0]?.cat;
+    if(g){S.draft.cat=g;const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=g}
   }
   if(k==='magnetG')applyMagnetRule();
   if(k==='marge')syncMarge();
   persist();
+  renderSuggestions();
   renderResult();
 }
 
@@ -1104,6 +1126,11 @@ app.addEventListener('click',e=>{
   if(ds.step){S.draft.qty=Math.max(1,(Number(S.draft.qty)||1)+Number(ds.step));persist();renderResult();return}
   if(ds.marge){S.draft.marge=Number(ds.marge);syncMarge();const mi=app.querySelector('[data-k="marge"]');if(mi)mi.value=Math.round(S.draft.marge*100);persist();renderResult();return}
   if(ds.appearance){setAppearance(ds.appearance,viewReglages);return}
+  if(ds.suggest!==undefined){
+    S.draft.cat=ds.suggest;S.draft.catManual=true;
+    const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=ds.suggest;
+    persist();renderSuggestions();renderResult();return;
+  }
   if(ds.focus!==undefined){focusCheck(ds.focus);return}
   if(t.id==='back-best'){S.draft.mode='prix';persist();renderResult();return}
   if(t.id==='save'){saveDraft();return}

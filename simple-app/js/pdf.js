@@ -68,7 +68,8 @@ function inWords(n){
 
 window.devisPdf=function(info){
   const W=595,H=842,X=48,R=W-48;
-  const ACCENT='#5B4BDB', INK='#191827', MUTED='#6B6880', LINE='#E2E0EC', TINT='#F5F4FA', SOFT='#EEEBFD', OK='#1E8E5A', NO='#B4233C';
+  const B=window.HYGO_BRAND;
+  const ACCENT=B.accent, INK=B.ink, MUTED=B.muted, LINE=B.line, TINT=B.tint, SOFT=B.soft, OK=B.positiveInk, NO=B.negativeInk;
   const ops=[];
   const text=(s,x,y,size,{bold=false,color=INK,align='left'}={})=>{
     const xx=align==='right'?x-width(s,size,bold):align==='center'?x-width(s,size,bold)/2:x;
@@ -92,7 +93,7 @@ window.devisPdf=function(info){
   /* ---------- En-tête : émetteur à gauche, « DEVIS » à droite ---------- */
   rect(0,H-6,W,6,ACCENT);
   round(X,H-84,36,36,8,{fill:ACCENT});
-  text('H',X+18,H-72.5,19,{bold:true,color:'#FFFFFF',align:'center'});
+  text('H',X+18,H-72.5,19,{bold:true,color:B.accentOn,align:'center'});
   text('Hygo',X+48,H-62,16,{bold:true});
   text('Import Chine – Madagascar',X+48,H-77,9,{color:MUTED});
   text('DEVIS',R,H-64,26,{bold:true,color:ACCENT,align:'right'});
@@ -113,10 +114,10 @@ window.devisPdf=function(info){
   /* ---------- Tableau : désignation, quantité, prix unitaire, montant ---------- */
   const cQty=332, cUnit=432;
   round(X,y-9,R-X,26,6,{fill:INK});
-  text('DÉSIGNATION',X+12,y,8,{bold:true,color:'#FFFFFF'});
-  text('QTÉ',cQty,y,8,{bold:true,color:'#FFFFFF',align:'right'});
-  text('PRIX UNITAIRE',cUnit,y,8,{bold:true,color:'#FFFFFF',align:'right'});
-  text('MONTANT',R-12,y,8,{bold:true,color:'#FFFFFF',align:'right'});
+  text('DÉSIGNATION',X+12,y,8,{bold:true,color:B.accentOn});
+  text('QTÉ',cQty,y,8,{bold:true,color:B.accentOn,align:'right'});
+  text('PRIX UNITAIRE',cUnit,y,8,{bold:true,color:B.accentOn,align:'right'});
+  text('MONTANT',R-12,y,8,{bold:true,color:B.accentOn,align:'right'});
   y-=34;
   const nameLines=wrap(info.name,cQty-X-70,11.5,true);
   const rowTop=y;
@@ -137,8 +138,8 @@ window.devisPdf=function(info){
   y-=10;hline(y,tx,R);
   y-=34;
   round(tx,y-10,R-tx,34,6,{fill:ACCENT});
-  text('TOTAL À PAYER',tx+12,y+2,9.5,{bold:true,color:'#FFFFFF'});
-  text(info.total,R-12,y+1,15,{bold:true,color:'#FFFFFF',align:'right'});
+  text('TOTAL À PAYER',tx+12,y+2,9.5,{bold:true,color:B.accentOn});
+  text(info.total,R-12,y+1,15,{bold:true,color:B.accentOn,align:'right'});
   if(isFinite(info.totalValue)){
     const w=inWords(info.totalValue);
     let wy=y+40;

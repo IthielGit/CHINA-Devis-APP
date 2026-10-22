@@ -310,7 +310,7 @@ function start(sessionId,target,userRole){
   setSync(localStorage.getItem(DIRTY_KEY)?'pending':'synced');
   $('viewAs').hidden=target===sessionId;
   // Scripts téléchargés en parallèle, exécutés dans l’ordre (async=false dans load).
-  const scripts=['js/engine.js','js/pdf.js','js/app.js',...(userRole==='super_admin'?['js/admin.js']:[])];
+  const scripts=['js/brand.js','js/engine.js','js/pdf.js','js/app.js',...(userRole==='super_admin'?['js/admin.js']:[])];
   Promise.all(scripts.map(load)).then(()=>pushState());
 }
 function load(src){

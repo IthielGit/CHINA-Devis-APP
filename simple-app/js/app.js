@@ -35,7 +35,7 @@ function syncTheme(){
   let tc=document.querySelector('meta[name="theme-color"]:not([media])');
   if(document.documentElement.dataset.theme){
     if(!tc){tc=document.createElement('meta');tc.name='theme-color';document.head.appendChild(tc)}
-    tc.content=eff==='dark'?'#11111B':'#F6F5FA';
+    tc.content=eff==='dark'?HYGO_BRAND.bgDark:HYGO_BRAND.bgLight;
   }else if(tc)tc.remove();
 }
 systemDark.addEventListener?.('change',syncTheme);
@@ -253,7 +253,9 @@ function renderResult(){
   const checks=checksFor(d,R);
   const blocking=checks.filter(c=>c.state==='bad');
   const chk=$('checks');
-  if(chk)chk.innerHTML=checks.map(c=>`<span class="chk ${c.state==='ok'?'':c.state}"><b>${c.state==='ok'?'✓':c.state==='warn'?'!':'✕'}</b>${esc(c.label)}</span>`).join('');
+  const pills=chk?[...chk.querySelectorAll('.chk')]:[];
+  if(chk&&pills.length===checks.length)checks.forEach((c,i)=>{const el=pills[i];el.className=`chk ${c.state==='ok'?'':c.state}`;el.firstElementChild.textContent=c.state==='ok'?'✓':c.state==='warn'?'!':'✕';el.lastChild.textContent=c.label});
+  else if(chk)chk.innerHTML=checks.map(c=>`<span class="chk ${c.state==='ok'?'':c.state}"><b>${c.state==='ok'?'✓':c.state==='warn'?'!':'✕'}</b>${esc(c.label)}</span>`).join('');
   // Raison de chaque point à corriger, en clair. Un tap amène au champ concerné (le survol n’existe pas sur téléphone).
   const notes=$('chkNotes');
   if(notes)notes.innerHTML=checks.filter(c=>c.state!=='ok'&&c.txt).map(c=>`<li><button type="button" class="chk-note ${c.state}" data-focus="${c.key}">${esc(c.label)} : ${esc(c.txt)}</button></li>`).join('');

@@ -150,7 +150,7 @@ function viewDevis(){
         </div>
         <span class="hint" id="hint-dims"></span></div>
       <label class="field"><span>Poids d’un produit emballé</span><span class="input-wrap"><input class="inp" data-k="wt" type="number" step="any" inputmode="decimal" value="${esc(val(d.wt))}"><span class="suffix">kg</span></span><span class="hint" id="hint-wt"></span></label>
-      <label class="field"><span>Poids total des aimants</span><span class="input-wrap"><input class="inp" data-k="magnetG" type="number" step="any" inputmode="decimal" placeholder="Aucun" value="${esc(val(d.magnetG))}"><span class="suffix">g</span></span><span class="hint">Laisser vide sans aimant. Au-delà de 200 g au total : catégorie Aimant.</span></label>
+      <label class="field" id="magnetField" ${magnetRelevant(d)?'':'hidden'}><span>Poids total des aimants</span><span class="input-wrap"><input class="inp" data-k="magnetG" type="number" step="any" inputmode="decimal" placeholder="Aucun" value="${esc(val(d.magnetG))}"><span class="suffix">g</span></span><span class="hint">Laisser vide sans aimant. Au-delà de 200 g au total : catégorie Aimant.</span></label>
       <div class="field"><span>Marge</span>
         <div class="segments slide" id="margeChips" role="group" aria-label="Marge">
           ${MARGES.map(v=>`<button type="button" class="seg" data-marge="${v}" aria-pressed="false">${Math.round(v*100)} %</button>`).join('')}
@@ -203,6 +203,7 @@ function usableSuggestions(name){
 /* Deux suggestions en pastilles, un tap pour les choisir. Un avertissement si le nom suggère une catégorie restrictive. */
 const RESTRICTED_CATS=['Danger','Batterie','Batterie brute','Poudre/liquide'];
 function renderSuggestions(){
+  syncMagnetField();
   const box=$('catSuggest');
   if(!box)return;
   const name=S.draft.name||'';
@@ -214,6 +215,17 @@ function renderSuggestions(){
   if(all[0]&&RESTRICTED_CATS.includes(all[0].cat)&&all[0].cat!==cur)html+=`<p class="hint bad">Le nom suggère « ${esc(all[0].cat)} » : vérifiez la catégorie.</p>`;
   if(all.length&&!usable.length)html+=`<p class="hint bad">Aucun transitaire n’accepte « ${esc(all[0].cat)} ». Ajoutez-la à un tarif dans Tarifs.</p>`;
   box.innerHTML=html;
+}
+/* Produits qui contiennent souvent un aimant : le champ du poids n'apparaît que pour eux (ou si une valeur existe déjà). */
+const MAGNET_WORDS=['aimant','aimants','magnet','magnets','magnetique','micro','microphone','haut parleur','speaker','enceinte','moteur','motor','ventilateur','carte mere','casque','ecouteur','ecouteurs'];
+function magnetRelevant(d){
+  if(d.magnetG!==null&&d.magnetG!==undefined&&d.magnetG!=='')return true;
+  if(d.cat==='Aimant')return true;
+  return MAGNET_WORDS.some(w=>` ${catWords(d.name||'')} `.includes(` ${w} `));
+}
+function syncMagnetField(){
+  const f=$('magnetField');
+  if(f)f.hidden=!magnetRelevant(S.draft);
 }
 /* Le poids des aimants décide de la catégorie Aimant ; le nom ne suffit pas. */
 function applyMagnetRule(){

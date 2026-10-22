@@ -171,6 +171,7 @@ main#app>:nth-child(n+4){animation-delay:120ms}
 .grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s4)}
 @media (min-width:680px){.grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 .field{display:grid;gap:6px;min-width:0}
+.field[hidden]{display:none}
 .field>span:first-child,.field>label{font-size:calc(.9rem * var(--fs-k));font-weight:500;color:var(--ink)}
 .field.wide{grid-column:1/-1}
 .inp{width:100%;max-width:100%;min-height:var(--control);border:var(--line-w) solid var(--field-line);border-radius:var(--r-field);padding:var(--s3) var(--s4);font-size:16px;color:var(--ink);background:var(--elevated);min-width:0;box-sizing:border-box;transition:border-color var(--t) var(--ease),box-shadow var(--t) var(--ease)}

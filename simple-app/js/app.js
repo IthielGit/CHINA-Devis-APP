@@ -97,6 +97,7 @@ function placeIndicator(){
   nav.style.setProperty('--ind-on',1);
 }
 window.addEventListener('resize',placeIndicator);
+window.addEventListener('resize',()=>document.querySelectorAll('.segments.slide').forEach(placePill));
 function renderRates(){
   const p=S.params;
   $('rates').innerHTML=`<small>Taux de change</small>
@@ -147,7 +148,7 @@ function viewDevis(){
         <span class="hint" id="hint-dims"></span></div>
       <label class="field"><span>Poids d’un produit emballé</span><span class="input-wrap"><input class="inp" data-k="wt" type="number" step="any" inputmode="decimal" value="${esc(val(d.wt))}"><span class="suffix">kg</span></span><span class="hint" id="hint-wt"></span></label>
       <div class="field"><span>Marge</span>
-        <div class="segments" id="margeChips" role="group" aria-label="Marge">
+        <div class="segments slide" id="margeChips" role="group" aria-label="Marge">
           ${MARGES.map(v=>`<button type="button" class="seg" data-marge="${v}" aria-pressed="false">${Math.round(v*100)} %</button>`).join('')}
           <input class="inp mini" data-k="marge" type="number" step="1" inputmode="numeric" aria-label="Marge personnalisée en pourcentage" value="${Math.round((d.marge??0)*1000)/10}">
         </div></div>
@@ -178,6 +179,14 @@ function viewDevis(){
 function syncMarge(){
   const v=S.draft.marge??0;
   document.querySelectorAll('[data-marge]').forEach(b=>b.setAttribute('aria-pressed',String(Math.abs(Number(b.dataset.marge)-v)<1e-9)));
+  placePill($('margeChips'));
+}
+/* Pastille qui glisse sous l’option choisie (groupes .segments.slide). */
+function placePill(root){
+  if(!root)return;
+  const on=root.querySelector('[aria-pressed="true"]');
+  root.style.setProperty('--pill-w',on?on.offsetWidth+'px':'0px');
+  if(on)root.style.setProperty('--pill-x',on.offsetLeft+'px');
 }
 
 function onDraftField(el){
@@ -462,6 +471,9 @@ function renderHisto(){
   const dayLabel=k=>k===today?'Aujourd’hui':k===yesterday?'Hier':(k?new Date(k+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'Sans date');
   const groups=new Map();
   rows.forEach(x=>{const k=dayKey(x.modified);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(x)});
+  // Animation seulement à l’ouverture de l’écran : pas à chaque lettre tapée dans la recherche.
+  el.classList.toggle('enter',!el.dataset.loaded);
+  el.dataset.loaded='1';
   el.innerHTML=[...groups].map(([k,list])=>`<h3 class="day">${esc(dayLabel(k))}</h3><div class="list">${list.map(histItem).join('')}</div>`).join('');
 }
 function histItem(q){
@@ -901,7 +913,7 @@ function viewReglages(){
   const ap=appearance(), restore=readRestore();
   app.innerHTML=`
   <section class="card"><h2>Apparence</h2>
-    <div class="segments" role="group" aria-label="Apparence">
+    <div class="segments slide" role="group" aria-label="Apparence">
       ${[['system','Système'],['light','Clair'],['dark','Sombre']].map(([v,l])=>`<button type="button" class="seg" data-appearance="${v}" aria-pressed="${ap===v}">${l}</button>`).join('')}
     </div>
     <p class="hint" style="margin-top:8px">« Système » suit le mode clair ou sombre de l’appareil.</p>
@@ -936,6 +948,7 @@ function viewReglages(){
     ${restore?.state?`<p class="hint" style="margin-top:12px">Un import a remplacé vos données le ${esc(new Date(restore.at).toLocaleString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}))}.</p>
     <div class="actions"><button class="btn" id="restore">Restaurer les données d’avant l’import</button></div>`:''}
   </section>`;
+  placePill(app.querySelector('.segments.slide'));
 }
 
 /* Catégories : étiquettes retirables + une seule saisie pour en ajouter. La valeur réelle est dans un champ caché (séparé par « ; »). */

@@ -122,7 +122,7 @@ function categoryRecommendation(d){
   else if(d.batteryStatus==='separate'){category='Batterie brute';reason='La batterie est expédiée séparément du produit.'}
   else if(d.batteryStatus==='integrated'){category='Batterie';reason=`Le produit contient une batterie intégrée${d.deviceType==='phone'?' et est identifié comme un téléphone':d.deviceType==='computer'?' et est identifié comme un ordinateur ou une tablette':''}.`}
   else if(['liquid','powder','aerosol'].includes(d.handling)){category='Poudre/liquide';reason=({liquid:'Le produit est liquide.',powder:'Le produit est en poudre.',aerosol:'Le produit est un aérosol.'})[d.handling]}
-  else if(d.magnet==='yes'){category='Aimant';reason='Vous indiquez que le produit contient un aimant.'}
+  else if(d.magnetG>200){category='Aimant';reason='Le total des aimants dépasse 200 g.'}
   else if(d.deviceType==='phone'){category='Téléphone';reason='Le type d’article sélectionné est téléphone.'}
   else if(d.deviceType==='computer'){category='Ordinateur/tablette';reason='Le type d’article sélectionné est ordinateur ou tablette.'}
   else if(d.deviceType==='electronics'){category='Électronique';reason='Le type d’article sélectionné est autre appareil électronique.'}
@@ -130,9 +130,9 @@ function categoryRecommendation(d){
   else {category=guessCat(d.name);reason=category?'Suggestion basée sur le nom du produit.':'Répondez aux questions pour obtenir une suggestion.'}
   if(!category)return null;
   const risks=Number(d.batteryStatus==='integrated'||d.batteryStatus==='separate')+
-    Number(['liquid','powder','aerosol'].includes(d.handling))+Number(d.dangerous==='yes')+Number(d.magnet==='yes');
+    Number(['liquid','powder','aerosol'].includes(d.handling))+Number(d.dangerous==='yes')+Number(d.magnetG>200);
   const warning=risks>1?'Plusieurs caractéristiques particulières sont indiquées : confirmez la catégorie et l’acceptation du colis auprès du transitaire.'
-    :(d.batteryStatus==='integrated'||d.batteryStatus==='separate'||d.dangerous==='yes'||['liquid','powder','aerosol'].includes(d.handling)||d.magnet==='yes')?'Cette suggestion ne remplace pas les consignes du transitaire : confirmez que cette offre accepte ce type de produit.'
+    :(d.batteryStatus==='integrated'||d.batteryStatus==='separate'||d.dangerous==='yes'||['liquid','powder','aerosol'].includes(d.handling)||d.magnetG>200)?'Cette suggestion ne remplace pas les consignes du transitaire : confirmez que cette offre accepte ce type de produit.'
     :d.deviceType==='phone'||d.deviceType==='computer'?'Si l’appareil contient une batterie, vérifiez les consignes du transitaire pour les batteries intégrées.':'';
   return{category,reason,warning};
 }

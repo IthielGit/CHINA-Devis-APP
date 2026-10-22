@@ -3,7 +3,9 @@
 const app=document.getElementById('app');
 const sheet=document.getElementById('sheet');
 const sheetBody=document.getElementById('sheetBody');
-const NUM=['price','qty','wt','delai','heure','trans','livCh','exclus','livFin','pvRetenu'];
+const NUM=['price','qty','wt','magnetG','delai','heure','trans','livCh','exclus','livFin','pvRetenu'];
+/* Règle de transport : total des aimants du produit au-delà de 200 g → catégorie Aimant. */
+const MAGNET_LIMIT_G=200;
 const MODES=['Avion','Maritime','Express'];
 const MARGES=[0.3,0.5,1];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -147,6 +149,7 @@ function viewDevis(){
         </div>
         <span class="hint" id="hint-dims"></span></div>
       <label class="field"><span>Poids d’un produit emballé</span><span class="input-wrap"><input class="inp" data-k="wt" type="number" step="any" inputmode="decimal" value="${esc(val(d.wt))}"><span class="suffix">kg</span></span><span class="hint" id="hint-wt"></span></label>
+      <label class="field"><span>Poids total des aimants</span><span class="input-wrap"><input class="inp" data-k="magnetG" type="number" step="any" inputmode="decimal" placeholder="Aucun" value="${esc(val(d.magnetG))}"><span class="suffix">g</span></span><span class="hint">Laisser vide sans aimant. Au-delà de 200 g au total : catégorie Aimant.</span></label>
       <div class="field"><span>Marge</span>
         <div class="segments slide" id="margeChips" role="group" aria-label="Marge">
           ${MARGES.map(v=>`<button type="button" class="seg" data-marge="${v}" aria-pressed="false">${Math.round(v*100)} %</button>`).join('')}
@@ -189,6 +192,17 @@ function placePill(root){
   if(on)root.style.setProperty('--pill-x',on.offsetLeft+'px');
 }
 
+/* Le poids des aimants décide de la catégorie Aimant ; le nom ne suffit pas. */
+function applyMagnetRule(){
+  const d=S.draft, sel=app.querySelector('[data-k="cat"]');
+  if(d.magnetG>MAGNET_LIMIT_G){d.cat='Aimant';d.catManual=true}
+  else if(d.cat==='Aimant'){
+    const g=guessCat(d.name);
+    d.cat=g&&g!=='Aimant'&&S.params.cats.includes(g)?g:'Général';
+    d.catManual=false;
+  }
+  if(sel)sel.value=d.cat;
+}
 function onDraftField(el){
   const k=el.dataset.k;
   let v=el.value;
@@ -199,8 +213,10 @@ function onDraftField(el){
   if(k==='cat')S.draft.catManual=true;
   if(k==='name'&&!S.draft.catManual){
     const g=guessCat(v);
-    if(g&&S.params.cats.includes(g)){S.draft.cat=g;const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=g}
+    // « Aimant » ne se devine pas à partir du nom : il faut le poids des aimants.
+    if(g&&g!=='Aimant'&&S.params.cats.includes(g)){S.draft.cat=g;const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=g}
   }
+  if(k==='magnetG')applyMagnetRule();
   if(k==='marge')syncMarge();
   persist();
   renderResult();
@@ -213,7 +229,7 @@ function applyKnownName(){
   const known=[...S.quotes].sort((a,b)=>String(b.modified||'').localeCompare(String(a.modified||''))).find(q=>String(q.inputs?.name||'').trim().toLowerCase()===key);
   if(!known)return;
   const i=known.inputs;
-  Object.assign(S.draft,{cat:i.cat,catManual:true,price:i.price,dims:i.dims,wt:i.wt,marge:i.marge??S.draft.marge,repris:known.no});
+  Object.assign(S.draft,{cat:i.cat,catManual:true,price:i.price,dims:i.dims,wt:i.wt,magnetG:i.magnetG,marge:i.marge??S.draft.marge,repris:known.no});
   persist();
   viewDevis();
 }

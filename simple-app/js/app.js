@@ -154,6 +154,7 @@ function viewDevis(){
     </div>
     <div class="section-label">Contrôles automatiques</div>
     <div class="checks" id="checks"></div>
+    <ul class="chk-notes" id="chkNotes"></ul>
     <details class="adv"><summary>Catégorie, dates et frais <small>automatique, modifiable</small></summary>
       <div class="grid">
         <label class="field"><span>Catégorie</span><select class="inp" data-k="cat">${opt(cats,d.cat)}</select></label>
@@ -252,7 +253,10 @@ function renderResult(){
   const checks=checksFor(d,R);
   const blocking=checks.filter(c=>c.state==='bad');
   const chk=$('checks');
-  if(chk)chk.innerHTML=checks.map(c=>`<span class="chk ${c.state==='ok'?'':c.state}" title="${esc(c.txt)}"><b>${c.state==='ok'?'✓':c.state==='warn'?'!':'✕'}</b>${esc(c.label)}${c.txt&&c.state!=='ok'?' · '+esc(c.txt):''}</span>`).join('');
+  if(chk)chk.innerHTML=checks.map(c=>`<span class="chk ${c.state==='ok'?'':c.state}"><b>${c.state==='ok'?'✓':c.state==='warn'?'!':'✕'}</b>${esc(c.label)}</span>`).join('');
+  // Raison de chaque point à corriger, en clair. Un tap amène au champ concerné (le survol n’existe pas sur téléphone).
+  const notes=$('chkNotes');
+  if(notes)notes.innerHTML=checks.filter(c=>c.state!=='ok'&&c.txt).map(c=>`<li><button type="button" class="chk-note ${c.state}" data-focus="${c.key}">${esc(c.label)} : ${esc(c.txt)}</button></li>`).join('');
   updateHints(d,R,checks);
   const row=(lab,value,sub='')=>`<div class="row"><span>${lab}</span><span class="val">${value}${sub?`<small>${sub}</small>`:''}</span></div>`;
   const num=(key,v)=>isNum(v)?` data-num="${v}" data-key="${key}"`:'';
@@ -316,6 +320,8 @@ function renderSheet(R,d){
   }).join('')||'<p class="empty">Aucune offre compatible.</p>';
 }
 /* Feuille « Comparer les offres » (lecture) ou éditeur de tarif (saisie). */
+/* Durée lue dans les tokens CSS (ex. --t : 220ms) : la feuille ne se cache qu’une fois son animation finie. */
+const cssMs=name=>{const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();return v.endsWith('ms')?parseFloat(v):parseFloat(v)*1000};
 let closeTimer=0;
 function openSheet(){
   clearTimeout(closeTimer);
@@ -331,7 +337,7 @@ function closeSheet(){
     sheet.classList.remove('closing');
     sheetBody.classList.remove('editor-body');
     sheetBody.innerHTML='';
-  },reduce?0:200);
+  },reduce?0:cssMs('--t'));
 }
 function showCompare(){
   const d=S.draft;
@@ -1069,6 +1075,7 @@ app.addEventListener('click',e=>{
   if(ds.step){S.draft.qty=Math.max(1,(Number(S.draft.qty)||1)+Number(ds.step));persist();renderResult();return}
   if(ds.marge){S.draft.marge=Number(ds.marge);syncMarge();const mi=app.querySelector('[data-k="marge"]');if(mi)mi.value=Math.round(S.draft.marge*100);persist();renderResult();return}
   if(ds.appearance){setAppearance(ds.appearance,viewReglages);return}
+  if(ds.focus!==undefined){focusCheck(ds.focus);return}
   if(t.id==='back-best'){S.draft.mode='prix';persist();renderResult();return}
   if(t.id==='save'){saveDraft();return}
   if(t.id==='new'){newDraft();viewDevis();return}
@@ -1088,6 +1095,16 @@ app.addEventListener('click',e=>{
   if(t.id==='export'){exportData();return}
   if(t.id==='restore'){restoreBeforeImport();return}
 });
+/* Amène le champ d’un point à corriger au centre de l’écran, en dépliant sa section si besoin. */
+function focusCheck(key){
+  const sel={dims:'[data-dim]',pv:'[data-k="pvRetenu"]'}[key]||`[data-k="${key}"]`;
+  const el=app.querySelector(sel);
+  if(!el)return;
+  const fold=el.closest('details');
+  if(fold)fold.open=true;
+  el.focus();
+  el.scrollIntoView({block:'center'});
+}
 /* Dimensions : trois champs, reconstitués en « L x l x H » pour le moteur de calcul. */
 /* Le groupe L/l/H : on n’affiche pas son erreur tant que le focus reste dedans. */
 const dimsGroup=()=>app.querySelector('.dims3');

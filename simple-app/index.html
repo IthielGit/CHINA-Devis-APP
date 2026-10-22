@@ -85,7 +85,8 @@ html[data-theme="dark"]{color-scheme:dark}
 
 /* ---------- Base ---------- */
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;accent-color:var(--accent);scroll-padding-bottom:140px}
+html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;accent-color:var(--accent);scroll-padding-bottom:140px}
+button,a,[role="button"],summary{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--fs-body);line-height:1.45;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 /* Halos discrets derrière l’interface, pour que les cartes translucides aient un fond à laisser voir */
 body::before,body::after{content:"";position:fixed;z-index:-1;width:70vmax;height:70vmax;border-radius:50%;filter:blur(70px);opacity:.2;pointer-events:none}
@@ -114,7 +115,7 @@ svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .nav{position:relative;display:flex;flex-direction:column;gap:2px}
 .nav::before{content:"";position:absolute;left:0;top:0;width:100%;height:var(--ind-h,0px);border-radius:14px;background:var(--accent-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent);transform:translateY(var(--ind-y,0px));transition:transform var(--t-slow) var(--ease),height var(--t) var(--ease);opacity:var(--ind-on,0)}
 .nav button{position:relative;z-index:1;display:flex;align-items:center;gap:var(--s3);width:100%;min-height:48px;border:0;border-radius:14px;padding:var(--s2) var(--s3);color:var(--ink);opacity:.8;background:none;text-align:left;font-weight:500;cursor:pointer;transition:color var(--t) var(--ease)}
-.nav button:hover{opacity:1}
+@media (hover:hover) and (pointer:fine){.nav button:hover{opacity:1}}
 .nav button[aria-current="page"]{color:var(--accent-text);font-weight:700;opacity:1}
 .nav button .i{stroke-width:2.2}
 /* Nouveau produit : l’icône « + » est une pastille pleine, avec son libellé comme les autres entrées */
@@ -131,7 +132,8 @@ svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .top p{margin:var(--s1) 0 0;color:var(--muted)}
 /* Retour : contrôle discret, sans fond ni bordure ; zone tactile de 44 px, teinte seulement au toucher */
 .back-btn{display:inline-flex;align-items:center;gap:var(--s1);min-width:44px;min-height:44px;margin:var(--s2) 0 0 -10px;padding:0 var(--s3) 0 var(--s2);border:0;border-radius:12px;background:none;color:var(--accent-text);font:inherit;font-size:calc(1rem * var(--fs-k));font-weight:500;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color var(--t-fast) var(--ease)}
-.back-btn:hover,.back-btn:active{background:var(--accent-soft)}
+.back-btn:active{background:var(--accent-soft)}
+@media (hover:hover) and (pointer:fine){.back-btn:hover{background:var(--accent-soft)}}
 .back-btn[hidden]{display:none}
 .back-btn+.top{margin-top:0}
 /* Contrôle flottant : verre */
@@ -142,6 +144,9 @@ svg.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-widt
 
 main#app{display:grid;gap:var(--s6);min-width:0}
 main#app>*{animation:enter var(--t-slow) var(--ease) both}
+main#app>:nth-child(2){animation-delay:40ms}
+main#app>:nth-child(3){animation-delay:80ms}
+main#app>:nth-child(n+4){animation-delay:120ms}
 
 /* ---------- Cartes (surfaces pleines, pas de verre) ---------- */
 .card{background:color-mix(in srgb,var(--surface) 82%,transparent);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);border:var(--card-w) solid var(--divider);border-radius:var(--r-card);padding:var(--s5);min-width:0}
@@ -189,11 +194,11 @@ textarea.inp{min-height:0;resize:vertical}
 
 /* ---------- Boutons ---------- */
 .btn{min-height:var(--control);border:var(--line-w) solid var(--divider);background:var(--surface);color:var(--ink);border-radius:var(--r-btn);padding:0 var(--s5);font-size:var(--fs-button);font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);transition:background-color var(--t) var(--ease),transform var(--t-fast) var(--ease),opacity var(--t) var(--ease)}
-.btn:hover{background:var(--elevated)}
+@media (hover:hover) and (pointer:fine){.btn:hover{background:var(--elevated)}}
 .btn:active{transform:scale(.97)}
 .btn:disabled,.btn[aria-disabled="true"]{opacity:.42;cursor:pointer;transform:none}
 .btn.primary{background:var(--accent-button);border-color:transparent;color:var(--accent-ink)}
-.btn.primary:hover{background:var(--accent-button)}
+@media (hover:hover) and (pointer:fine){.btn.primary:hover{background:var(--accent-button)}}
 .btn.primary:active{background:var(--accent-pressed)}
 .btn.danger{color:var(--negative-ink)}
 .btn.small{min-height:44px;padding:0 var(--s4);font-size:calc(.92rem * var(--fs-k))}
@@ -224,7 +229,7 @@ textarea.inp{min-height:0;resize:vertical}
 .cat-chip button{position:relative;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:inherit;font-size:calc(1.25rem * var(--fs-k));line-height:1;cursor:pointer;display:grid;place-items:center}
 /* Zone tactile de 44 px sans agrandir le bouton visible */
 .cat-chip button::after{content:"";position:absolute;inset:-6px}
-.cat-chip button:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+@media (hover:hover) and (pointer:fine){.cat-chip button:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}}
 .cat-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--s2);align-items:center}
 .cat-add .inp{min-height:44px}
 .form-error{color:var(--negative-ink);font-size:calc(.9rem * var(--fs-k));min-height:1.2em;margin:0}
@@ -307,7 +312,7 @@ details[open]>.grid{margin-top:var(--s3)}
 .pw-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .auth-aside{margin:calc(var(--s2) * -1) 0 0;text-align:right;font-size:calc(.9rem * var(--fs-k))}
 .auth-submit{width:100%;background:var(--ink);color:var(--bg);border-color:transparent}
-.auth-submit:hover{background:var(--ink)}
+@media (hover:hover) and (pointer:fine){.auth-submit:hover{background:var(--ink)}}
 .auth-foot{margin:0;text-align:center;font-size:calc(.92rem * var(--fs-k));color:var(--muted)}
 .auth-note{margin:0;color:var(--muted);text-align:center}
 .auth-form{display:grid;gap:var(--s4)}
@@ -387,16 +392,17 @@ details[open]>.grid{margin-top:var(--s3)}
 .offer .price{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
 .offer .price small{display:block;font-weight:400}
 .radio{width:24px;height:24px;border-radius:50%;border:2px solid var(--divider);flex:none;display:grid;place-items:center;transition:background-color var(--t) var(--ease),border-color var(--t) var(--ease)}
-.radio::after{content:"";width:9px;height:5px;border:solid #fff;border-width:0 0 2px 2px;transform:rotate(-45deg) scale(0);transition:transform var(--t) var(--ease)}
+.radio::after{content:"";width:9px;height:5px;border:solid #fff;border-width:0 0 2px 2px;transform:rotate(-45deg) scale(.6);opacity:0;transition:transform var(--t) var(--ease),opacity var(--t) var(--ease)}
 .offer.is-on .radio{background:var(--accent);border-color:var(--accent)}
-.offer.is-on .radio::after{transform:rotate(-45deg) scale(1)}
+.offer.is-on .radio::after{transform:rotate(-45deg) scale(1);opacity:1}
 
 /* ---------- Historique : liste groupée par date ---------- */
 .day{font-size:var(--fs-meta);font-weight:600;color:var(--muted);margin:var(--s5) var(--s1) var(--s2);text-transform:capitalize}
 .day:first-child{margin-top:0}
 .list{border:var(--line-w) solid var(--divider);border-radius:var(--r-card);overflow:hidden;background:var(--surface)}
 .item{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:var(--s3);align-items:center;width:100%;min-height:68px;padding:var(--s3) var(--s4);background:none;border:0;text-align:left;cursor:pointer;color:var(--ink);transition:background-color var(--t-fast) var(--ease)}
-.item:active,.item:hover{background:var(--elevated)}
+.item:active{background:var(--elevated)}
+@media (hover:hover) and (pointer:fine){.item:hover{background:var(--elevated)}}
 .item-wrap+.item-wrap{border-top:var(--line-w) solid var(--divider)}
 .avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:600;background:var(--accent-soft);color:var(--accent)}
 .item .main{min-width:0}
@@ -409,12 +415,14 @@ details[open]>.grid{margin-top:var(--s3)}
 .item-wrap{display:flex;align-items:center}
 .item-wrap .item{flex:1;min-width:0;padding-right:var(--s2)}
 .item-more{flex:none;width:44px;height:44px;margin-right:var(--s2);padding:0;border:0;border-radius:50%;background:none;color:var(--muted);display:grid;place-items:center;cursor:pointer}
-.item-more:hover,.item-more:active{background:var(--elevated)}
+.item-more:active{background:var(--elevated)}
+@media (hover:hover) and (pointer:fine){.item-more:hover{background:var(--elevated)}}
 .item-more .i{fill:currentColor;stroke:none}
 .action-list{display:grid;border:var(--line-w) solid var(--divider);border-radius:var(--r-field);overflow:hidden;background:var(--surface)}
 .action{min-height:52px;padding:0 var(--s4);border:0;background:none;color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
 .action+.action{border-top:var(--line-w) solid var(--divider)}
-.action:active,.action:hover{background:var(--elevated)}
+.action:active{background:var(--elevated)}
+@media (hover:hover) and (pointer:fine){.action:hover{background:var(--elevated)}}
 .action small{display:block;font-weight:400;font-size:var(--fs-meta);color:var(--muted);margin-top:2px}
 .action:has(small){padding-top:var(--s3);padding-bottom:var(--s3)}
 .action.danger{color:var(--negative-ink)}

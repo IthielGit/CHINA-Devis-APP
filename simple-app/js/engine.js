@@ -118,10 +118,10 @@ function normalizeLegacyMaritimeOffer(d,tarifs){
 const normCat=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
 const CAT_PRIORITY=['Danger','Batterie','Batterie brute','Poudre/liquide','Téléphone','Ordinateur/tablette','Électronique'];
 const CAT_KEYWORDS={
-  'Danger':[['gaz',3],['aerosol',3],['inflammable',3],['butane',3],['corrosif',3],['acide',2]],
+  'Danger':[['gaz',3],['aerosol',3],['inflammable',3],['butane',3],['corrosif',3],['acide',2],['vernis',3]],
   'Batterie':[['batterie',2],['batteries',2],['power bank',3],['powerbank',3],['pile',2],['piles',2],['lipo',2],['lithium',1],['rechargeable',4],['enceinte',2],['smartwatch',3],['montre connectee',2]],
   'Batterie brute':[['cellule',3],['cellules',3],['18650',4],['21700',4],['32140',3],['lifepo4',2],['li ion',2]],
-  'Poudre/liquide':[['adhesif',3],['cyanoacrylate',3],['spray',3],['liquide',3],['poudre',3],['creme',3],['parfum',3],['huile',3],['gel',2],['shampoing',3],['savon',3],['cosmetique',2],['vernis',3],['colle',3],['encre',3],['serum',3],['lotion',3]],
+  'Poudre/liquide':[['adhesif',3],['cyanoacrylate',3],['spray',3],['liquide',3],['poudre',3],['creme',3],['parfum',3],['huile',3],['gel',2],['shampoing',3],['savon',3],['cosmetique',2],['colle',3],['encre',3],['serum',3],['lotion',3]],
   'Téléphone':[['telephone',2],['smartphone',3],['iphone',3],['phone',1]],
   'Ordinateur/tablette':[['ordinateur',3],['laptop',3],['notebook',3],['tablette',3],['tablet',3],['macbook',3]],
   'Électronique':[['led',3],['cable',3],['cellule photoelectrique',4],['chargeur',3],['charger',3],['usb',2],['casque',2],['microphone',2],['ecouteurs',2],['earbuds',2],['souris',3],['clavier',3],['lampe',2],['montre',2],['camera',2],['capteur',2]],

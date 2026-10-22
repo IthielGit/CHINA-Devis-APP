@@ -119,7 +119,7 @@ const normCat=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').to
 const CAT_PRIORITY=['Danger','Batterie','Batterie brute','Poudre/liquide','Téléphone','Ordinateur/tablette','Électronique'];
 const CAT_KEYWORDS={
   'Danger':[['gaz',3],['aerosol',3],['inflammable',3],['butane',3],['corrosif',3],['acide',2]],
-  'Batterie':[['batterie',2],['batteries',2],['power bank',3],['powerbank',3],['pile',2],['piles',2],['lipo',2],['lithium',1],['bluetooth',2],['sans fil',2],['wireless',2],['rechargeable',4],['enceinte',2],['smartwatch',3],['montre connectee',2]],
+  'Batterie':[['batterie',2],['batteries',2],['power bank',3],['powerbank',3],['pile',2],['piles',2],['lipo',2],['lithium',1],['rechargeable',4],['enceinte',2],['smartwatch',3],['montre connectee',2]],
   'Batterie brute':[['cellule',3],['cellules',3],['18650',4],['21700',4],['32140',3],['lifepo4',2],['li ion',2]],
   'Poudre/liquide':[['adhesif',3],['cyanoacrylate',3],['spray',3],['liquide',3],['poudre',3],['creme',3],['parfum',3],['huile',3],['gel',2],['shampoing',3],['savon',3],['cosmetique',2],['vernis',3],['colle',3],['encre',3],['serum',3],['lotion',3]],
   'Téléphone':[['telephone',2],['smartphone',3],['iphone',3],['phone',1]],
@@ -142,21 +142,34 @@ function historyBonus(words){
   }
   return out;
 }
-function rankCats(name){
-  const words=catWords(name), padded=` ${words} `, score={};
+const WIRELESS_WORDS=['bluetooth','sans fil','wireless'];
+const hasAny=(padded,list)=>list.some(w=>padded.includes(` ${w} `));
+/* Ces produits demandent si une batterie est incluse (sans fil, Bluetooth, jouets). */
+const askBattery=name=>hasAny(` ${catWords(name)} `,[...WIRELESS_WORDS,...GENERAL_TOY]);
+function scoreCats(padded){
+  const s={};
   for(const cat of CAT_PRIORITY){
-    let s=0;for(const [k,w] of CAT_KEYWORDS_N[cat])if(padded.includes(` ${k} `))s+=w;
-    if(s)score[cat]=s;
+    let n=0;for(const [k,w] of CAT_KEYWORDS_N[cat])if(padded.includes(` ${k} `))n+=w;
+    if(n)s[cat]=n;
   }
-  const hasWord=list=>list.some(w=>padded.includes(` ${w} `));
-  const hasPart=['Danger','Batterie','Batterie brute','Poudre/liquide','Électronique'].some(c=>score[c]);
-  if(hasWord(GENERAL_ACCESSORY)&&!hasPart)return [{cat:'Général',score:1}];
-  if(hasWord(GENERAL_TOY)&&!score['Batterie']&&!score['Batterie brute'])return [{cat:'Général',score:1}];
+  return s;
+}
+/* Ce qui précède « pour » ou « à » décrit le produit ; le reste est sa cible ou une option (« pour téléphone », « à clavier »).
+   Sans/Bluetooth : Batterie seulement si le produit contient une batterie (batt), sinon Électronique. */
+function rankCats(name,batt){
+  const words=catWords(name), padded=` ${words} `, full=scoreCats(padded);
+  const head=scoreCats(` ${words.split(/ (?:pour|a) /)[0]} `), score=Object.keys(head).length?head:{...full};
+  const wireless=hasAny(padded,WIRELESS_WORDS), battery=askBattery(name)&&batt===true;
+  if(battery)score.Batterie=(score.Batterie||0)+3;
+  else if(wireless)score['Électronique']=(score['Électronique']||0)+2;
+  const hasPart=wireless||battery||['Danger','Batterie','Batterie brute','Poudre/liquide','Électronique'].some(c=>full[c]);
+  if(hasAny(padded,GENERAL_ACCESSORY)&&!hasPart)return [{cat:'Général',score:1}];
+  if(hasAny(padded,GENERAL_TOY)&&!full.Batterie&&!full['Batterie brute']&&!battery)return [{cat:'Général',score:1}];
   for(const [cat,b] of Object.entries(historyBonus(words)))score[cat]=(score[cat]||0)+b;
   const rank=c=>CAT_PRIORITY.includes(c)?CAT_PRIORITY.indexOf(c):CAT_PRIORITY.length;
   return Object.keys(score).sort((a,b)=>score[b]-score[a]||rank(a)-rank(b)).map(c=>({cat:c,score:score[c]}));
 }
-function guessCat(n){const r=rankCats(n);return r.length?r[0].cat:null}
+function guessCat(n,batt){const r=rankCats(n,batt);return r.length?r[0].cat:null}
 function categoryRecommendation(d){
   let category,reason;
   if(d.dangerous==='yes'){category='Danger';reason='Vous indiquez que le produit peut être dangereux.'}

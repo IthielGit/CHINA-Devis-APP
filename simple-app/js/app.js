@@ -198,7 +198,7 @@ function placePill(root){
 function acceptedCats(){return new Set(S.tarifs.flatMap(t=>catList(t.cats)))}
 function usableSuggestions(name){
   const acc=acceptedCats();
-  return rankCats(name).filter(x=>S.params.cats.includes(x.cat)&&x.cat!=='Aimant'&&(!acc.size||acc.has(x.cat)));
+  return rankCats(name,S.draft.batt).filter(x=>S.params.cats.includes(x.cat)&&x.cat!=='Aimant'&&(!acc.size||acc.has(x.cat)));
 }
 /* Deux suggestions en pastilles, un tap pour les choisir. Un avertissement si le nom suggère une catégorie restrictive. */
 const RESTRICTED_CATS=['Danger','Batterie','Batterie brute','Poudre/liquide'];
@@ -207,9 +207,10 @@ function renderSuggestions(){
   if(!box)return;
   const name=S.draft.name||'';
   if(!name.trim()){box.innerHTML='';return}
-  const cur=S.draft.cat, all=rankCats(name).filter(x=>x.cat!=='Aimant'), usable=usableSuggestions(name).slice(0,2);
+  const cur=S.draft.cat, all=rankCats(name,S.draft.batt).filter(x=>x.cat!=='Aimant'), usable=usableSuggestions(name).slice(0,2);
   let html='';
   if(usable.length)html+=`<span class="hint">Suggéré</span>`+usable.map(x=>`<button type="button" class="seg" data-suggest="${esc(x.cat)}" aria-pressed="${x.cat===cur}">${esc(x.cat)}</button>`).join('');
+  if(askBattery(name))html+=`<p class="hint ask">Le produit est-il livré avec une pile ou contient-il une batterie ?</p><button type="button" class="seg" data-batt="yes" aria-pressed="${S.draft.batt===true}">Oui</button><button type="button" class="seg" data-batt="no" aria-pressed="${S.draft.batt===false}">Non</button>`;
   if(all[0]&&RESTRICTED_CATS.includes(all[0].cat)&&all[0].cat!==cur)html+=`<p class="hint bad">Le nom suggère « ${esc(all[0].cat)} » : vérifiez la catégorie.</p>`;
   if(all.length&&!usable.length)html+=`<p class="hint bad">Aucun transitaire n’accepte « ${esc(all[0].cat)} ». Ajoutez-la à un tarif dans Tarifs.</p>`;
   box.innerHTML=html;
@@ -219,7 +220,7 @@ function applyMagnetRule(){
   const d=S.draft, sel=app.querySelector('[data-k="cat"]');
   if(d.magnetG>MAGNET_LIMIT_G){d.cat='Aimant';d.catManual=true}
   else if(d.cat==='Aimant'){
-    const g=guessCat(d.name);
+    const g=guessCat(d.name,d.batt);
     d.cat=g&&g!=='Aimant'&&S.params.cats.includes(g)?g:'Général';
     d.catManual=false;
   }
@@ -1126,6 +1127,11 @@ app.addEventListener('click',e=>{
   if(ds.step){S.draft.qty=Math.max(1,(Number(S.draft.qty)||1)+Number(ds.step));persist();renderResult();return}
   if(ds.marge){S.draft.marge=Number(ds.marge);syncMarge();const mi=app.querySelector('[data-k="marge"]');if(mi)mi.value=Math.round(S.draft.marge*100);persist();renderResult();return}
   if(ds.appearance){setAppearance(ds.appearance,viewReglages);return}
+  if(ds.batt!==undefined){
+    S.draft.batt=ds.batt==='yes';
+    if(!S.draft.catManual){const g=usableSuggestions(S.draft.name)[0]?.cat;if(g){S.draft.cat=g;const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=g}}
+    persist();renderSuggestions();renderResult();return;
+  }
   if(ds.suggest!==undefined){
     S.draft.cat=ds.suggest;S.draft.catManual=true;
     const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=ds.suggest;

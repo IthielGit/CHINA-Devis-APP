@@ -17,7 +17,7 @@ const data = JSON.parse(fs.readFileSync(file, 'utf8'));
 // Cas de base : ce que l’on attend clairement (indépendant du fichier).
 const BASE = [
   ['Spray anti-pluie 50 ml', 'Poudre/liquide'], ['Chargeur téléphone USB-C 20W', 'Électronique'],
-  ['Écouteurs bluetooth sans fil', 'Batterie'], ['Casque microphone gaming', 'Électronique'],
+  ['Écouteurs bluetooth sans fil', 'Électronique'], ['Casque microphone gaming', 'Électronique'],
   ['Power bank 10000 mAh', 'Batterie'], ['Batterie 18650 seule', 'Batterie brute'],
   ['Smartphone Xiaomi 128 Go', 'Téléphone'], ['Lampe LED bureau', 'Électronique'],
   ['Montre connectée', 'Batterie'], ['Crème hydratante visage', 'Poudre/liquide'],
@@ -35,15 +35,20 @@ for (const [name, expected] of BASE) {
 }
 console.log(`Cas de base : ${base}/${BASE.length}`);
 
+// Sans/Bluetooth : l’application demande si le produit contient une batterie. Le jeu simule la réponse
+// d’après l’étiquette (Batterie → oui, Électronique → non). Sans réponse, le score est affiché à part.
 const cases = data.filter(x => x.category !== 'Aimant');
-let ok = 0;
+let ok = 0, sansReponse = 0;
 const erreurs = {};
 for (const x of cases) {
-  const got = guessCat(x.name) || 'null';
+  const batt = x.category === 'Batterie' ? true : x.category === 'Électronique' ? false : undefined;
+  const got = guessCat(x.name, batt) || 'null';
   if (got === x.category) ok++;
   else (erreurs[`${x.category} → ${got}`] ||= []).push(x.name);
+  if ((guessCat(x.name) || 'null') === x.category) sansReponse++;
 }
-console.log(`Jeu de tests (hors Aimant) : ${ok}/${cases.length} (${Math.round(100 * ok / cases.length)} %)`);
+console.log(`Jeu de tests (hors Aimant, réponse batterie simulée) : ${ok}/${cases.length} (${Math.round(100 * ok / cases.length)} %)`);
+console.log(`Sans réponse batterie : ${sansReponse}/${cases.length}`);
 for (const [k, list] of Object.entries(erreurs).sort((a, b) => b[1].length - a[1].length)) {
   console.log(`\n${k} (${list.length})`);
   list.forEach(n => console.log('   ' + n));

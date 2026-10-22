@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Hygo</title>
 <!-- Barre d’état : couleur du thème clair ou sombre du système -->
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F6F5FA">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F7FA">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0E1117">
 <meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -28,14 +28,14 @@
 :root{
   color-scheme:light dark;
   /* Couleurs */
-  --bg:light-dark(#F6F5FA,#0E1117);
+  --bg:light-dark(#F5F7FA,#0E1117);
   --surface:light-dark(#FFFFFF,#161B24);
-  --elevated:light-dark(#F1EFF8,#1F2631);
-  --ink:light-dark(#191827,#EEF2F8);
-  --muted:light-dark(#68677A,#A3ADBE);
-  --divider:light-dark(#E8E6EF,#2B3340);
-  --field-line:light-dark(#8A87A0,#5F6B7F);
-  --chip-fill:light-dark(rgba(25,24,39,.06),rgba(255,255,255,.06));
+  --elevated:light-dark(#EEF2F7,#1F2631);
+  --ink:light-dark(#161B26,#EEF2F8);
+  --muted:light-dark(#5E6779,#A3ADBE);
+  --divider:light-dark(#E1E6EE,#2B3340);
+  --field-line:light-dark(#8790A2,#5F6B7F);
+  --chip-fill:light-dark(rgba(22,27,38,.06),rgba(255,255,255,.06));
   /* Gamme de marque (bleu marine) : la seule source des couleurs d’accent */
   --brand-200:#B3C4FF; --brand-300:#8FA8FF; --brand-400:#2F4FB0; --brand-500:#1F3A8A; --brand-600:#172C6B;
   --accent:light-dark(var(--brand-500),#8AA6E6);
@@ -48,7 +48,7 @@
   --accent-text:light-dark(var(--brand-500),#B5C6EE);
   --accent-button:light-dark(var(--brand-500),var(--brand-400));
   --scrim:rgba(8,10,16,.38);
-  --lavender:light-dark(#B7A6FF,#2A3A66);
+  --lavender:light-dark(#9DB2E0,#2A3A66);
   --positive:#34C98B;
   --negative:#FF737D;
   /* Variantes lisibles des couleurs d’état sur fond clair */
@@ -62,7 +62,7 @@
   --glass:light-dark(rgba(255,255,255,.82),rgba(22,27,36,.7));
   --glass-edge:light-dark(rgba(255,255,255,.85),rgba(255,255,255,.08));
   --glass-blur:blur(24px) saturate(170%);
-  --glass-shadow:light-dark(0 8px 28px rgba(25,24,39,.12),0 8px 28px rgba(0,0,0,.45));
+  --glass-shadow:light-dark(0 8px 28px rgba(22,27,38,.12),0 8px 28px rgba(0,0,0,.45));
   /* Typographie */
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Roboto Flex",Roboto,"Segoe UI",system-ui,sans-serif;
   --fs-amount:calc(2.2rem * var(--fs-k)); --fs-title:calc(1.85rem * var(--fs-k)); --fs-section:calc(1.15rem * var(--fs-k)); --fs-card-amount:calc(1.35rem * var(--fs-k));
@@ -72,14 +72,14 @@
   /* Formes */
   --r-card:22px; --r-btn:16px; --r-field:14px; --r-pill:999px;
   --control:52px;
-  --shadow-card:light-dark(0 10px 30px rgba(25,24,39,.07),none);
+  --shadow-card:light-dark(0 10px 30px rgba(22,27,38,.07),none);
   --shadow-result:light-dark(0 18px 48px rgba(31,58,138,.16),none);
   /* Mouvement */
   --t-fast:150ms; --t:220ms; --t-slow:300ms; --ease:cubic-bezier(.2,.8,.2,1);
 }
 /* Navigateurs sans light-dark() (anciens Android WebView, anciens iOS) : mêmes couleurs, selon le système ou le choix de l’utilisateur. */
 @supports not (color:light-dark(#000,#fff)){
-  :root{--bg:#F6F5FA;--surface:#FFFFFF;--elevated:#F1EFF8;--ink:#191827;--muted:#68677A;--divider:#E8E6EF;--field-line:#8A87A0;--chip-fill:rgba(25,24,39,.06);--accent:var(--brand-500);--accent-on:#FFFFFF;--accent-soft:#E8EDFB;--accent-text:var(--brand-500);--accent-button:var(--brand-500);--lavender:#B7A6FF;--positive-ink:#0F6B45;--negative-ink:#A8222F;--warning-ink:#7A5400;--positive-bg:#E3F7EE;--negative-bg:#FFE9EB;--warning-bg:#FDF3DC;--glass:rgba(255,255,255,.82);--glass-edge:rgba(255,255,255,.85);--glass-shadow:0 8px 28px rgba(25,24,39,.12);--shadow-card:0 10px 30px rgba(25,24,39,.07);--shadow-result:0 18px 48px rgba(31,58,138,.16)}
+  :root{--bg:#F5F7FA;--surface:#FFFFFF;--elevated:#EEF2F7;--ink:#161B26;--muted:#5E6779;--divider:#E1E6EE;--field-line:#8790A2;--chip-fill:rgba(22,27,38,.06);--accent:var(--brand-500);--accent-on:#FFFFFF;--accent-soft:#E8EDFB;--accent-text:var(--brand-500);--accent-button:var(--brand-500);--lavender:#9DB2E0;--positive-ink:#0F6B45;--negative-ink:#A8222F;--warning-ink:#7A5400;--positive-bg:#E3F7EE;--negative-bg:#FFE9EB;--warning-bg:#FDF3DC;--glass:rgba(255,255,255,.82);--glass-edge:rgba(255,255,255,.85);--glass-shadow:0 8px 28px rgba(22,27,38,.12);--shadow-card:0 10px 30px rgba(22,27,38,.07);--shadow-result:0 18px 48px rgba(31,58,138,.16)}
   @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1117;--surface:#161B24;--elevated:#1F2631;--ink:#EEF2F8;--muted:#A3ADBE;--divider:#2B3340;--field-line:#5F6B7F;--chip-fill:rgba(255,255,255,.06);--accent:#8AA6E6;--accent-on:#0B1230;--accent-soft:#1B2A4A;--accent-text:#B5C6EE;--accent-button:var(--brand-400);--lavender:#2A3A66;--positive-ink:#5FDCA7;--negative-ink:#FF8C94;--warning-ink:#F7C866;--positive-bg:#173A2C;--negative-bg:#3E2028;--warning-bg:#3A3020;--glass:rgba(22,27,36,.7);--glass-edge:rgba(255,255,255,.08);--glass-shadow:0 8px 28px rgba(0,0,0,.45);--shadow-card:none;--shadow-result:none;--bg:#0E1117;--surface:#161B24;--elevated:#1F2631;--ink:#EEF2F8;--muted:#A3ADBE;--divider:#2B3340;--field-line:#5F6B7F;--chip-fill:rgba(255,255,255,.06);--accent:#8AA6E6;--accent-on:#0B1230;--accent-soft:#1B2A4A;--accent-text:#B5C6EE;--accent-button:#2F4FB0;--positive-ink:#5FDCA7;--negative-ink:#FF8C94;--warning-ink:#F7C866;--positive-bg:#173A2C;--negative-bg:#3E2028;--warning-bg:#3A3020;--glass:rgba(22,27,36,.7);--glass-edge:rgba(255,255,255,.08)}}
   :root[data-theme="dark"]{--bg:#0E1117;--surface:#161B24;--elevated:#1F2631;--ink:#EEF2F8;--muted:#A3ADBE;--divider:#2B3340;--field-line:#5F6B7F;--chip-fill:rgba(255,255,255,.06);--accent:#8AA6E6;--accent-on:#0B1230;--accent-soft:#1B2A4A;--accent-text:#B5C6EE;--accent-button:var(--brand-400);--lavender:#2A3A66;--positive-ink:#5FDCA7;--negative-ink:#FF8C94;--warning-ink:#F7C866;--positive-bg:#173A2C;--negative-bg:#3E2028;--warning-bg:#3A3020;--glass:rgba(22,27,36,.7);--glass-edge:rgba(255,255,255,.08);--glass-shadow:0 8px 28px rgba(0,0,0,.45);--shadow-card:none;--shadow-result:none;--bg:#0E1117;--surface:#161B24;--elevated:#1F2631;--ink:#EEF2F8;--muted:#A3ADBE;--divider:#2B3340;--field-line:#5F6B7F;--chip-fill:rgba(255,255,255,.06);--accent:#8AA6E6;--accent-on:#0B1230;--accent-soft:#1B2A4A;--accent-text:#B5C6EE;--accent-button:#2F4FB0;--positive-ink:#5FDCA7;--negative-ink:#FF8C94;--warning-ink:#F7C866;--positive-bg:#173A2C;--negative-bg:#3E2028;--warning-bg:#3A3020;--glass:rgba(22,27,36,.7);--glass-edge:rgba(255,255,255,.08)}
 }
@@ -93,7 +93,7 @@ html[data-theme="dark"]{color-scheme:dark}
 @supports (font:-apple-system-body){html{font:-apple-system-body}}
 /* Réduction de transparence : surfaces pleines */
 @media (prefers-reduced-transparency:reduce){:root{--glass:var(--surface);--glass-blur:none}}
-@media (prefers-contrast:more){:root{--divider:light-dark(#9C99AE,#6E6A88);--muted:light-dark(#4A495C,#D5D1E6);--glass:var(--surface)}}
+@media (prefers-contrast:more){:root{--divider:light-dark(#9AA2B3,#6E7689);--muted:light-dark(#4A5263,#D5D1E6);--glass:var(--surface)}}
 
 /* ---------- Base ---------- */
 *{box-sizing:border-box}

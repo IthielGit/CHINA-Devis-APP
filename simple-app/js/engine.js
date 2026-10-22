@@ -110,73 +110,19 @@ function normalizeLegacyMaritimeOffer(d,tarifs){
   const tariff=tarifs.find(t=>t.tr===match[1]&&t.mode==='Maritime'&&t.cats===match[2]);
   if(tariff)d.offer=`${tariff.tr} | Maritime | ${tariff.cats||''}`;
 }
-/* ---------- Catégorie suggérée à partir du nom ----------
-   Mots entiers, sans accents ni majuscules. Chaque mot-clé vaut de 1 à 3 points ; la catégorie au score le plus haut gagne.
-   À égalité, CAT_PRIORITY (le plus restrictif au transport d’abord). Les devis déjà enregistrés ajoutent un point
-   par mot commun à une catégorie choisie, plafonné à 3. « Aimant » ne se devine pas du nom : il dépend du poids.
-   Accessoires sans partie électrique et jouets sans batterie : Général, même si le nom cite un téléphone ou un ordinateur. */
-const normCat=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
-const CAT_PRIORITY=['Danger','Batterie','Batterie brute','Poudre/liquide','Téléphone','Ordinateur/tablette','Électronique'];
-const CAT_KEYWORDS={
-  'Danger':[['gaz',3],['aerosol',3],['inflammable',3],['butane',3],['corrosif',3],['acide',2]],
-  'Batterie':[['batterie',2],['batteries',2],['power bank',3],['powerbank',3],['pile',2],['piles',2],['lipo',2],['lithium',1],['rechargeable',4],['enceinte',2],['smartwatch',3],['montre connectee',2]],
-  'Batterie brute':[['cellule',3],['cellules',3],['18650',4],['21700',4],['32140',3],['lifepo4',2],['li ion',2]],
-  'Poudre/liquide':[['adhesif',3],['cyanoacrylate',3],['spray',3],['liquide',3],['poudre',3],['creme',3],['parfum',3],['huile',3],['gel',2],['shampoing',3],['savon',3],['cosmetique',2],['vernis',3],['colle',3],['encre',3],['serum',3],['lotion',3]],
-  'Téléphone':[['telephone',2],['smartphone',3],['iphone',3],['phone',1]],
-  'Ordinateur/tablette':[['ordinateur',3],['laptop',3],['notebook',3],['tablette',3],['tablet',3],['macbook',3]],
-  'Électronique':[['led',3],['cable',3],['cellule photoelectrique',4],['chargeur',3],['charger',3],['usb',2],['casque',2],['microphone',2],['ecouteurs',2],['earbuds',2],['souris',3],['clavier',3],['lampe',2],['montre',2],['camera',2],['capteur',2]],
-};
-const CAT_KEYWORDS_N=Object.fromEntries(Object.entries(CAT_KEYWORDS).map(([c,l])=>[c,l.map(([k,w])=>[normCat(k),w])]));
-const GENERAL_ACCESSORY=['coque','coques','housse','housses','etui','etuis','sac','sacs','sacoche','sacoches','cabas','pochette','pochettes','protection','protections','protecteur','protecteurs','verre','film','support','supports','stand','trepied','perche','holder','case','cover','sleeve'];
-const GENERAL_TOY=['jouet','jouets','peluche','peluches','puzzle','toy','toys','enfant','enfants'];
-const STOP_WORDS=new Set(['pour','avec','sans','dans','tous','cette','plus','sur','fait','produit','pouces']);
-const catWords=s=>normCat(s).replace(/[^a-z0-9]+/g,' ').trim();
-function historyBonus(words){
-  const now=new Set(words.split(' ').filter(t=>t.length>=4&&!STOP_WORDS.has(t)));
-  const out={};
-  for(const q of S.quotes){
-    const cat=q.inputs?.cat, name=q.inputs?.name;
-    if(!cat||!name)continue;
-    const past=catWords(name).split(' ').filter(t=>t.length>=4&&!STOP_WORDS.has(t));
-    if(past.some(t=>now.has(t)))out[cat]=Math.min(3,(out[cat]||0)+1);
-  }
-  return out;
-}
-const WIRELESS_WORDS=['bluetooth','sans fil','wireless'];
-const hasAny=(padded,list)=>list.some(w=>padded.includes(` ${w} `));
-/* Ces produits demandent si une batterie est incluse (sans fil, Bluetooth, jouets). */
-const askBattery=name=>hasAny(` ${catWords(name)} `,[...WIRELESS_WORDS,...GENERAL_TOY]);
-function scoreCats(padded){
-  const s={};
-  for(const cat of CAT_PRIORITY){
-    let n=0;for(const [k,w] of CAT_KEYWORDS_N[cat])if(padded.includes(` ${k} `))n+=w;
-    if(n)s[cat]=n;
-  }
-  return s;
-}
-/* Ce qui précède « pour » ou « à » décrit le produit ; le reste est sa cible ou une option (« pour téléphone », « à clavier »).
-   Sans/Bluetooth : Batterie seulement si le produit contient une batterie (batt), sinon Électronique. */
-function rankCats(name,batt){
-  const words=catWords(name), padded=` ${words} `, full=scoreCats(padded);
-  const head=scoreCats(` ${words.split(/ (?:pour|a) /)[0]} `), score=Object.keys(head).length?head:{...full};
-  const wireless=hasAny(padded,WIRELESS_WORDS), battery=askBattery(name)&&batt===true;
-  if(battery)score.Batterie=(score.Batterie||0)+3;
-  else if(wireless)score['Électronique']=(score['Électronique']||0)+2;
-  const hasPart=wireless||battery||['Danger','Batterie','Batterie brute','Poudre/liquide','Électronique'].some(c=>full[c]);
-  if(hasAny(padded,GENERAL_ACCESSORY)&&!hasPart)return [{cat:'Général',score:1}];
-  if(hasAny(padded,GENERAL_TOY)&&!full.Batterie&&!full['Batterie brute']&&!battery)return [{cat:'Général',score:1}];
-  for(const [cat,b] of Object.entries(historyBonus(words)))score[cat]=(score[cat]||0)+b;
-  const rank=c=>CAT_PRIORITY.includes(c)?CAT_PRIORITY.indexOf(c):CAT_PRIORITY.length;
-  return Object.keys(score).sort((a,b)=>score[b]-score[a]||rank(a)-rank(b)).map(c=>({cat:c,score:score[c]}));
-}
-function guessCat(n,batt){const r=rankCats(n,batt);return r.length?r[0].cat:null}
+function guessCat(n){n=(n||'').toLowerCase();
+  const R=[['Batterie brute',/batterie seule|cellule|18650|21700/],['Batterie',/batterie|power ?bank|piles?\b|lithium/],['Téléphone',/t[ée]l[ée]phone|smartphone|iphone|phone/],
+  ['Ordinateur/tablette',/ordinateur|laptop|tablette|tablet|pc portable|macbook/],['Aimant',/aimant|magn[ée]t/],
+  ['Poudre/liquide',/spray|liquide|poudre|cr[èe]me|parfum|huile|gel\b|shampo|savon|cosm[ée]tique|vernis|colle|encre|s[ée]rum|lotion/],
+  ['Électronique',/led\b|c[âa]ble|chargeur|[ée]couteur|casque|montre|usb|capteur|lampe|enceinte|[ée]lectr|camera|cam[ée]ra|souris|clavier/]];
+  for(const [c,r] of R)if(r.test(n))return c;return null}
 function categoryRecommendation(d){
   let category,reason;
   if(d.dangerous==='yes'){category='Danger';reason='Vous indiquez que le produit peut être dangereux.'}
   else if(d.batteryStatus==='separate'){category='Batterie brute';reason='La batterie est expédiée séparément du produit.'}
   else if(d.batteryStatus==='integrated'){category='Batterie';reason=`Le produit contient une batterie intégrée${d.deviceType==='phone'?' et est identifié comme un téléphone':d.deviceType==='computer'?' et est identifié comme un ordinateur ou une tablette':''}.`}
   else if(['liquid','powder','aerosol'].includes(d.handling)){category='Poudre/liquide';reason=({liquid:'Le produit est liquide.',powder:'Le produit est en poudre.',aerosol:'Le produit est un aérosol.'})[d.handling]}
-  else if(d.magnetG>200){category='Aimant';reason='Le total des aimants dépasse 200 g.'}
+  else if(d.magnet==='yes'){category='Aimant';reason='Vous indiquez que le produit contient un aimant.'}
   else if(d.deviceType==='phone'){category='Téléphone';reason='Le type d’article sélectionné est téléphone.'}
   else if(d.deviceType==='computer'){category='Ordinateur/tablette';reason='Le type d’article sélectionné est ordinateur ou tablette.'}
   else if(d.deviceType==='electronics'){category='Électronique';reason='Le type d’article sélectionné est autre appareil électronique.'}
@@ -184,9 +130,9 @@ function categoryRecommendation(d){
   else {category=guessCat(d.name);reason=category?'Suggestion basée sur le nom du produit.':'Répondez aux questions pour obtenir une suggestion.'}
   if(!category)return null;
   const risks=Number(d.batteryStatus==='integrated'||d.batteryStatus==='separate')+
-    Number(['liquid','powder','aerosol'].includes(d.handling))+Number(d.dangerous==='yes')+Number(d.magnetG>200);
+    Number(['liquid','powder','aerosol'].includes(d.handling))+Number(d.dangerous==='yes')+Number(d.magnet==='yes');
   const warning=risks>1?'Plusieurs caractéristiques particulières sont indiquées : confirmez la catégorie et l’acceptation du colis auprès du transitaire.'
-    :(d.batteryStatus==='integrated'||d.batteryStatus==='separate'||d.dangerous==='yes'||['liquid','powder','aerosol'].includes(d.handling)||d.magnetG>200)?'Cette suggestion ne remplace pas les consignes du transitaire : confirmez que cette offre accepte ce type de produit.'
+    :(d.batteryStatus==='integrated'||d.batteryStatus==='separate'||d.dangerous==='yes'||['liquid','powder','aerosol'].includes(d.handling)||d.magnet==='yes')?'Cette suggestion ne remplace pas les consignes du transitaire : confirmez que cette offre accepte ce type de produit.'
     :d.deviceType==='phone'||d.deviceType==='computer'?'Si l’appareil contient une batterie, vérifiez les consignes du transitaire pour les batteries intégrées.':'';
   return{category,reason,warning};
 }

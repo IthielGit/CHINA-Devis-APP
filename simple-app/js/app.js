@@ -3,9 +3,7 @@
 const app=document.getElementById('app');
 const sheet=document.getElementById('sheet');
 const sheetBody=document.getElementById('sheetBody');
-const NUM=['price','qty','wt','magnetG','delai','heure','trans','livCh','exclus','livFin','pvRetenu'];
-/* Règle de transport : total des aimants du produit au-delà de 200 g → catégorie Aimant. */
-const MAGNET_LIMIT_G=200;
+const NUM=['price','qty','wt','delai','heure','trans','livCh','exclus','livFin','pvRetenu'];
 const MODES=['Avion','Maritime','Express'];
 const MARGES=[0.3,0.5,1];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -139,7 +137,6 @@ function viewDevis(){
     <h2>Produit</h2>
     <div class="grid">
       <label class="field wide"><span>Nom du produit</span><input class="inp" data-k="name" list="names" autocomplete="off" placeholder="Ex. Spray anti-pluie 50 ml" value="${esc(val(d.name))}"><span class="hint" id="hint-name">${esc(d.repris?'Repris de '+d.repris+' : vérifiez le prix.':'Un nom déjà enregistré remplit le reste.')}</span></label>
-      <div class="cat-suggest wide" id="catSuggest"></div>
       <label class="field"><span>Prix d’achat</span><span class="input-wrap"><input class="inp" data-k="price" type="number" step="any" inputmode="decimal" value="${esc(val(d.price))}"><span class="suffix">¥</span></span><span class="hint" id="hint-price"></span></label>
       <div class="field"><span>Quantité</span>
         <div class="stepper"><button type="button" data-step="-1" aria-label="Retirer une pièce">−</button><output id="qty-out">${d.qty||1}</output><button type="button" data-step="1" aria-label="Ajouter une pièce">+</button></div>
@@ -150,7 +147,6 @@ function viewDevis(){
         </div>
         <span class="hint" id="hint-dims"></span></div>
       <label class="field"><span>Poids d’un produit emballé</span><span class="input-wrap"><input class="inp" data-k="wt" type="number" step="any" inputmode="decimal" value="${esc(val(d.wt))}"><span class="suffix">kg</span></span><span class="hint" id="hint-wt"></span></label>
-      <label class="field" id="magnetField" ${magnetRelevant(d)?'':'hidden'}><span>Poids total des aimants</span><span class="input-wrap"><input class="inp" data-k="magnetG" type="number" step="any" inputmode="decimal" placeholder="Aucun" value="${esc(val(d.magnetG))}"><span class="suffix">g</span></span><span class="hint">Laisser vide sans aimant. Au-delà de 200 g au total : catégorie Aimant.</span></label>
       <div class="field"><span>Marge</span>
         <div class="segments slide" id="margeChips" role="group" aria-label="Marge">
           ${MARGES.map(v=>`<button type="button" class="seg" data-marge="${v}" aria-pressed="false">${Math.round(v*100)} %</button>`).join('')}
@@ -178,7 +174,6 @@ function viewDevis(){
   <section class="card" id="result"></section>`;
   syncMarge();
   renderResult();
-  renderSuggestions();
 }
 
 function syncMarge(){
@@ -194,50 +189,6 @@ function placePill(root){
   if(on)root.style.setProperty('--pill-x',on.offsetLeft+'px');
 }
 
-/* Catégories acceptées par au moins un transitaire (Tarifs). Sans transitaire, aucune restriction. */
-function acceptedCats(){return new Set(S.tarifs.flatMap(t=>catList(t.cats)))}
-function usableSuggestions(name){
-  const acc=acceptedCats();
-  return rankCats(name,S.draft.batt).filter(x=>S.params.cats.includes(x.cat)&&x.cat!=='Aimant'&&(!acc.size||acc.has(x.cat)));
-}
-/* Deux suggestions en pastilles, un tap pour les choisir. Un avertissement si le nom suggère une catégorie restrictive. */
-const RESTRICTED_CATS=['Danger','Batterie','Batterie brute','Poudre/liquide'];
-function renderSuggestions(){
-  syncMagnetField();
-  const box=$('catSuggest');
-  if(!box)return;
-  const name=S.draft.name||'';
-  if(!name.trim()){box.innerHTML='';return}
-  const cur=S.draft.cat, all=rankCats(name,S.draft.batt).filter(x=>x.cat!=='Aimant'), usable=usableSuggestions(name).slice(0,2);
-  let html='';
-  if(usable.length)html+=`<span class="hint">Suggéré</span>`+usable.map(x=>`<button type="button" class="seg" data-suggest="${esc(x.cat)}" aria-pressed="${x.cat===cur}">${esc(x.cat)}</button>`).join('');
-  if(askBattery(name))html+=`<p class="hint ask">Le produit est-il livré avec une pile ou contient-il une batterie ?</p><button type="button" class="seg" data-batt="yes" aria-pressed="${S.draft.batt===true}">Oui</button><button type="button" class="seg" data-batt="no" aria-pressed="${S.draft.batt===false}">Non</button>`;
-  if(all[0]&&RESTRICTED_CATS.includes(all[0].cat)&&all[0].cat!==cur)html+=`<p class="hint bad">Le nom suggère « ${esc(all[0].cat)} » : vérifiez la catégorie.</p>`;
-  if(all.length&&!usable.length)html+=`<p class="hint bad">Aucun transitaire n’accepte « ${esc(all[0].cat)} ». Ajoutez-la à un tarif dans Tarifs.</p>`;
-  box.innerHTML=html;
-}
-/* Produits qui contiennent souvent un aimant : le champ du poids n'apparaît que pour eux (ou si une valeur existe déjà). */
-const MAGNET_WORDS=['aimant','aimants','magnet','magnets','magnetique','micro','microphone','haut parleur','speaker','enceinte','moteur','motor','ventilateur','carte mere','casque','ecouteur','ecouteurs'];
-function magnetRelevant(d){
-  if(d.magnetG!==null&&d.magnetG!==undefined&&d.magnetG!=='')return true;
-  if(d.cat==='Aimant')return true;
-  return MAGNET_WORDS.some(w=>` ${catWords(d.name||'')} `.includes(` ${w} `));
-}
-function syncMagnetField(){
-  const f=$('magnetField');
-  if(f)f.hidden=!magnetRelevant(S.draft);
-}
-/* Le poids des aimants décide de la catégorie Aimant ; le nom ne suffit pas. */
-function applyMagnetRule(){
-  const d=S.draft, sel=app.querySelector('[data-k="cat"]');
-  if(d.magnetG>MAGNET_LIMIT_G){d.cat='Aimant';d.catManual=true}
-  else if(d.cat==='Aimant'){
-    const g=guessCat(d.name,d.batt);
-    d.cat=g&&g!=='Aimant'&&S.params.cats.includes(g)?g:'Général';
-    d.catManual=false;
-  }
-  if(sel)sel.value=d.cat;
-}
 function onDraftField(el){
   const k=el.dataset.k;
   let v=el.value;
@@ -247,13 +198,11 @@ function onDraftField(el){
   touched.add(k);
   if(k==='cat')S.draft.catManual=true;
   if(k==='name'&&!S.draft.catManual){
-    const g=usableSuggestions(v)[0]?.cat;
-    if(g){S.draft.cat=g;const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=g}
+    const g=guessCat(v);
+    if(g&&S.params.cats.includes(g)){S.draft.cat=g;const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=g}
   }
-  if(k==='magnetG')applyMagnetRule();
   if(k==='marge')syncMarge();
   persist();
-  renderSuggestions();
   renderResult();
 }
 
@@ -264,7 +213,7 @@ function applyKnownName(){
   const known=[...S.quotes].sort((a,b)=>String(b.modified||'').localeCompare(String(a.modified||''))).find(q=>String(q.inputs?.name||'').trim().toLowerCase()===key);
   if(!known)return;
   const i=known.inputs;
-  Object.assign(S.draft,{cat:i.cat,catManual:true,price:i.price,dims:i.dims,wt:i.wt,magnetG:i.magnetG,marge:i.marge??S.draft.marge,repris:known.no});
+  Object.assign(S.draft,{cat:i.cat,catManual:true,price:i.price,dims:i.dims,wt:i.wt,marge:i.marge??S.draft.marge,repris:known.no});
   persist();
   viewDevis();
 }
@@ -1139,16 +1088,6 @@ app.addEventListener('click',e=>{
   if(ds.step){S.draft.qty=Math.max(1,(Number(S.draft.qty)||1)+Number(ds.step));persist();renderResult();return}
   if(ds.marge){S.draft.marge=Number(ds.marge);syncMarge();const mi=app.querySelector('[data-k="marge"]');if(mi)mi.value=Math.round(S.draft.marge*100);persist();renderResult();return}
   if(ds.appearance){setAppearance(ds.appearance,viewReglages);return}
-  if(ds.batt!==undefined){
-    S.draft.batt=ds.batt==='yes';
-    if(!S.draft.catManual){const g=usableSuggestions(S.draft.name)[0]?.cat;if(g){S.draft.cat=g;const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=g}}
-    persist();renderSuggestions();renderResult();return;
-  }
-  if(ds.suggest!==undefined){
-    S.draft.cat=ds.suggest;S.draft.catManual=true;
-    const sel=app.querySelector('[data-k="cat"]');if(sel)sel.value=ds.suggest;
-    persist();renderSuggestions();renderResult();return;
-  }
   if(ds.focus!==undefined){focusCheck(ds.focus);return}
   if(t.id==='back-best'){S.draft.mode='prix';persist();renderResult();return}
   if(t.id==='save'){saveDraft();return}

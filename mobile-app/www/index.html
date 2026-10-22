@@ -2239,6 +2239,15 @@ takeDailySnapshot();drawTabs();go(startTab());
   window.mBack=()=>{if(hasEntry())history.back();else logicalBack()};
   window.mAfterClose=fn=>{if(hasEntry()&&layerOpen()){pendingFn=fn;history.back()}else{closeLayerSilently();fn()}};
   window.mGoFromMenu=k=>window.mAfterClose(()=>go(k));
+  // Bouton Android : même retour que ‹ ; quitter l’app seulement sur l’écran Devis, sans fenêtre ni étape précédente.
+  // Les entrées pushState ne font pas partie de l’historique natif de la WebView : sans ce relais, le bouton ferme l’app.
+  try{
+    const App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
+    if(App)App.addListener('backButton',()=>{
+      if(!layerOpen()&&!navStack.length&&S.tab==='devis'&&!hasEntry())App.exitApp();
+      else window.mBack();
+    });
+  }catch(e){}
   const top=document.querySelector('.top');
   const btn=document.createElement('button');
   btn.id='mBack';btn.type='button';btn.className='m-back';btn.hidden=true;btn.setAttribute('aria-label','Retour');
@@ -2426,7 +2435,7 @@ takeDailySnapshot();drawTabs();go(startTab());
   moreBtn.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Plus</span>';
   tabs.after(moreBtn);
   const MORE=[['tarifs','Tarifs des transitaires'],['cal','Calendrier des départs'],['params','Paramètres'],['guide','Mode d’emploi']];
-  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 18/10 22:43</p></div></div></div>`};
+  moreBtn.onclick=()=>{layer.innerHTML=`<div class="overlay" data-close><div class="card"><h2>Plus</h2><div class="more-list"><button class="btn more-item pri" data-new-quote>＋ Nouveau devis</button>${MORE.map(([k,l])=>`<button class="btn more-item" data-go="${k}">${l}</button>`).join('')}<button class="btn more-item" data-theme-toggle>Changer le thème clair / sombre</button><button class="btn more-item m-close" data-close>Fermer</button><p class="app-build">Version 22/10 13:23</p></div></div></div>`};
   layer.addEventListener('click',e=>{
     const g=e.target.closest('[data-go]');
     if(e.target.closest('[data-new-quote]')){layer.innerHTML='';startNewQuote();return}

@@ -68,6 +68,15 @@
   window.mBack=()=>{if(hasEntry())history.back();else logicalBack()};
   window.mAfterClose=fn=>{if(hasEntry()&&layerOpen()){pendingFn=fn;history.back()}else{closeLayerSilently();fn()}};
   window.mGoFromMenu=k=>window.mAfterClose(()=>go(k));
+  // Bouton Android : même retour que ‹ ; quitter l’app seulement sur l’écran Devis, sans fenêtre ni étape précédente.
+  // Les entrées pushState ne font pas partie de l’historique natif de la WebView : sans ce relais, le bouton ferme l’app.
+  try{
+    const App=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;
+    if(App)App.addListener('backButton',()=>{
+      if(!layerOpen()&&!navStack.length&&S.tab==='devis'&&!hasEntry())App.exitApp();
+      else window.mBack();
+    });
+  }catch(e){}
   const top=document.querySelector('.top');
   const btn=document.createElement('button');
   btn.id='mBack';btn.type='button';btn.className='m-back';btn.hidden=true;btn.setAttribute('aria-label','Retour');

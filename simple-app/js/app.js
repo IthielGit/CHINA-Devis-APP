@@ -438,7 +438,6 @@ function statsHtml(){
   const list=S.quotes.filter(q=>when(q)===cur);
   const before=S.quotes.filter(q=>when(q)===prev).length;
   const rates=list.map(q=>q.res).filter(r=>r&&isNum(r.margeP)&&r.costP>0).map(r=>r.margeP/r.costP);
-  const value=list.reduce((a,q)=>a+(isNum(q.res?.revenueLot)?q.res.revenueLot:0),0);
   const byTr=new Map();list.forEach(q=>{const t=q.res?.tr;if(t)byTr.set(t,(byTr.get(t)||0)+1)});
   const top=[...byTr].sort((a,b)=>b[1]-a[1])[0];
   const tile=(label,value,ctx)=>`<div class="stat"><span class="stat-label">${label}</span><b class="stat-value">${value}</b><small>${ctx}</small></div>`;
@@ -446,7 +445,6 @@ function statsHtml(){
   return `<section class="card"><h2>Ce mois-ci <small class="muted">${esc(monthName)}</small></h2>
     <div class="stats">
       ${tile('Devis',list.length,before?`${before} le mois dernier`:'aucun le mois dernier')}
-      ${tile('Valeur des devis',list.length?m(value):'—','prix de vente × quantité')}
       ${tile('Marge moyenne',rates.length?pct(rates.reduce((a,x)=>a+x,0)/rates.length):'—',rates.length?`sur ${rates.length} devis`:'pas encore de devis')}
       ${tile('Transitaire le plus utilisé',top?esc(top[0]):'—',top?`${top[1]} devis sur ${list.length}`:'pas encore de devis')}
     </div></section>`;

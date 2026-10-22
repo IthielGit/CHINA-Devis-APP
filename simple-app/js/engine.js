@@ -113,19 +113,22 @@ function normalizeLegacyMaritimeOffer(d,tarifs){
 /* ---------- Catégorie suggérée à partir du nom ----------
    Mots entiers, sans accents ni majuscules. Chaque mot-clé vaut de 1 à 3 points ; la catégorie au score le plus haut gagne.
    À égalité, CAT_PRIORITY (le plus restrictif au transport d’abord). Les devis déjà enregistrés ajoutent un point
-   par mot commun à une catégorie choisie, plafonné à 3. « Aimant » ne se devine pas du nom : il dépend du poids. */
+   par mot commun à une catégorie choisie, plafonné à 3. « Aimant » ne se devine pas du nom : il dépend du poids.
+   Accessoires sans partie électrique et jouets sans batterie : Général, même si le nom cite un téléphone ou un ordinateur. */
 const normCat=s=>String(s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
 const CAT_PRIORITY=['Danger','Batterie','Batterie brute','Poudre/liquide','Téléphone','Ordinateur/tablette','Électronique'];
 const CAT_KEYWORDS={
   'Danger':[['gaz',3],['aerosol',3],['inflammable',3],['butane',3],['corrosif',3],['acide',2]],
   'Batterie':[['batterie',2],['batteries',2],['power bank',3],['powerbank',3],['pile',2],['piles',2],['lipo',2],['lithium',1],['bluetooth',2],['sans fil',2],['wireless',2],['rechargeable',4],['enceinte',2],['smartwatch',3],['montre connectee',2]],
-  'Batterie brute':[['cellule',3],['cellules',3],['18650',4],['21700',4],['32140',3],['lifepo4',2]],
-  'Poudre/liquide':[['spray',3],['liquide',3],['poudre',3],['creme',3],['parfum',3],['huile',3],['gel',2],['shampoing',3],['savon',3],['cosmetique',2],['vernis',3],['colle',3],['encre',3],['serum',3],['lotion',3]],
+  'Batterie brute':[['cellule',3],['cellules',3],['18650',4],['21700',4],['32140',3],['lifepo4',2],['li ion',2]],
+  'Poudre/liquide':[['adhesif',3],['cyanoacrylate',3],['spray',3],['liquide',3],['poudre',3],['creme',3],['parfum',3],['huile',3],['gel',2],['shampoing',3],['savon',3],['cosmetique',2],['vernis',3],['colle',3],['encre',3],['serum',3],['lotion',3]],
   'Téléphone':[['telephone',2],['smartphone',3],['iphone',3],['phone',1]],
   'Ordinateur/tablette':[['ordinateur',3],['laptop',3],['notebook',3],['tablette',3],['tablet',3],['macbook',3]],
   'Électronique':[['led',3],['cable',3],['cellule photoelectrique',4],['chargeur',3],['charger',3],['usb',2],['casque',2],['microphone',2],['ecouteurs',2],['earbuds',2],['souris',3],['clavier',3],['lampe',2],['montre',2],['camera',2],['capteur',2]],
 };
 const CAT_KEYWORDS_N=Object.fromEntries(Object.entries(CAT_KEYWORDS).map(([c,l])=>[c,l.map(([k,w])=>[normCat(k),w])]));
+const GENERAL_ACCESSORY=['coque','coques','housse','housses','etui','etuis','sac','sacs','sacoche','sacoches','cabas','pochette','pochettes','protection','protections','protecteur','protecteurs','verre','film','support','supports','stand','trepied','perche','holder','case','cover','sleeve'];
+const GENERAL_TOY=['jouet','jouets','peluche','peluches','puzzle','toy','toys','enfant','enfants'];
 const STOP_WORDS=new Set(['pour','avec','sans','dans','tous','cette','plus','sur','fait','produit','pouces']);
 const catWords=s=>normCat(s).replace(/[^a-z0-9]+/g,' ').trim();
 function historyBonus(words){
@@ -145,6 +148,10 @@ function rankCats(name){
     let s=0;for(const [k,w] of CAT_KEYWORDS_N[cat])if(padded.includes(` ${k} `))s+=w;
     if(s)score[cat]=s;
   }
+  const hasWord=list=>list.some(w=>padded.includes(` ${w} `));
+  const hasPart=['Danger','Batterie','Batterie brute','Poudre/liquide','Électronique'].some(c=>score[c]);
+  if(hasWord(GENERAL_ACCESSORY)&&!hasPart)return [{cat:'Général',score:1}];
+  if(hasWord(GENERAL_TOY)&&!score['Batterie']&&!score['Batterie brute'])return [{cat:'Général',score:1}];
   for(const [cat,b] of Object.entries(historyBonus(words)))score[cat]=(score[cat]||0)+b;
   const rank=c=>CAT_PRIORITY.includes(c)?CAT_PRIORITY.indexOf(c):CAT_PRIORITY.length;
   return Object.keys(score).sort((a,b)=>score[b]-score[a]||rank(a)-rank(b)).map(c=>({cat:c,score:score[c]}));

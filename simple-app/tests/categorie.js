@@ -21,9 +21,9 @@ const BASE = [
   ['Power bank 10000 mAh', 'Batterie'], ['Batterie 18650 seule', 'Batterie brute'],
   ['Smartphone Xiaomi 128 Go', 'Téléphone'], ['Lampe LED bureau', 'Électronique'],
   ['Montre connectée', 'Batterie'], ['Crème hydratante visage', 'Poudre/liquide'],
-  ['Ordinateur portable 15 pouces', 'Ordinateur/tablette'], ['Laptop stand aluminium', 'Ordinateur/tablette'],
+  ['Ordinateur portable 15 pouces', 'Ordinateur/tablette'], ['Laptop stand aluminium', 'Général'],
   ['Câble USB 2m', 'Électronique'], ['Pile AA alcaline', 'Batterie'],
-  ['Sac à dos voyage', 'null'], ['Jouet en peluche', 'null'], ['Cartes mémoire microSD', 'null'],
+  ['Sac à dos voyage', 'Général'], ['Jouet en peluche', 'Général'], ['Cartes mémoire microSD', 'null'],
   ['Gel douche 500 ml', 'Poudre/liquide'],
 ];
 

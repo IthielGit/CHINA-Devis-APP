@@ -63,18 +63,25 @@ const PAGES={
   tarifs:['Tarifs','Transitaires, tarifs et dates de départ.'],
   reglages:['Réglages','Apparence, taux de change et sauvegarde.']
 };
-const trail=[];  // onglets déjà ouverts : le bouton Retour revient au dernier
+const trail=[];  // onglets déjà ouverts : chaque saut a une entrée d’historique, le Retour revient d’une étape
+let sheetEntry=false,histIgnore=0,pendingNav=null;  // feuille ouverte avec son entrée d’historique ; popstate provoqué par l’app
 function go(t,back){
-  if(!back&&t!==tab)trail.push(tab);
+  if(sheetEntry&&!back&&t!==tab){pendingNav=()=>go(t,back);closeSheet();return}  // on ferme la feuille d’abord
+  if(!back&&t!==tab){trail.push(tab);history.pushState({hygo:'tab'},'')}
   const apply=()=>{tab=t;closeSheet();render()};
   if(document.startViewTransition&&!reduce)document.startViewTransition(apply);else apply();
   window.scrollTo(0,0);
 }
 function goBack(){
-  const prev=trail.pop();
-  if(prev)go(prev,true);
+  if(trail.length)history.back();  // le retour passe par popstate, comme le bouton Retour du système
 }
 $('backBtn').addEventListener('click',goBack);
+/* Bouton Retour du système (Android, navigateur) : même effet que ‹ — feuille, puis onglet précédent. L’application ne quitte qu’à l’onglet Devis racine. */
+window.addEventListener('popstate',()=>{
+  if(histIgnore){histIgnore--;const f=pendingNav;pendingNav=null;if(f)f();return}
+  if(sheetEntry){sheetEntry=false;closeSheet(true);return}
+  if(trail.length)go(trail.pop(),true);
+});
 function render(){
   document.querySelectorAll('.nav [data-go]').forEach(b=>b.setAttribute('aria-current',b.dataset.go===tab?'page':'false'));
   $('backBtn').hidden=!trail.length;
@@ -338,10 +345,12 @@ function openSheet(){
   clearTimeout(closeTimer);
   sheet.classList.remove('closing');
   sheet.hidden=false;
+  if(!sheetEntry){sheetEntry=true;history.pushState({hygo:'sheet'},'')}
 }
-function closeSheet(){
+function closeSheet(fromHistory){
   editorSubmit=null;
   if(sheet.hidden||sheet.classList.contains('closing'))return;
+  if(sheetEntry&&!fromHistory){sheetEntry=false;histIgnore++;history.back()}  // on retire l’entrée de la feuille
   sheet.classList.add('closing');
   closeTimer=setTimeout(()=>{
     sheet.hidden=true;

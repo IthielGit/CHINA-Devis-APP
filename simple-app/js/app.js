@@ -3,7 +3,7 @@
 const app=document.getElementById('app');
 const sheet=document.getElementById('sheet');
 const sheetBody=document.getElementById('sheetBody');
-const NUM=['price','qty','wt','delai','heure','trans','livCh','exclus','livFin','pvRetenu'];
+const NUM=['price','perPack','qty','wt','delai','heure','trans','livCh','exclus','livFin','pvRetenu'];
 const MODES=['Avion','Maritime','Express'];
 const MARGES=[0.3,0.5,1];
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -145,6 +145,7 @@ function viewDevis(){
     <div class="grid">
       <label class="field wide"><span>Nom du produit</span><input class="inp" data-k="name" list="names" autocomplete="off" placeholder="Ex. Spray anti-pluie 50 ml" value="${esc(val(d.name))}"><span class="hint" id="hint-name">${esc(d.repris?'Repris de '+d.repris+' : vérifiez le prix.':'Un nom déjà enregistré remplit le reste.')}</span></label>
       <label class="field"><span>Prix d’achat</span><span class="input-wrap"><input class="inp" data-k="price" type="number" step="any" inputmode="decimal" value="${esc(val(d.price))}"><span class="suffix">¥</span></span><span class="hint" id="hint-price"></span></label>
+      <label class="field"><span>Balles par paquet <small>facultatif</small></span><input class="inp" data-k="perPack" type="number" step="1" min="1" inputmode="numeric" placeholder="ex. 12" value="${esc(val(d.perPack))}"><span class="hint">Affiche aussi le prix par balle.</span></label>
       <div class="field"><span>Quantité</span>
         <div class="stepper"><button type="button" data-step="-1" aria-label="Retirer une pièce">−</button><output id="qty-out">${d.qty||1}</output><button type="button" data-step="1" aria-label="Ajouter une pièce">+</button></div>
         <span class="hint">Pièces identiques</span></div>
@@ -213,6 +214,9 @@ function onDraftField(el){
   renderResult();
 }
 
+/* Balles par paquet (facultatif) : nombre entier positif, sinon rien. */
+function perPackOf(d){const n=Math.floor(Number(d.perPack));return n>0?n:0}
+
 /* Nom déjà enregistré : on reprend prix, dimensions, poids, catégorie et marge du dernier devis. */
 function applyKnownName(){
   const key=String(S.draft.name||'').trim().toLowerCase();
@@ -248,7 +252,8 @@ function updateHints(d,R,checks){
     el.className='hint'+(bad||warn&&warnTxt?' bad':'');
   };
   set('hint-name','name',d.repris?`Repris de ${d.repris} : vérifiez le prix.`:'','Un nom déjà enregistré remplit le reste.','Donnez un nom au produit.');
-  set('hint-price','price',isNum(R.achat)?`≈ ${ar(R.achat)} par pièce`:'','En yuans, pour une pièce.','Saisissez le prix d’achat en yuans.');
+  const pp=perPackOf(d);
+  set('hint-price','price',isNum(R.achat)?`≈ ${ar(R.achat)} par ${pp?'paquet':'pièce'}${pp?` · ≈ ${ar(R.achat/pp)} par balle`:''}`:'','En yuans, pour une pièce.','Saisissez le prix d’achat en yuans.');
   set('hint-dims','dims',prod?`Volume ${dec(prod,0)} cm³ · poids volumétrique ${dec(prod/S.params.div,2)} kg`:'','Trois mesures en cm, par exemple 14 x 6 x 6.','Format attendu : 14 x 6 x 6.');
   const maxWt=wtLimit(R.sel?.t);
   set('hint-wt','wt','','Produit emballé, en kg.','Saisissez le poids d’un produit emballé.',maxWt!=null?`Au-delà de la limite de ${R.sel.t.tr} (${dec(maxWt,1)} kg par pièce) : choisissez une autre offre.`:'Poids élevé : vérifiez que le transitaire l’accepte.');
@@ -298,8 +303,9 @@ function renderResult(){
   const marge=isNum(R.margeP)?`<span class="${R.margeP>=0?'pos':'neg'}">Marge ${R.margeP>0?'+':''}${m(R.margeP)} (${pct(R.margeRate)})</span>`:'<span>Marge —</span>';
   const hero=`<div class="summary-head"><span class="tag neutral">${esc(d.cat||'Sans catégorie')}</span><span class="tag">${manual?'Offre choisie':'✓ Meilleur prix'}</span></div>
     <div class="product-name">${esc(d.name||'Nouveau produit')}</div>
-    <div class="big-label">Prix de vente conseillé, par pièce</div>
+    <div class="big-label">Prix de vente conseillé, par ${perPackOf(d)?'paquet':'pièce'}</div>
     <div class="big-amount amount"${num('pv',R.pv)}>${m(R.pv)}</div>
+    ${perPackOf(d)&&isNum(R.pv)?`<div class="sub-amounts"><span>Soit ≈ ${ar(R.pv/perPackOf(d))} par balle</span></div>`:''}
     <div class="sub-amounts"><span>Total ${m(R.revenueLot)}</span>${marge}</div>`;
   const canSave=blocking.length===0;
   // Devis déjà confirmé (il se modifie depuis la version bureau), ou rien de changé depuis le dernier enregistrement : rien à enregistrer.

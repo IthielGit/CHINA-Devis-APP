@@ -43,8 +43,7 @@ function calendarServices(tr,mode){
 }
 function blankDraft(no){return{no,name:'',cat:'Général',catManual:false,batteryStatus:'',handling:'',dangerous:'',magnet:'',deviceType:'',price:null,perPack:null,qty:1,dims:'',wt:null,mode:'prix',offer:'',base:'Le plus élevé',
   pay:dayStr(Math.floor(Date.now()/864e5)),delai:2,heure:16,livCh:0,exclus:0,livFin:0,trans:2,marge:0.5,pvRetenu:null,marketPrice:null,status:STATUS.DRAFT,destination:''}}
-/* Cas de test : paquet de 12 balles, 4 paquets. Valeurs fictives, à remplacer par les vraies. */
-function exampleDraft(no){return{...blankDraft(no),name:'Test - balles ping-pong (paquet de 12)',cat:'Général',catManual:true,price:39,perPack:12,qty:4,dims:'20 x 10 x 5',wt:2.4,mode:'prix',pay:'2026-10-10',marge:0.5}}
+function exampleDraft(no){return{...blankDraft(no),name:'Spray anti-pluie 50 ml',cat:'Poudre/liquide',catManual:true,price:4.04,qty:1,dims:'14 x 6 x 6',wt:0.08,mode:'prix',pay:'2026-10-10',marge:0.5}}
 function norm(d){if(typeof d.marge==='string'&&Number.isFinite(Number(d.marge)))d.marge=Number(d.marge);if(d.dims===undefined)d.dims=d.L?`${d.L} x ${d.W} x ${d.H}`:'';if(!d.mode)d.mode=d.offer?'manuel':'prix';if(d.catManual===undefined)d.catManual=true;for(const k of ['batteryStatus','handling','dangerous','magnet','deviceType'])if(d[k]===undefined)d[k]='';if(d.marketPrice===undefined)d.marketPrice=null;return d}
 function serviceKey(x){return String(x||'').trim().toLocaleLowerCase('fr').replace(/\s+/g,' ')}
 function quoteService(t){return String(t.svc||'')}

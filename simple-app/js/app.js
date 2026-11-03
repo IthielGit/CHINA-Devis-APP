@@ -148,7 +148,7 @@ function viewDevis(){
       <label class="field"><span>Prix d’achat</span><span class="input-wrap"><input class="inp" data-k="price" type="number" step="any" inputmode="decimal" value="${esc(val(d.price))}"><span class="suffix">¥</span></span><span class="hint" id="hint-price"></span></label>
       ${d.pack?`<label class="field"><span>Unités par paquet</span><input class="inp" data-k="perPack" type="number" step="1" min="1" inputmode="numeric" placeholder="ex. 12" value="${esc(val(d.perPack))}"><span class="hint">Affiche aussi le prix par unité.</span></label>`:''}
       <div class="field"><span>Quantité</span>
-        <div class="stepper"><button type="button" data-step="-1" aria-label="Retirer une pièce">−</button><output id="qty-out">${d.qty||1}</output><button type="button" data-step="1" aria-label="Ajouter une pièce">+</button></div>
+        <div class="stepper"><button type="button" data-step="-1" aria-label="Retirer une pièce">−</button><input class="inp qty-input" id="qty-out" data-k="qty" type="number" min="1" step="1" inputmode="numeric" aria-label="Quantité" value="${d.qty||1}"><button type="button" data-step="1" aria-label="Ajouter une pièce">+</button></div>
         <span class="hint">Pièces identiques</span></div>
       <div class="field wide"><span>Dimensions (cm)</span>
         <div class="dims3" role="group" aria-label="Dimensions en centimètres">
@@ -203,6 +203,7 @@ function onDraftField(el){
   if(k==='pack'){S.draft.pack=el.checked;persist();viewDevis();return}
   let v=el.value;
   if(k==='marge')v=v===''?0:Number(v)/100;
+  else if(k==='qty')v=Math.max(1,Math.floor(Number(v))||1);
   else if(NUM.includes(k))v=v===''?null:Number(v);
   S.draft[k]=v;
   touched.add(k);
@@ -259,7 +260,7 @@ function updateHints(d,R,checks){
   set('hint-dims','dims',prod?`Volume ${dec(prod,0)} cm³ · poids volumétrique ${dec(prod/S.params.div,2)} kg`:'','Trois mesures en cm, par exemple 14 x 6 x 6.','Format attendu : 14 x 6 x 6.');
   const maxWt=wtLimit(R.sel?.t);
   set('hint-wt','wt','','Produit emballé, en kg.','Saisissez le poids d’un produit emballé.',maxWt!=null?`Au-delà de la limite de ${R.sel.t.tr} (${dec(maxWt,1)} kg par pièce) : choisissez une autre offre.`:'Poids élevé : vérifiez que le transitaire l’accepte.');
-  const out=$('qty-out');if(out)out.textContent=d.qty||1;
+  const out=$('qty-out');if(out&&document.activeElement!==out)out.value=d.qty||1;
   document.querySelectorAll('.inp[data-k]').forEach(el=>{
     const k=el.dataset.k, c=by(k);
     el.classList.toggle('is-bad',!!c&&c.state==='bad'&&show(k));

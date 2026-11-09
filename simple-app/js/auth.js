@@ -157,21 +157,29 @@ async function signInGoogle(){
 
 /* ---------- démarrage ---------- */
 function hasStoredSession(){return Object.keys(localStorage).some(k=>/^sb-.+-auth-token$/.test(k))}
+const EARLY_START_MS=1000;
+const NETWORK_TIMEOUT_MS=8000;
+const withTimeout=(promise,ms)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),ms))]);
 async function boot(){
   if(location.hash.includes('type=recovery'))return viewRecover();
-  const {data:{session}}=await client.auth.getSession();
+  const cachedUid=localStorage.getItem(USER_KEY);
+  const canOpenCache=!!cachedUid&&hasStoredSession();
+  const openCache=()=>start(cachedUid,cachedUid,localStorage.getItem(ROLE_KEY));
+  // Hors ligne, ou réseau qui ne répond pas : on ouvre le cache du compte sans attendre le réseau.
+  if(!navigator.onLine&&canOpenCache)return openCache();
+  const sessionRead=client.auth.getSession();
+  const early=await Promise.race([sessionRead.then(()=>'read'),new Promise(resolve=>setTimeout(()=>resolve('slow'),EARLY_START_MS))]);
+  if(early==='slow'&&canOpenCache)return openCache();
+  const {data:{session}}=await sessionRead;
+  if(started)return;
   if(!session){
-    // Hors ligne avec une session déjà enregistrée : on ouvre le cache du compte.
-    if(!navigator.onLine&&localStorage.getItem(USER_KEY)&&hasStoredSession()){
-      const cached=localStorage.getItem(USER_KEY);
-      return start(cached,cached,localStorage.getItem(ROLE_KEY));
-    }
+    if(!navigator.onLine&&canOpenCache)return openCache();
     return viewLogin();
   }
   const id=session.user.id;
   let profile;
   try{
-    const {data,error}=await client.from('profiles').select('status,role,email').eq('id',id).maybeSingle();
+    const {data,error}=await withTimeout(client.from('profiles').select('status,role,email').eq('id',id).maybeSingle(),NETWORK_TIMEOUT_MS);
     if(error)throw error;
     profile=data;
   }catch(e){
@@ -280,7 +288,7 @@ function applyMerged(state,before){
 async function loadData(id){
   const cachedUid=localStorage.getItem(USER_KEY);
   if(cachedUid&&cachedUid!==id)[DATA_KEY,DIRTY_KEY,BASE_KEY,BASE_AT_KEY].forEach(k=>localStorage.removeItem(k));
-  const {data:row,error}=await client.from('app_data').select('state,updated_at').eq('owner_id',id).maybeSingle();
+  const {data:row,error}=await withTimeout(client.from('app_data').select('state,updated_at').eq('owner_id',id).maybeSingle(),NETWORK_TIMEOUT_MS);
   if(error)throw error;
   const remote=row?.state&&Object.keys(row.state).length?row.state:null;
   const local=readJson(DATA_KEY);
